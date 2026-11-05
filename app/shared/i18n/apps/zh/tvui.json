@@ -1,0 +1,8 @@
+{
+  "wv_fixing": "正在重新启用电视的 WebView…",
+  "wv_none": "此电视没有 WebView。请在 Play 商店安装或启用“Android System WebView”。",
+  "wv_none_setup": "此电视没有 WebView。请从 Play 商店安装“Android System WebView”，或安装 TV Setup，由它自动重新启用。",
+  "wv_store": "打开 Play 商店",
+  "wv_retry": "重试",
+  "wv_back": "返回"
+}

@@ -1,0 +1,6 @@
+{
+  "app_name": "TV Setup Keys",
+  "keys_fix": "TV Setup Keys：遥控器按键",
+  "keys_wake": "TV Setup Keys：仅唤醒（屏幕关闭时自动启用）",
+  "keys_about": "TV Setup 的组成部分：修复无响应的遥控器按键，避免只想唤醒屏幕时却同时打开应用。在未开启 ADB 的电视上，可按你的要求打开系统电源菜单。不读取屏幕内容。"
+}
