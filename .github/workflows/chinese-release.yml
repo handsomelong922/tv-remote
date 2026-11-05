@@ -1,0 +1,220 @@
+# DRAFT: install only on i18n-zh. No code or workflow changes to main.
+# Native Sync fork -> push must still be verified on a real upstream update.
+name: Chinese Android Release
+on:
+  push:
+    branches: [i18n-zh]
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: chinese-android-release
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+env:
+  FORK_REPO: handsomelong922/tv-remote
+
+jobs:
+  build:
+    if: >-
+      github.repository == 'handsomelong922/tv-remote' &&
+      github.repository_id == '1446476170' &&
+      github.ref == 'refs/heads/i18n-zh'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validate source and Chinese strings
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(find app -name signing.jks -print)"
+          python3 - <<'PY'
+          import json, pathlib
+          p = pathlib.Path('app/shared/i18n')
+          load = lambda f: json.loads(f.read_text(encoding='utf-8'))
+          assert load(p/'langs.json').get('zh') == '简体中文'
+          assert set(load(p/'zh.json')) == set(load(p/'en.json')), 'Missing or obsolete Chinese web keys'
+          modules = {f.name for f in (p/'apps/en').glob('*.json')}
+          assert modules == {f.name for f in (p/'apps/zh').glob('*.json')}, 'Chinese native module mismatch'
+          for name in modules:
+              assert set(load(p/'apps/en'/name)) == set(load(p/'apps/zh'/name)), f'Chinese key mismatch: {name}'
+          PY
+          node --test app/shared/tests/i18n.test.js
+      - name: Build unsigned Release only
+        run: |
+          set -euo pipefail
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0' >/dev/null
+          cd app/gradle
+          ./gradlew --no-daemon --console=plain :android:assembleRelease --dry-run > "$RUNNER_TEMP/task-plan.txt"
+          cat "$RUNNER_TEMP/task-plan.txt"
+          if grep -E '^:[^[:space:]]*[Dd]ebug[^[:space:]]*[[:space:]]' "$RUNNER_TEMP/task-plan.txt"; then
+            echo 'Debug task detected; refusing to build.' >&2; exit 1
+          fi
+          ./gradlew --no-daemon --console=plain :android:assembleRelease
+          cd ../..
+          test -z "$(find app -name signing.jks -print)"
+          mkdir "$RUNNER_TEMP/unsigned"
+          cp app/android/build/outputs/apk/release/android-release-unsigned.apk "$RUNNER_TEMP/unsigned/tv-remote.apk"
+          test -s "$RUNNER_TEMP/unsigned/tv-remote.apk"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        id: upload
+        with:
+          name: unsigned-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/unsigned/tv-remote.apk
+          if-no-files-found: error
+          retention-days: 3
+
+  sign:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions: {}
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: unsigned
+          merge-multiple: true
+      - name: Check APK before accessing private key
+        run: |
+          set -euo pipefail
+          test "$(find unsigned -type f | wc -l)" -eq 1
+          test -f unsigned/tv-remote.apk && test ! -L unsigned/tv-remote.apk
+          sdkmanager 'build-tools;35.0.0' >/dev/null
+          bt="$ANDROID_HOME/build-tools/35.0.0"
+          "$bt/aapt" dump badging unsigned/tv-remote.apk > "$RUNNER_TEMP/badging.txt"
+          grep -q "^package: name='dev.tvremote.phone' " "$RUNNER_TEMP/badging.txt"
+          ! grep -q '^application-debuggable' "$RUNNER_TEMP/badging.txt"
+          "$bt/aapt2" dump configurations unsigned/tv-remote.apk > "$RUNNER_TEMP/configurations.txt"
+          grep -qx zh "$RUNNER_TEMP/configurations.txt"
+          unzip -Z1 unsigned/tv-remote.apk > "$RUNNER_TEMP/entries.txt"
+          grep -qx 'assets/i18n/zh.json' "$RUNNER_TEMP/entries.txt"
+      - name: Sign and verify with the fixed fork certificate
+        env:
+          KEYSTORE_B64: ${{ secrets.FORK_RELEASE_KEYSTORE_B64 }}
+          STORE_PASSWORD: tvremote
+          KEY_PASSWORD: tvremote
+          KEY_ALIAS: tvremote
+          EXPECTED_CERT_SHA256: 9527621ba569ec2fe760553bb7d99c1f0b81f7688310480f631eb7adf11405de
+        run: |
+          set -euo pipefail
+          # No checkout, project scripts, key generation, caches, or debug logging in this job.
+          test -n "$KEYSTORE_B64" && test -n "$STORE_PASSWORD" && test -n "$KEY_PASSWORD" && test -n "$KEY_ALIAS"
+          expected=$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')
+          [[ "$expected" =~ ^[0-9a-f]{64}$ ]]
+          keydir=$(mktemp -d "$RUNNER_TEMP/signing.XXXXXX")
+          trap 'rm -rf -- "$keydir"' EXIT
+          umask 077
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$keydir/release.jks"
+          unset KEYSTORE_B64
+          mkdir signed
+          bt="$ANDROID_HOME/build-tools/35.0.0"
+          "$bt/zipalign" -P 16 -f 4 unsigned/tv-remote.apk "$keydir/aligned.apk"
+          "$bt/apksigner" sign --ks "$keydir/release.jks" --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:STORE_PASSWORD --key-pass env:KEY_PASSWORD --v4-signing-enabled false \
+            --out signed/tv-remote.apk "$keydir/aligned.apk"
+          "$bt/apksigner" verify --verbose --print-certs signed/tv-remote.apk > "$RUNNER_TEMP/certificate.txt"
+          actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/certificate.txt" | tr '[:upper:]' '[:lower:]')
+          test "$actual" = "$expected"
+          ! grep -q '^Signer #2 ' "$RUNNER_TEMP/certificate.txt"
+          "$bt/aapt" dump badging signed/tv-remote.apk > "$RUNNER_TEMP/signed-badging.txt"
+          ! grep -q '^application-debuggable' "$RUNNER_TEMP/signed-badging.txt"
+          "$bt/zipalign" -c -P 16 4 signed/tv-remote.apk
+          (cd signed && sha256sum tv-remote.apk > SHA256SUMS)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        id: upload
+        with:
+          name: signed-${{ github.run_id }}-${{ github.run_attempt }}
+          path: signed/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: sign
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ needs.sign.outputs.artifact_id }}
+          path: signed
+          merge-multiple: true
+      - name: Publish verified assets through a draft, without touching branch heads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tag="zh-run-$GITHUB_RUN_ID" # unique per run; stable across attempts for safe recovery
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(find signed -type f | wc -l)" -eq 2
+          test -f signed/tv-remote.apk && test -f signed/SHA256SUMS
+          (cd signed && sha256sum -c SHA256SUMS)
+          gh api "repos/$FORK_REPO" | jq -e '
+            .id==1446476170 and .full_name=="handsomelong922/tv-remote" and
+            .fork==true and .parent.full_name=="HoangTran0410/tv-remote"' >/dev/null
+          check_head() {
+            test "$(gh api "repos/$FORK_REPO/git/ref/heads/i18n-zh" --jq '.object.sha')" = "$SOURCE_SHA" || {
+              echo 'Chinese branch advanced. Run latest source; no stale publication.' >&2; return 1;
+            }
+          }
+          # Only an explicit 404 means absent. Network, permission, and rate-limit errors are terminal.
+          read_api() {
+            curl --silent --show-error --output "$2" --write-out '%{http_code}' \
+              -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/$FORK_REPO/$1"
+          }
+          check_head
+          code=$(read_api "git/ref/tags/$tag" "$RUNNER_TEMP/tag.json")
+          if [ "$code" = 200 ]; then
+            jq -e --arg sha "$SOURCE_SHA" '.object.type=="commit" and .object.sha==$sha' "$RUNNER_TEMP/tag.json" >/dev/null
+          elif [ "$code" = 404 ]; then
+            gh api --method POST "repos/$FORK_REPO/git/refs" -f "ref=refs/tags/$tag" -f "sha=$SOURCE_SHA" >/dev/null
+          else
+            echo "Tag lookup failed: HTTP $code" >&2; exit 1
+          fi
+          test "$(gh api "repos/$FORK_REPO/git/ref/tags/$tag" --jq '.object.sha')" = "$SOURCE_SHA"
+          code=$(read_api "releases/tags/$tag" "$RUNNER_TEMP/release.json")
+          if [ "$code" = 200 ]; then
+            if ! jq -e '.draft' "$RUNNER_TEMP/release.json" >/dev/null; then
+              mkdir "$RUNNER_TEMP/published"
+              gh release download "$tag" --repo "$FORK_REPO" --pattern tv-remote.apk --pattern SHA256SUMS --dir "$RUNNER_TEMP/published"
+              (cd "$RUNNER_TEMP/published" && sha256sum -c SHA256SUMS)
+              cmp signed/SHA256SUMS "$RUNNER_TEMP/published/SHA256SUMS"
+              echo 'Identical verified Release is already public.'; exit 0
+            fi
+          elif [ "$code" = 404 ]; then
+            printf '%s\n' 'Chinese Android Release APK.' "Source: $SOURCE_SHA" \
+              'Signed with the fixed fork certificate. Fork in-app updates are not configured by this workflow.' > "$RUNNER_TEMP/notes.txt"
+            gh release create "$tag" --repo "$FORK_REPO" --verify-tag --draft \
+              --title "Chinese Release $tag" --notes-file "$RUNNER_TEMP/notes.txt"
+          else
+            echo "Release lookup failed: HTTP $code" >&2; exit 1
+          fi
+          gh release upload "$tag" --repo "$FORK_REPO" signed/tv-remote.apk signed/SHA256SUMS --clobber
+          mkdir "$RUNNER_TEMP/verify-upload"
+          gh release download "$tag" --repo "$FORK_REPO" --pattern tv-remote.apk --pattern SHA256SUMS --dir "$RUNNER_TEMP/verify-upload"
+          (cd "$RUNNER_TEMP/verify-upload" && sha256sum -c SHA256SUMS)
+          cmp signed/SHA256SUMS "$RUNNER_TEMP/verify-upload/SHA256SUMS"
+          check_head
+          gh release edit "$tag" --repo "$FORK_REPO" --draft=false --latest
+          gh release view "$tag" --repo "$FORK_REPO" --json isDraft,url --jq 'select(.isDraft==false) | .url'
