@@ -69,6 +69,11 @@ import org.json.JSONObject
  *   motion  how much moves while [anim] is on: "" this TV's choice (calm on one with little memory, 2.25 GB or less, or that Android
  *           calls low on RAM), "calm" (no overshoot, shorter, only the tile grows: fewer frames on a weak chip), "full"
  *   focus   how the focused app shows: "glass" (a pane gliding from tile to tile) or "ring" (a blue ring on the tile)
+ *   tstyle  how an app tile looks: "banner" (default, the TV banner on a card), "icon" (the app's icon large, no card, its name under it)
+ *           or "glass" (a frosted card with the icon and the name). A live widget, a folder, an app with its own picture and a pin with its
+ *           picture stay cards in every style. Absent or unknown = "banner" (TV Home as before; app/DESIGN-TV.md 2.5b)
+ *   accent  one colour for what says "chosen / now": "" (default, today's colours) or a name of [ACCENTS]. It tints the focus ring
+ *           and the glass pane's rim, the clock's date line, the calendar's today and the top bar's rule. Unknown = ""
  *   cols    how many app tiles in a row of the grid, [COLS_MIN]..[COLS_MAX] (default [COLS_DEFAULT]). A TV Home that has this reports
  *           "colsOk": true (the page offers the choice only to one that does)
  *   rows    how many rows of apps the first screen shows under the clock or the widgets, tenths allowed (1.2: row 1 and a fifth of
@@ -103,7 +108,7 @@ import org.json.JSONObject
  *   place   a city for the weather widget, as typed ([PLACE_MAX] characters); empty = automatic
  *   market  (widget) gold (SJC, 9999) and the banks' exchange rates in VND, optionally Bitcoin: public prices fetched by the TV itself,
  *           the addresses in the site's signed list docs/home/feeds.json; options "layout" card / ticker (one scrolling line), "show"
- *           all / gold / rates, "btc". news (widget) headlines with a picture from RSS feeds (the same list, by the TV's language, and
+ *           all / gold / rates, "btc", "fuel" (Vietnam's retail fuel: RON 95, E5, diesel). news (widget) headlines with a picture from RSS feeds (the same list, by the TV's language, and
  *           [feeds]: the person's own links, [FEEDS_MAX]); option "src" auto (the list) / mine / both. OK on a headline opens the
  *           reader; OK on the weather widget opens its map. A TV Home that has these reports "infoOk": true
  *   feeds   the person's own RSS links for the news widget, [FEEDS_MAX] at most ([feeds]); set from the page, like [place]
@@ -117,6 +122,9 @@ import org.json.JSONObject
  *           Checked by the screensaver's once-a-minute tick; not a theme key
  *   center  the app grid's tiles sit in the middle of their row (a row with fewer tiles than [cols] too), default false = left-aligned.
  *           A look, so a theme key
+ *   wplace  where the widgets sit ([WPLACES]): "top" (default, also a missing key) = one row under the top bar; "left" / "right" = a
+ *           column of full-form widgets beside the grid (the grid keeps its tile size and takes fewer columns). No "under the apps": the grid is
+ *           every app, so a row after it sat many rows down on a TV with 30 apps (2026-11-05). A look, so a theme key
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
  *   names   the person's own names for apps and shortcuts: {"<package or pin:...>": "name"}, at most [NAMES_MAX], each [NAME_MAX] characters;
  *           shown wherever TV Home shows the app's name, and always on a banner tile (two YouTubes look the same). Not a theme key
@@ -294,7 +302,7 @@ object HomeConfig {
         val size = Opt("size", "choice", SIZES, defaultSize(k), "wsize")
         return when {
             k == "clock" -> listOf(size, Opt("face", "choice", listOf("classic", "minimal", "roman", "modern", "digital"), "classic"), Opt("theme", "choice", listOf("dark", "light"), "dark"), Opt("look", "choice", BARE, "glass"))
-            k == "market" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("layout", "choice", listOf("card", "ticker"), "card"), Opt("show", "choice", listOf("all", "gold", "rates"), "all"), Opt("btc", "toggle", emptyList(), "off"))
+            k == "market" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("layout", "choice", listOf("card", "ticker"), "card"), Opt("show", "choice", listOf("all", "gold", "rates"), "all"), Opt("btc", "toggle", emptyList(), "off"), Opt("fuel", "toggle", emptyList(), "off"))
             k == "calendar" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("layout", "choice", listOf("month", "date"), "month"))
             k == "news" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("src", "choice", listOf("auto", "mine", "both"), "auto"))
             k == "prayer" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("method", "choice", listOf("auto") + PRAYER_METHODS, "auto"),
@@ -370,7 +378,10 @@ object HomeConfig {
      */
     const val W_BIG = 100; const val W_CAL = 120; const val W_SMALL = 90; const val BUDGET = 415; const val FLOOR = 190
     fun weight(k: String, big: Boolean) = if (!big) W_SMALL else if (k == "calendar") W_CAL else W_BIG
-    /** The widgets of one column, top to bottom, and its weight. */
+    /** Where the widgets sit: the row under the top bar (default), or a column beside the grid. */
+    val WPLACES = listOf("top", "left", "right")
+    fun side(place: String?) = place == "left" || place == "right"
+    /** The widgets of one column, top to bottom, and its weight (in a side column: its height in dp). */
     class Col(val keys: List<String>, val weight: Int)
     /** The columns that fit, left to right, and the widgets that wait (the pinned note, "note", never does). */
     class Packed(val cols: List<Col>, val waiting: List<String>)
@@ -380,15 +391,26 @@ object HomeConfig {
      * column of its own; stop at the first column that would pass [BUDGET], the rest wait. The pinned note ([note]) is the last
      * small widget and keeps its place: the widgets before it give way, from the end.
      */
-    fun pack(keys: List<String>, big: Set<String>, note: Boolean = false): Packed {
+    fun pack(keys: List<String>, big: Set<String>, note: Boolean = false): Packed = packWith(keys, big, note, BUDGET, 0) { k, isBig, _ -> weight(k, isBig) }
+
+    /** Heights in a side column (dp): a big widget or a stacked pair of small ones [H_FULL], a small one alone [H_HALF], [H_GAP] between. */
+    const val H_FULL = 180; const val H_HALF = 90; const val H_GAP = 12
+    /**
+     * The side column ("left" / "right"): the same walk as [pack], but the budget is the screen's height ([roomDp]) and a block's weight its
+     * height; what does not fit waits. The first block always shows (a short screen still has a widget).
+     */
+    fun packColumn(keys: List<String>, big: Set<String>, note: Boolean, roomDp: Int): Packed =
+        packWith(keys, big, note, roomDp + H_GAP, H_GAP) { _, isBig, group -> (if (isBig || group.size == 2) H_FULL else H_HALF) + H_GAP }
+
+    private fun packWith(keys: List<String>, big: Set<String>, note: Boolean, budget: Int, pad: Int, size: (String, Boolean, List<String>) -> Int): Packed {
         fun run(ks: List<String>): Packed {
             val cols = ArrayList<Col>(); var sum = 0; var i = 0
             while (i < ks.size) {
                 val k = ks[i]; val isBig = k in big
                 val group = if (!isBig && ks.getOrNull(i + 1)?.let { it !in big } == true) listOf(k, ks[i + 1]) else listOf(k)
-                val w = weight(k, isBig)
-                if (sum + w > BUDGET) break
-                cols += Col(group, w); sum += w; i += group.size
+                val w = size(k, isBig, group)
+                if (cols.isNotEmpty() && sum + w > budget) break
+                cols += Col(group, w - pad); sum += w; i += group.size
             }
             return Packed(cols, ks.drop(i))
         }
@@ -466,6 +488,28 @@ object HomeConfig {
      * One header line, [which] "g" (the greeting, first) or "d" (the date, second), from [t]: the [TOKENS]' values now, plus
      * "lunarLine" (the lunar date as a phrase). A style with nothing to show falls back to the line's own default.
      */
+    /**
+     * One clock on the screen (the user, 2026-11-05: themes drew the time in the top bar, in a clock widget and on its face): a clock
+     * widget takes the top bar's time, and with a calendar widget their date, while that line says the date (its default). The switches
+     * stay as the person set them; taking the widget off brings the bar's back.
+     */
+    fun barClock(o: JSONObject, placed: List<String> = placed(o)) = o.optBoolean("showClock", true) && "clock" !in placed
+    fun barDate(o: JSONObject, placed: List<String> = placed(o)) = o.optBoolean("showDate", true) &&
+        !(o.optString("dstyle").ifEmpty { "date" } == "date" && placed.any { it == "clock" || it == "calendar" })
+    /**
+     * A guess of the widgets that get a place, for previews and before TV Home's first read (TV Home then passes what Widgets.show
+     * really placed): a clock widget pushed out must not take the bar's clock with it. A timer counts as not set, QR widgets only
+     * when written; 378 dp: a 1080p screen under the top bar. Twin: homePlaced in js/home_walls.js.
+     */
+    fun placed(o: JSONObject): List<String> {
+        val qrs = o.optJSONObject("qrs")
+        val keys = strs(o.optJSONArray("widgets")).filter { it != "timer" && (it !in HomeQr.KEYS || qrs?.has(it) == true) }
+        if (keys.isEmpty()) return keys
+        val note = o.optString("note").isNotEmpty()
+        val p = if (side(o.optString("wplace"))) packColumn(keys, bigs(o), note, 378) else pack(keys, bigs(o), note)
+        return keys - p.waiting.toSet()
+    }
+
     fun headLine(o: JSONObject, which: String, t: Map<String, String>): String {
         val base = if (which == "g") t["greet"].orEmpty() else t["date"].orEmpty()
         return when (o.optString(which + "style").ifEmpty { if (which == "g") "time" else "date" }) {
@@ -514,7 +558,12 @@ object HomeConfig {
     const val THEME_NAME_MAX = 24
     /** The settings a theme holds and an apply switches . */
     val THEME_KEYS = listOf("wall", "walls", "wurl", "wcol", "wdir", "wmode", "wsnap", "wkeep", "wevery", "shade", "wfit", "wfade",
-        "widgets", "wsize", "wopt", "cols", "center", "rows", "focus", "motion", "anim", "clock24", "greet")
+        "widgets", "wsize", "wopt", "wplace", "cols", "center", "rows", "focus", "tstyle", "accent", "motion", "anim", "clock24", "greet")
+    /** How an app tile looks ("tstyle"), the default first. */
+    val TSTYLES = listOf("banner", "icon", "glass")
+    /** The accent palette ("accent"): name to #RRGGBB, each seen on a dark and a light wall (app/DESIGN-TV.md 2.5b). Twin: HOME_ACCENTS in js/home_walls.js. */
+    val ACCENTS = linkedMapOf("blue" to "#2F72F0", "teal" to "#0E9F92", "green" to "#2E9E55", "amber" to "#C57400",
+        "orange" to "#E8590C", "red" to "#E5383B", "pink" to "#D6336C", "violet" to "#7B55EE")
     private val THEME_ID = Regex("t[0-9]{1,4}")
     /** What the first screen draws that the person can take off (not in a theme: a look does not hide the way to the settings). */
     /** Where the Play Next items sit on the grid, first the default (the user, 2026-10-26: a row wedged inside their own apps annoys). */
@@ -621,8 +670,9 @@ object HomeConfig {
     /** The id of the theme whose look is on now (the person's first), or "". */
     fun themeNow(c: JSONObject): String {
         val now = canon(pickTheme(clean(c)))
-        return customThemes(c).firstOrNull { canon(it.optJSONObject("conf")) == now }?.optString("id")
-            ?: before(c)?.takeIf { canon(it) == now }?.let { BEFORE }
+        val same = { t: JSONObject? -> t != null && canon(pickTheme(clean(t))) == now }   // a theme saved before a key existed lacks it: filled the same way, it still matches
+        return customThemes(c).firstOrNull { same(it.optJSONObject("conf")) }?.optString("id")
+            ?: before(c)?.takeIf { same(it) }?.let { BEFORE }
             ?: BUILTIN.firstOrNull { canon(it.second) == now }?.first ?: ""
     }
 
@@ -734,12 +784,15 @@ object HomeConfig {
             .put("shift", o.optBoolean("shift", false))               // burn-in care: Home moves a few px every minute (ui/PixelShift)
             .put("motion", o.optString("motion").takeIf { it in MOTIONS } ?: "")
             .put("focus", o.optString("focus").takeIf { it == "ring" } ?: "glass")
+            .put("tstyle", o.optString("tstyle").takeIf { it in TSTYLES } ?: TSTYLES[0])
+            .put("accent", o.optString("accent").takeIf { it in ACCENTS } ?: "")
             .put("cols", o.optInt("cols", COLS_DEFAULT).coerceIn(COLS_MIN, COLS_MAX))
             .put("rows", rows(o.optDouble("rows", 0.0)))
             .put("dream", o.optBoolean("dream", false))
             .put("dface", o.optString("dface").takeIf { it in DFACES } ?: "big")
             .put("ddark", dark(o.optString("ddark")))
             .put("center", o.optBoolean("center", false))
+            .put("wplace", o.optString("wplace").takeIf { it in WPLACES } ?: WPLACES[0])
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))
             .put("feeds", JSONArray(feeds(o.optJSONArray("feeds"))))

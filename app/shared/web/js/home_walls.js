@@ -167,6 +167,9 @@ function homeVeil(ctx, w, h, k, user) {
 // The wall under the veil at its real strength, the clock, the widgets as homePack lays them, the grid's columns and rows with
 // the live widgets first and the focus on the first one. Rounded shapes only; `img` (a loaded Image) is the background of a photo / page /
 // video, else the drawn look or the colours.
+/** HomeConfig.ACCENTS (a test keeps them equal) and TSTYLES: the page's twins of the TV's look choices. */
+const HOME_ACCENTS = { blue: '#2F72F0', teal: '#0E9F92', green: '#2E9E55', amber: '#C57400', orange: '#E8590C', red: '#E5383B', pink: '#D6336C', violet: '#7B55EE' };
+const HOME_TSTYLES = ['banner', 'icon', 'glass'];
 const HOME_PREV = { ink: '255,255,255', live: ['#4fc3a1', '#ffc857', '#8ab4f8', '#f28b82'], none: '#2a2f3a' };
 // the wall moves (a video, or a web page that is one video): the picture alone cannot say so (ThemePreview.moving is the twin)
 function homeThemeMoving(conf) {
@@ -175,6 +178,22 @@ function homeThemeMoving(conf) {
   const u = String(conf.wurl || '').toLowerCase();
   return u.includes('/home/loop.html?v=') || /\.(mp4|webm|m3u8|mkv|mov)(\?|#|$)/.test(u);
 }
+/** HomeConfig.barClock / barDate: which of the top bar's time and date TV Home draws (a clock widget is the clock then; with a calendar widget the date too, while that line says the date). */
+function homeBar(conf) {
+  const ws = homePlaced(conf), clock = ws.includes('clock');
+  return { clock: conf.showClock !== false && !clock,
+    date: conf.showDate !== false && !((conf.dstyle || 'date') === 'date' && (clock || ws.includes('calendar'))) };
+}
+
+/** HomeConfig.placed: the chosen widgets that get a place (a clock widget waiting for room leaves the bar's clock on). */
+function homePlaced(conf) {
+  const keys = (conf.widgets || []).filter((k) => k !== 'timer' && (!/^qr\d$/.test(k) || (conf.qrs && conf.qrs[k])));   // as HomeConfig.placed: a timer counts as not set
+  if (!keys.length || typeof homePack !== 'function') return keys;
+  const big = keys.filter((k) => homeSize(conf, k) === 'big'), note = !!conf.note;
+  const p = conf.wplace === 'left' || conf.wplace === 'right' ? homePackColumn(keys, big, note, 378) : homePack(keys, big, note);
+  return keys.filter((k) => !(p.waiting || []).includes(k));
+}
+
 function homeThemePaint(cv, conf, tiles, img, look, now) {   // now: a Date, for the live preview of the config being edited (its real time)
   const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, wall = conf.wall, user = (conf.shade ?? 50) / 50;
   const bar = (x, y, bw, bh, a) => { ctx.fillStyle = `rgba(${HOME_PREV.ink},${a})`; ctx.beginPath(); ctx.roundRect(x, y, bw, bh, bh / 2); ctx.fill(); };
@@ -186,46 +205,80 @@ function homeThemePaint(cv, conf, tiles, img, look, now) {   // now: a Date, for
     else { const c = (HOME_WALLS[wall] || HOME_PREV.none).split(','), g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, c[0]); g.addColorStop(1, c[c.length - 1]); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
     homeVeil(ctx, w, h, 1, user);
   }
-  const m = w * 0.06;
-  if (now) {                                                            // the clock as the TV writes it, the greeting and date a bar beside it
-    const hh = conf.clock24 === false ? (now.getHours() % 12 || 12) : String(now.getHours()).padStart(2, '0'), t = hh + ':' + String(now.getMinutes()).padStart(2, '0');
-    ctx.font = `300 ${Math.round(h * 0.11)}px system-ui, sans-serif`; ctx.textBaseline = 'middle'; ctx.fillStyle = `rgba(${HOME_PREV.ink},0.95)`;
-    ctx.fillText(t, m, h * 0.11); const tw = ctx.measureText(t).width;
-    bar(m + tw + w * 0.025, h * 0.08, w * 0.16, h * 0.026, 0.45); bar(m + tw + w * 0.025, h * 0.122, w * 0.22, h * 0.034, 0.75);
-  } else bar(m, h * 0.075, w * 0.30, h * 0.07, 0.8);                    // the time, greeting and date: one row on TV Home, one bar here
-  bar(w - m - w * 0.16, h * 0.085, w * 0.16, h * 0.05, 0.25);           // the buttons as one bar: where things are, not each one
-  let y = h * 0.21;
-  const big = HOME_WIDGETS.concat(['qr1', 'qr2', 'qr3', 'qr4']).filter((k) => homeSize(conf, k) === 'big'), packed = homePack((conf.widgets || []).filter((k) => HOME_WIDGETS.includes(k)), big);
-  if (packed.cols.length) {
-    const rowH = h * 0.30, gap = w * 0.02, room = w - 2 * m - gap * (packed.cols.length - 1), sum = Math.max(HOME_W.floor, packed.cols.reduce((n, c) => n + c.weight, 0));
-    let x = m;
-    for (const col of packed.cols) {
-      const cw = room * col.weight / sum, n = col.keys.length, ch = (rowH - (n - 1) * gap * 0.6) / n;
-      col.keys.forEach((k, j) => {
-        const cy = y + j * (ch + gap * 0.6), look = ((conf.wopt || {})[k] || {}).look || (conf.wstyle || {})[k], pad = h * 0.03;
-        ctx.fillStyle = look === 'solid' ? 'rgba(24,27,34,0.94)' : `rgba(${HOME_PREV.ink},${look === 'tonal' ? 0.29 : 0.18})`;   // Frost's solid card; none: no card
-        if (look !== 'none') box(x, cy, cw, ch, h * 0.035);
-        if (k === 'clock' && (n === 1 || ch > h * 0.12)) { ctx.strokeStyle = `rgba(${HOME_PREV.ink},0.7)`; ctx.lineWidth = Math.max(1, h * 0.008); ctx.beginPath(); ctx.arc(x + cw / 2, cy + ch / 2, Math.min(cw, ch) * 0.28, 0, 2 * Math.PI); ctx.stroke(); }
-        else { bar(x + pad, cy + pad, cw * 0.42, h * 0.018, 0.4); if (ch > h * 0.12) bar(x + pad, cy + ch * 0.45, cw * 0.62, h * 0.045, 0.7); else bar(x + pad, cy + ch * 0.55, cw * 0.5, h * 0.03, 0.7); }
-      });
-      x += cw + gap;
-    }
-    y += rowH + h * 0.04;
+  const m = w * 0.06, head = homeBar(conf);                             // a clock widget takes the bar's time (and date): one clock on the screen, as on the TV
+  let hx = m;
+  if (head.clock) {
+    if (now) {                                                          // the clock as the TV writes it
+      const hh = conf.clock24 === false ? (now.getHours() % 12 || 12) : String(now.getHours()).padStart(2, '0'), t = hh + ':' + String(now.getMinutes()).padStart(2, '0');
+      ctx.font = `300 ${Math.round(h * 0.11)}px system-ui, sans-serif`; ctx.textBaseline = 'middle'; ctx.fillStyle = `rgba(${HOME_PREV.ink},0.95)`;
+      ctx.fillText(t, m, h * 0.11); hx = m + ctx.measureText(t).width + w * 0.025;
+    } else { bar(m, h * 0.075, w * 0.12, h * 0.07, 0.8); hx = m + w * 0.145; }
   }
-  const cols = Math.min(8, Math.max(4, conf.cols || 5)), gap = w * 0.014, tw = (w - 2 * m - (cols - 1) * gap) / cols, th = tw * 0.56;
-  const fit = (h - y + gap) / (th + gap), shown = conf.rows >= 1 ? Math.min(conf.rows, Math.max(fit, 1)) : Math.min(fit, 3), ring = conf.focus === 'ring';
+  if (conf.greet !== false) bar(hx, h * 0.08, w * 0.16, h * 0.026, 0.45);
+  if (head.date) bar(hx, h * 0.122, w * 0.22, h * 0.034, 0.75);
+  bar(w - m - w * 0.16, h * 0.085, w * 0.16, h * 0.05, 0.25);           // the buttons as one bar: where things are, not each one
+  // where the widgets sit (HomeConfig "wplace"): the row under the top bar (top, today), a column beside the grid (left / right)
+  const place = HOME_PLACES.includes(conf.wplace) ? conf.wplace : 'top', side0 = place === 'left' || place === 'right';
+  let y = h * 0.21;
+  const big = HOME_WIDGETS.concat(['qr1', 'qr2', 'qr3', 'qr4']).filter((k) => homeSize(conf, k) === 'big'), keys = (conf.widgets || []).filter((k) => HOME_WIDGETS.includes(k));
+  const packed = side0 ? homePackColumn(keys, big, false, 378) : homePack(keys, big);   // 378 dp: what is left of a 1080p screen under the top bar
+  const side = side0 && packed.cols.length > 0;
+  const card = (k, x, cy, cw, ch, n) => {
+    const look = ((conf.wopt || {})[k] || {}).look || (conf.wstyle || {})[k], pad = h * 0.03;
+    ctx.fillStyle = look === 'solid' ? 'rgba(24,27,34,0.94)' : `rgba(${HOME_PREV.ink},${look === 'tonal' ? 0.29 : 0.18})`;   // Frost's solid card; none: no card
+    if (look !== 'none') box(x, cy, cw, ch, h * 0.035);
+    if (k === 'clock' && (n === 1 || ch > h * 0.12)) { ctx.strokeStyle = `rgba(${HOME_PREV.ink},0.7)`; ctx.lineWidth = Math.max(1, h * 0.008); ctx.beginPath(); ctx.arc(x + cw / 2, cy + ch / 2, Math.min(cw, ch) * 0.28, 0, 2 * Math.PI); ctx.stroke(); }
+    else { bar(x + pad, cy + pad, cw * 0.42, h * 0.018, 0.4); if (ch > h * 0.12) bar(x + pad, cy + ch * 0.45, cw * 0.62, h * 0.045, 0.7); else bar(x + pad, cy + ch * 0.55, cw * 0.5, h * 0.03, 0.7); }
+  };
+  const rowH = h * 0.30, wgap = w * 0.02, sideW = (w - 2 * m) / 3, sideGap = w * 0.033;
+  const drawRow = (ry) => {
+    const room = w - 2 * m - wgap * (packed.cols.length - 1), sum = Math.max(HOME_W.floor, packed.cols.reduce((n, c) => n + c.weight, 0));
+    const used = room * packed.cols.reduce((n, c) => n + c.weight, 0) / sum + wgap * (packed.cols.length - 1);
+    let x = conf.center ? (w - used) / 2 : m;                           // centered over a centered grid, as TV Home lays it
+    for (const col of packed.cols) {
+      const cw = room * col.weight / sum, n = col.keys.length, ch = (rowH - (n - 1) * wgap * 0.6) / n;
+      col.keys.forEach((k, j) => card(k, x, ry + j * (ch + wgap * 0.6), cw, ch, n));
+      x += cw + wgap;
+    }
+  };
+  if (side) {                                                           // full-width blocks stacked, a block as high as its dp says (540 dp screen)
+    const x = place === 'left' ? m : w - m - sideW, sc = h / 540;
+    let cy = y;
+    for (const col of packed.cols) {
+      const n = col.keys.length, ch = col.weight * sc, g = HOME_H.gap * sc * 0.5;
+      col.keys.forEach((k, j) => card(k, x, cy + j * ((ch - g * (n - 1)) / n + g), sideW, (ch - g * (n - 1)) / n, n));
+      cy += ch + HOME_H.gap * sc;
+    }
+  } else if (packed.cols.length && place === 'top') { drawRow(y); y += rowH + h * 0.04; }
+  const cols0 = Math.min(8, Math.max(4, conf.cols || 5)), gap = w * 0.014, base = (w - 2 * m - (cols0 - 1) * gap) / cols0;
+  const gx = side && place === 'left' ? m + sideW + sideGap : m, gw = side ? w - 2 * m - sideW - sideGap : w - 2 * m;
+  // beside a column the tiles keep about their size and the row holds fewer (HomeActivity.gridCols)
+  const cols = side ? Math.min(cols0, Math.max(Math.min(3, cols0), Math.floor((gw + gap) / (base * 0.88 + gap)))) : cols0;
+  const tw = (gw - (cols - 1) * gap) / cols, th = tw * 0.56;
+  const fit = (h - y + gap) / (th + gap), shown = conf.rows >= 1 && !side ? Math.min(conf.rows, Math.max(fit, 1)) : Math.min(fit, 3), ring = conf.focus === 'ring';
+  const tstyle = HOME_TSTYLES.includes(conf.tstyle) ? conf.tstyle : 'banner', accent = HOME_ACCENTS[conf.accent] || '';
   // TV Home keeps the grid at the bottom of the screen: whole rows above a margin, a part of a row cut by the screen's edge
   const whole = Math.abs(shown - Math.round(shown)) < 0.0001;
-  y = Math.max(y, (whole ? h * 0.94 : h) - (shown * (th + gap) - (whole ? gap : 0)));
+  if (!side) y = Math.max(y, (whole ? h * 0.94 : h) - (shown * (th + gap) - (whole ? gap : 0)));
   for (let i = 0; i < Math.ceil(shown - 0.0001) * cols; i++) {
-    const rx = m + (i % cols) * (tw + gap), ry = y + Math.floor(i / cols) * (th + gap), row = Math.floor(i / cols);
+    const rx = gx + (i % cols) * (tw + gap), ry = y + Math.floor(i / cols) * (th + gap), row = Math.floor(i / cols);
     const vis = row + 1 <= shown + 0.0001 ? 1 : Math.min(1, Math.max(0.05, shown - row)), live = i < tiles.length;
-    ctx.fillStyle = live ? HOME_PREV.live[i % 4] : `rgba(${HOME_PREV.ink},0.15)`;
-    if (live) ctx.globalAlpha = 0.8;
-    box(rx, ry, tw, th * vis, h * 0.03); ctx.globalAlpha = 1;
+    if (live || tstyle === 'banner') {
+      ctx.fillStyle = live ? HOME_PREV.live[i % 4] : `rgba(${HOME_PREV.ink},0.15)`;
+      if (live) ctx.globalAlpha = 0.8;
+      box(rx, ry, tw, th * vis, h * 0.03); ctx.globalAlpha = 1;
+    } else {                                                        // icon / glass: a rounded square for the icon (a frosted card behind it for glass) and a bar for the name
+      if (tstyle === 'glass') { ctx.fillStyle = `rgba(${HOME_PREV.ink},0.19)`; box(rx, ry, tw, th * vis, h * 0.03); }
+      const s = th * (tstyle === 'icon' ? 0.56 : 0.46), ix = rx + (tw - s) / 2, iy = ry + th * (tstyle === 'icon' ? 0.04 : 0.1), ny = iy + s + th * 0.08;
+      if (iy + s <= ry + th * vis) { ctx.fillStyle = HOME_PREV.live[i % 4]; ctx.globalAlpha = 0.8; box(ix, iy, s, s, s * 0.26); ctx.globalAlpha = 1; }
+      if (ny + th * 0.05 <= ry + th * vis) { ctx.fillStyle = `rgba(${HOME_PREV.ink},0.6)`; box(rx + tw * 0.28, ny, tw * 0.44, th * 0.05, th * 0.025); }
+    }
     if (i === 0) {
-      if (ring) { ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1.5, h * 0.012); ctx.beginPath(); ctx.roundRect(rx - 1, ry - 1, tw + 2, th * vis + 2, h * 0.03); ctx.stroke(); }
-      else { ctx.fillStyle = `rgba(${HOME_PREV.ink},0.25)`; box(rx - tw * 0.04, ry - th * 0.06, tw * 1.08, th * vis + th * 0.12, h * 0.036); }
+      if (ring) { ctx.strokeStyle = accent || '#fff'; ctx.lineWidth = Math.max(1.5, h * 0.012); ctx.beginPath(); ctx.roundRect(rx - 1, ry - 1, tw + 2, th * vis + 2, h * 0.03); ctx.stroke(); }
+      else {
+        ctx.fillStyle = `rgba(${HOME_PREV.ink},0.25)`; box(rx - tw * 0.04, ry - th * 0.06, tw * 1.08, th * vis + th * 0.12, h * 0.036);
+        if (accent) { ctx.strokeStyle = accent; ctx.lineWidth = Math.max(1.5, h * 0.01); ctx.beginPath(); ctx.roundRect(rx - tw * 0.04, ry - th * 0.06, tw * 1.08, th * vis + th * 0.12, h * 0.036); ctx.stroke(); }
+      }
     }
   }
   if (homeThemeMoving(conf)) {                                    // a dark pill with a play triangle, top right

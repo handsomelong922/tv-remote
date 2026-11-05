@@ -522,7 +522,7 @@ TV Home has two more widgets that read their data straight from the source, with
 
 | Widget | Shows |
 | --- | --- |
-| Market | SJC bar and 9999 ring gold, Vietcombank rates, optional Bitcoin. A box or a scrolling ticker. Refreshes ~20 min; offline it keeps the last numbers with their time |
+| Market | SJC bar and 9999 ring gold, Vietcombank rates, optional Bitcoin and fuel (RON 95, E5, diesel). A box or a scrolling ticker. Refreshes ~20 min; offline it keeps the last numbers with their time |
 | News | Headlines and pictures from the RSS of VnExpress, Tuoi Tre, Thanh Nien, Dan Tri, VietnamNet (English TV: BBC, NPR, the Guardian, Al Jazeera). Add up to 5 RSS links of your own from the phone. OK opens a big-text reader |
 | Weather | OK opens Windy's map full screen at your city (rain, wind, temperature, satellite, PM2.5), a button per layer, **Play the forecast**; Back closes |
 | Recently opened | The last 4-6 apps; Left / Right pick, OK opens |
@@ -627,7 +627,7 @@ Paste a web or YouTube link, or an app's deep link (`app://…`): see which app 
 
 ## TV Home themes
 
-A theme changes the whole home screen in one press: background, widgets, widget style, columns and rows, a centered grid, live widgets.
+A theme changes the whole home screen in one press: background, widgets and where they sit (top, left or right column), app tile style (banner, icon, frosted glass), accent colour, columns and rows, live widgets.
 
 1. On the TV: ⚙ → **Quick settings** → **Customize** → **Themes**. Phone, computer: **TV** tab → **Customize TV Home** → **Themes**.
 2. Each tile is the home screen in miniature: the real background, where the widgets go, the app grid. Pick one and the TV changes at once.

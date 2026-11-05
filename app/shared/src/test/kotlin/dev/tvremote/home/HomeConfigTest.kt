@@ -37,6 +37,35 @@ class HomeConfigTest {
         assertEquals(false, HomeConfig.clean(JSONObject()).getBoolean("center"))
         assertEquals(true, HomeConfig.clean(JSONObject().put("center", true)).getBoolean("center"))
         assertEquals(true, "center" in HomeConfig.THEME_KEYS)
+        assertEquals("top", HomeConfig.clean(JSONObject()).getString("wplace"))                       // missing = today's row
+        for (p in listOf("top", "left", "right")) assertEquals(p, HomeConfig.clean(JSONObject().put("wplace", p)).getString("wplace"))
+        assertEquals("top", HomeConfig.clean(JSONObject().put("wplace", "middle")).getString("wplace"))
+        assertEquals(true, "wplace" in HomeConfig.THEME_KEYS)
+    }
+
+    @Test fun sideColumnPacking() {
+        val big = setOf("weather", "calendar")
+        val keys = listOf("clock", "weather", "calendar", "system", "lunar")
+        val p = HomeConfig.packColumn(keys, big, false, 380)                                          // 1080p: two blocks of 180 under the top bar
+        assertEquals(listOf(listOf("clock"), listOf("weather")), p.cols.map { it.keys }.take(2))
+        assertEquals(HomeConfig.H_HALF, p.cols[0].weight)
+        assertEquals(true, p.waiting.isNotEmpty())
+        assertEquals(1, HomeConfig.packColumn(listOf("weather", "calendar"), big, false, 100).cols.size)   // a short screen still shows the first
+        assertEquals(emptyList<String>(), HomeConfig.packColumn(keys, big, false, 2000).waiting)
+        assertEquals("note", HomeConfig.packColumn(keys, big, true, 380).cols.last().keys.last())        // the pinned note keeps its place
+    }
+
+    @Test fun tileStyleAndAccentDefaultToTodayAndRejectUnknown() {
+        val d = HomeConfig.clean(JSONObject())
+        assertEquals("banner", d.getString("tstyle")); assertEquals("", d.getString("accent"))
+        for (s in HomeConfig.TSTYLES) assertEquals(s, HomeConfig.clean(JSONObject().put("tstyle", s)).getString("tstyle"))
+        for ((n, hex) in HomeConfig.ACCENTS) { assertEquals(n, HomeConfig.clean(JSONObject().put("accent", n)).getString("accent")); assertTrue(Regex("#[0-9A-F]{6}").matches(hex)) }
+        val bad = HomeConfig.clean(JSONObject().put("tstyle", "neon").put("accent", "#ff0000"))
+        assertEquals("banner", bad.getString("tstyle")); assertEquals("", bad.getString("accent"))
+        assertEquals("banner", HomeConfig.TSTYLES[0])
+        assertTrue("tstyle" in HomeConfig.THEME_KEYS && "accent" in HomeConfig.THEME_KEYS)
+        val t = HomeConfig.pickTheme(HomeConfig.clean(JSONObject().put("tstyle", "glass").put("accent", "teal")))
+        assertEquals("glass", t.getString("tstyle")); assertEquals("teal", t.getString("accent"))
     }
 
     @Test fun colsDefaultToFiveAndStayInRange() {
@@ -564,6 +593,23 @@ class HomeConfigTest {
         c = HomeConfig.merge(c, op("apply" to "before")); assertEquals("easy", HomeConfig.themeNow(c))                        // nothing there: nothing happens
     }
 
+    @Test fun clockWidgetWaitingKeepsBarClock() {                   // a clock pushed out of a full column must not take the bar's clock with it
+        val big = JSONObject().put("news", "big").put("system", "big").put("calendar", "big").put("clock", "big")
+        val c = JSONObject().put("wplace", "left").put("wsize", big).put("widgets", org.json.JSONArray(listOf("news", "system", "calendar", "clock")))
+        assertTrue("clock" !in HomeConfig.placed(c)); assertTrue(HomeConfig.barClock(c))
+        assertFalse(HomeConfig.barClock(JSONObject().put("widgets", org.json.JSONArray(listOf("clock")))))
+        val noted = JSONObject().put("widgets", org.json.JSONArray(listOf("calendar", "weather", "news", "adblock", "clock"))).put("note", "hi")
+        assertTrue(HomeConfig.barClock(noted))                                                                              // the note took the clock's room
+        assertTrue(HomeConfig.barClock(c, listOf("news")))                                                                  // TV Home passes what it really placed
+    }
+
+    @Test fun oldSavedThemeStillMatches() {                         // saved before wplace / tstyle / accent existed: clean() fills them, the theme must still read as "on"
+        val old = JSONObject().put("wall", "teal").put("cols", 7)
+        val c = HomeConfig.merge(JSONObject(), JSONObject().put("wall", "teal").put("cols", 7))
+            .put("themes", org.json.JSONArray().put(JSONObject().put("id", "t1").put("name", "Old").put("conf", old)))
+        assertEquals("t1", HomeConfig.themeNow(c))
+    }
+
     @Test fun saveApplyDeleteMine() {
         var c = HomeConfig.merge(JSONObject(), JSONObject().put("wall", "teal").put("cols", 7).put("shade", 70))
         c = HomeConfig.merge(c, op("save" to "  Evening  "))
@@ -628,7 +674,7 @@ class HomeConfigTest {
     }
 
     @Test fun marketAndNewsCardsHaveTheirOptionsAndOwnFeeds() {
-        assertEquals(listOf("size", "look", "layout", "show", "btc"), HomeConfig.options("market").map { it.id })
+        assertEquals(listOf("size", "look", "layout", "show", "btc", "fuel"), HomeConfig.options("market").map { it.id })
         assertEquals(listOf("size", "look", "src"), HomeConfig.options("news").map { it.id })
         assertTrue("market" in HomeConfig.WIDGETS && "news" in HomeConfig.WIDGETS)
         val c = HomeConfig.clean(JSONObject().put("feeds", JSONArray(listOf("https://a.x/r.xml", "ftp://no", "https://a.x/r.xml", "https://b.x/1", "https://b.x/2", "https://b.x/3", "https://b.x/4", "javascript:1"))))

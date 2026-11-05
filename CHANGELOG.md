@@ -4,6 +4,18 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+- TV Home: beside a widget column, widgets with nothing to show (a timer not set) no longer rebuild the screen without end; a clock widget with no room leaves the top bar's clock on; icon / glass tiles load their icons at start off the main thread; 9 ready-made themes tuned after a design review (focus ring where the accent met the wallpaper, darker shade on busy photos, fewer columns where icons were too small).
+- TV Home: the Market widget can show Vietnam's fuel prices (RON 95, E5 RON 92, diesel, per litre) next to gold, with the change since the last price move; its own switch, off by default. Read from Saigon Petro's site, else Petrolimex's table on webgia.com, every 3 hours while the widget is on screen.
+- TV Home: a theme file imported on the page keeps where the widgets sit and the custom colours; a theme saved before the newer choices still shows as the one in use; icon / glass tiles load their icons off the main thread; the theme's details list where the widgets sit; App rows is hidden beside a widget column (it did nothing there).
+- TV Home: the 16 ready-made themes redone with the new choices, each its own layout (widgets above, in a left or right column), tile style and accent colour; previews re-shot. Beside a column every app row shows (a theme's row count no longer left one lone row), and the column fits three widgets under the clock.
+- TV Home: where the widgets go (Customize > Grid, and the page: "Widgets position"): above the apps (as before), left or right of the apps as a column of full-size widgets (the grid keeps its tile size and shows fewer columns). The D-pad moves between the column and the grid, and the theme previews draw it.
+- TV Home: two new look choices a theme can hold, so themes can differ by more than the wallpaper: App tiles (Banner as before, Icon = the app's icon large with its name and no card, Frosted glass = a translucent card with icon and name) and an Accent colour (8 colours; tints the focus ring or glass rim, the clock's date, the calendar's today and the top bar's rule). Off by default: nothing changes until chosen. In the TV's Customize > Look and on the page; the theme previews draw them. The focus choice "Blue ring" is now just "Ring".
+- TV Home: one clock on the screen. A clock widget takes over the top bar's time (and, with a calendar widget, its date); the clock beside the analog face says the weekday and date in words instead of repeating the time, and the face no longer draws a small date in its dial.
+- TV Home: the one-time "Hold OK" tip no longer covers the widgets: when the first row sits low it shows beside the gear. Match day and Tết themes lose their second date widget.
+- TV Home: a widget alone in its column shows its full form (the weather's forecast, not a tall card with one number), and with a centered grid the widget row is centered over it too.
+
 ## 0.46.0 - 2026-11-05
 
 Web 0.46.0 · Phone app 0.43.0 · TV app 0.44.0 · TV Home 0.28.0 · TV Channels 0.19.0 · TV Games 0.21.0 · TV Apps 0.5.0

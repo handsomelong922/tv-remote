@@ -174,6 +174,8 @@ class HomeActivity : Activity() {
     }
     private var open: android.app.Dialog? = null                    // the panel or menu on top, closed by a Home press
     private lateinit var widgets: Widgets
+    private lateinit var body: LinearLayout                         // the widgets and the grid, arranged by "wplace" ([arrange])
+    private var arranged = ""
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
     private val widgetTick = object : Runnable { override fun run() { widgetsRead(); ui.postDelayed(this, 60_000) } }
     private var ticked = 0L                                           // elapsedRealtime of the last TIME_TICK (the wall clock jumps on these boxes)
@@ -261,7 +263,7 @@ class HomeActivity : Activity() {
         // each line as wide as its words: at the column's width (the default), new words were only re-wrapped in the old width, cut short
         val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(greetLine, LinearLayout.LayoutParams(-2, -2)); addView(dateLine, LinearLayout.LayoutParams(-2, -2)) }
         left.addView(clock)
-        rule = View(this).apply { setBackgroundColor(HEAD_RULE) }
+        rule = View(this).apply { setBackgroundColor(HEAD_RULE) }   // [clockAndDay] tints it with the accent
         left.addView(rule, LinearLayout.LayoutParams(dp(1), dp(56)).apply { leftMargin = dp(28); rightMargin = dp(28) })
         left.addView(words, LinearLayout.LayoutParams(-2, -2))
         // as wide as its words, in a slot that takes the rest of the row: stretched, its focus (the glass) reached the top bar (the user, 2026-10-27)
@@ -291,16 +293,18 @@ class HomeActivity : Activity() {
         col.addView(head)
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
         widgets.onMenu = ::widgetMenu
-        widgets.onFocus = { v, f -> if (f) glassTo(v) else glassOff() }
+        widgets.onFocus = { v, f -> if (f) { glassTo(v); if (HomeConfig.side(place())) scrollToY(0) } else glassOff() }   // a side column is in the first screen
         widgets.onMark = { glassTo(it, r = dp(12).toFloat()) }
         widgets.onOpen = { k -> if (editing || k !in OPENS) widgets.hot.firstOrNull { it.tag == k }?.let { widgetMenu(k, it) } else startActivity(Intent(this, when (k) { "news" -> dev.tvremote.home.widgets.NewsActivity::class.java; "market" -> dev.tvremote.home.widgets.MarketActivity::class.java; else -> dev.tvremote.home.widgets.WeatherMapActivity::class.java }).putExtra("i", widgets.newsShown)) }
         widgets.onUp = { v -> (bar.buttons.filter { it.isShown } + listOfNotNull(headLeft.takeIf { it.isShown && it.isFocusable })).minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
-        widgets.onDown = { v -> below(v)?.let { go(it) } }
-        col.addView(widgets, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
+        widgets.onDown = { v -> if (place() == "top") below(v)?.let { go(it) } }   // beside the grid nothing is below
+        widgets.onSide = { v, dx -> if ((place() == "left" && dx > 0) || (place() == "right" && dx < 0)) gridBeside(v)?.let { go(it) } }
+        body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
+        col.addView(body, LinearLayout.LayoutParams(-1, -2))
 
         // ONE grid: the favourites are its first tiles, then every other app; no panel, the wallpaper stays whole
         grid = Flat(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
-        col.addView(grid, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) })
+        arrange()
         // no widgets: the grid starts low, so the first row is whole and the second is cut by the screen's edge; the wallpaper above
         grid.viewTreeObserver.addOnGlobalLayoutListener { peek(); if (tipOn) (grid.getChildAt(0) as? ViewGroup)?.let { tipPlace(it) } }  // after every layout: rows came or went, a widget opened
         scroll.viewTreeObserver.addOnGlobalFocusChangeListener { _, _ -> touchScrolled = false; veil(); tip() }   // the remote again: its rule again
@@ -326,6 +330,7 @@ class HomeActivity : Activity() {
             addAction(Intent.ACTION_DREAMING_STARTED); addAction(Intent.ACTION_DREAMING_STOPPED)
         })
         if (Store.suggestOff(this)) { Store.suggestOff(this, false); conf = Store.change(this, JSONObject().put("showSuggest", false)) }   // the old "hide" flag is now the setting everyone sees
+        Look.read(Store.get(this))                                    // before the apps load: App.load makes the icon of icon / glass tiles off the main thread
         loadApps()
         if (Motion.on) enter()
         if (reopen) { reopen = false; ui.post { customize("lang") } }
@@ -447,7 +452,7 @@ class HomeActivity : Activity() {
     /** Where the Play Next items go ([HomeConfig.WATCH_AT]): the old config without the key reads as the default. */
     private fun watchAt() = conf.optString("watchAt").takeIf { it in HomeConfig.WATCH_AT } ?: HomeConfig.WATCH_AT[0]
     /** How many items are read: a row of their own scrolls sideways, so it holds more; among the tiles they are one grid row's worth, or the grid would grow without end. */
-    private fun watchCap() = if (watchAt() == "tiles") conf.optInt("cols", HomeConfig.COLS_DEFAULT) else WATCH_ROW
+    private fun watchCap() = if (watchAt() == "tiles") gridCols() else WATCH_ROW
     private fun watchAtName(k: String) = getString(when (k) { "top" -> R.string.watch_at_top; "under1" -> R.string.watch_at_under1; "tiles" -> R.string.watch_at_tiles; else -> R.string.watch_at_bottom })
 
     private fun watchMenu(it: Watch.Item) {
@@ -649,7 +654,7 @@ class HomeActivity : Activity() {
         Customize.forget()
     }
 
-    private fun firstRows() = tiles().take(2 * conf.optInt("cols", HomeConfig.COLS_DEFAULT)).mapNotNull { it.app }.toSet()
+    private fun firstRows() = tiles().take(2 * gridCols()).mapNotNull { it.app }.toSet()
 
     private fun untrim() {
         trimmed = false
@@ -657,7 +662,7 @@ class HomeActivity : Activity() {
         val kept = wallKept && !wallStale                              // the sharp photo never left: nothing to read again, no gradient in between
         wallKept = false
         if (!kept && (Walls.isPicture(conf.optString("wall")) || conf.optString("wall") == HomeConfig.WEB)) loadWall(conf.optString("wall"))
-        for (t in tiles().take(2 * conf.optInt("cols", HomeConfig.COLS_DEFAULT))) { t.app?.let { if (it.banner == null && it.icon == null) it.load(this) }; t.restore() }   // the favourites at once (kept by [trim] unless the list moved), the rest from the side
+        for (t in tiles().take(2 * gridCols())) { t.app?.let { if (it.banner == null && it.icon == null) it.load(this) }; t.restore() }   // the favourites at once (kept by [trim] unless the list moved), the rest from the side
         bg.execute {
             for (a in apps) if (a.banner == null && a.icon == null) a.load(this)
             runOnUiThread { if (!isDestroyed && !trimmed) for (t in tileCache.values) t.restore() }
@@ -675,13 +680,60 @@ class HomeActivity : Activity() {
      * clock or the widgets. By itself: without widgets 1.2 (a clean screen that still says there is more), with them right under them.
      * From the real screen and tile heights.
      */
+    /** Where the widgets sit ([HomeConfig] "wplace"): top (the row under the top bar), left / right (a column beside the grid). */
+    private fun place() = conf.optString("wplace").takeIf { it in HomeConfig.WPLACES } ?: HomeConfig.WPLACES[0]
+    /** The widgets stand in a column beside the grid now (and there are some). */
+    private fun sideNow() = HomeConfig.side(place()) && !noWidgets
+
+    /** Puts the widgets and the grid in [body] as "wplace" says; nothing is rebuilt when the place is the same. */
+    private fun arrange() {
+        val p = place()
+        if (p == arranged) return
+        arranged = p
+        widgets.place = p
+        val side = HomeConfig.side(p)
+        body.removeAllViews()
+        body.orientation = if (side) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+        val wl = if (side) LinearLayout.LayoutParams(Widgets.sideW(resources.displayMetrics), -2).apply { topMargin = dp(SIDE_TOP); if (p == "left") rightMargin = dp(SIDE_GAP) else leftMargin = dp(SIDE_GAP) }
+            else LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (p == "top") 28 else 32) }
+        val gl = if (side) LinearLayout.LayoutParams(0, -2, 1f).apply { topMargin = dp(SIDE_TOP) } else LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) }
+        if (p == "top" || p == "left") { body.addView(widgets, wl); body.addView(grid, gl) } else { body.addView(grid, gl); body.addView(widgets, wl) }
+        shownKey = ""
+        body.requestLayout()
+    }
+
+    /** The grid's tile nearest [v] in height, on the side next to the widgets: where Left / Right from a side column lands. */
+    private fun gridBeside(v: View): View? {
+        val vy = IntArray(2).also { v.getLocationOnScreen(it) }.let { it[1] + v.height / 2 }
+        val rows = (0 until grid.childCount).map { grid.getChildAt(it) as ViewGroup }.filter { it.childCount > 0 && it.height > 0 }
+        val row = rows.minByOrNull { r -> val o = IntArray(2); r.getLocationOnScreen(o); Math.abs(o[1] + r.height / 2 - vy) } ?: return null
+        return if (place() == "left") row.getChildAt(0) else row.getChildAt(row.childCount - 1)
+    }
+
+    /** The widget a grid tile at [v] reaches going to the widgets: beside it (left / right: nearest in height), else nearest across. */
+    private fun widgetFrom(v: View): View? {
+        val shown = widgets.hot.filter { it.isShown }
+        if (HomeConfig.side(place())) { val vy = IntArray(2).also { v.getLocationOnScreen(it) }.let { it[1] + v.height / 2 }
+            return shown.minByOrNull { w -> val o = IntArray(2); w.getLocationOnScreen(o); Math.abs(o[1] + w.height / 2 - vy) } }
+        return shown.minByOrNull { Math.abs(centre(it) - centre(v)) }
+    }
+
+    /** How many app tiles a grid row holds: "cols", fewer beside a side column (tiles keep about their size: readable at 1080p, not squeezed to fit). */
+    private fun gridCols(): Int {
+        val c = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
+        if (!sideNow()) return c
+        val gap = dp(GRID_GAP); val base = (resources.displayMetrics.widthPixels - dp(96) - (c - 1) * gap) / c
+        return ((gridRoom() + gap) / (base * 0.88f + gap)).toInt().coerceIn(minOf(3, c), c)
+    }
+    private fun gridRoom() = resources.displayMetrics.widthPixels - dp(96) - (if (sideNow()) Widgets.sideW(resources.displayMetrics) + dp(SIDE_GAP) else 0)
+
     private fun peek() {
         val lp = grid.layoutParams as LinearLayout.LayoutParams
         val rows = grid.childCount
         val rowH = if (rows > 0) grid.getChildAt(0).height else 0
         val want = conf.optDouble("rows", 0.0).let { if (it >= 1) it else if (noWidgets) 1.2 else 0.0 }
         if (want > 0 && rows > 0 && rowH == 0) return                   // new rows, not laid out yet: the next layout asks again
-        val above = if (noWidgets) head.bottom else widgets.bottom
+        val above = if (noWidgets || sideNow()) head.bottom else (widgets.parent as View).top + widgets.bottom
         val least = dp(if (noWidgets) 48 else 36); val gap = dp(GRID_GAP)
         if (rowH > 0 && scroll.height > 0) {
             val room = scroll.height - above - least
@@ -689,7 +741,7 @@ class HomeActivity : Activity() {
             rowsFit = maxOf(1.0, if (f >= 1) n + 1.0 else n + Math.floor(f * 10) / 10)
         }
         // one row sits where row 1 of many would (more columns put few apps in one row: it rose to the clock)
-        val m = if (want == 0.0 || rows == 0 || rowH == 0 || scroll.height == 0) least else {
+        val m = if (sideNow()) dp(28) else if (want == 0.0 || rows == 0 || rowH == 0 || scroll.height == 0) least else {
             val n = Math.floor(want + 1e-6).toInt(); val f = want - n
             // whole rows keep half a row clear under them (the rows below, hidden there until the focus goes down: [veil])
             val tall = if (f < 0.05) n * (rowH + gap) + rowH / 2 else n * (rowH + gap) + (f * rowH).toInt()
@@ -716,7 +768,7 @@ class HomeActivity : Activity() {
             return
         }
         val r = conf.optDouble("rows", 0.0)
-        val n = if (r >= 1 && r - Math.floor(r) < 0.05) Math.floor(r).toInt() else Int.MAX_VALUE
+        val n = if (r >= 1 && r - Math.floor(r) < 0.05 && !sideNow()) Math.floor(r).toInt() else Int.MAX_VALUE   // beside a column every row shows: hidden ones left it a lone row and blank
         var v: View? = currentFocus
         while (v != null && v.parent !== grid) v = v.parent as? View
         val down = v != null && grid.indexOfChild(v) >= n || touchScrolled   // a finger (scrcpy's touch, a mouse) scrolled to them: no focus came down to show them
@@ -726,17 +778,22 @@ class HomeActivity : Activity() {
         }
     }
 
+    private var placedNow: List<String>? = null
+    /** The top bar's clock and date follow the widgets really placed (a clock widget with no room, or a timer with nothing to show, changes them). */
+    private fun placedSet(p: List<String>) { if (p != placedNow) { placedNow = p; clockAndDay() } }
+
     /** The widgets' numbers, read off the main thread; none at all while they are off. */
     private fun widgetsRead() {
         val want = Store.list(this, "widgets")
         val conf = Store.get(this); val note = conf.optString("note"); val sizes = conf.optJSONObject("wsize") ?: JSONObject()
         val none = want.isEmpty() && note.isEmpty()
-        noWidgets = none
+        if (none) noWidgets = true                                    // else kept until the read says: reset to false here, chosen widgets with nothing to show rebuilt the grid without end
+        widgets.roomPx = (if (scroll.height > 0) scroll.height else resources.displayMetrics.heightPixels) - (if (head.bottom > 0) head.bottom else dp(118)) - dp(SIDE_TOP) - dp(16)   // two full blocks (2 x 180 + 12) under a head with the time (126 dp): 20 dp less above them than the row has, they fit
         peek()                                                        // the grid's margin is peek()'s alone: set here too, every minute's read made it jump
-        if (none) { widgets.visibility = View.GONE; return }
+        if (none) { widgets.visibility = View.GONE; placedSet(emptyList()); return }
         val sig = want.joinToString(",") + "|" + note.isNotEmpty()
         val held = widgets.visibility == View.GONE && widgetsLast != "-$sig"   // the row came last time (or nothing known): keep its place
-        if (held) widgets.hold()
+        if (held && !(noWidgets && HomeConfig.side(place()))) widgets.hold()   // a first column held beside a grid laid out full width pushed its last tiles off the screen
         bg.execute {
             val f = widgets.read(want)
             runOnUiThread {
@@ -745,7 +802,8 @@ class HomeActivity : Activity() {
                 // chosen but with nothing to show (the timer with no timer set, a lunar date off): no row, so the grid sits as with none
                 // (FPT, the user 2026-11-03: the timer alone left the grid up under an empty row)
                 val shown = widgets.visibility == View.VISIBLE
-                if (noWidgets == shown) { noWidgets = !shown; peek() }
+                placedSet(if (shown) widgets.placed else emptyList())
+                if (noWidgets == shown) { noWidgets = !shown; peek(); if (HomeConfig.side(place())) { shownKey = ""; show() } }   // beside the grid they change its columns
                 (if (shown) sig else "-$sig").let { if (widgetsLast != it) widgetsLast = it }
                 if (held && shown && Motion.on) { widgets.alpha = 0f; widgets.animate().alpha(1f).setDuration(Motion.ms(240)).withLayer().start() }   // into the place kept
                 focusWidget?.let { k -> ui.post { widgetView(k)?.let { focusWidget = null; go(it) } } }
@@ -896,13 +954,22 @@ class HomeActivity : Activity() {
     private var tipBelow = true                                       // under the row's names when the screen has room (first row seen from the top of the page), else just above the row
 
     private fun tipPlace(row: ViewGroup) {
-        var y = 0; var p: View? = row
-        while (p != null && p !== content) { y += p.top; p = p.parent as? View }
+        var y = 0; var x0 = 0; var p: View? = row
+        while (p != null && p !== content) { y += p.top; x0 += p.left; p = p.parent as? View }
         val h = dp(48)
         tipBelow = y + row.height + dp(40) + h <= scroll.height - dp(8)
-        val at = if (tipBelow) y + row.height + dp(40) else y - h - dp(24)   // clear of the focused tile, which grows when focused
+        var at = if (tipBelow) y + row.height + dp(40) else y - h - dp(24)   // clear of the focused tile, which grows when focused
+        var x = x0                                                    // the grid's left edge (a column of widgets may stand at the left)
+        // beside the gear first, wherever the bar has room: under the first row it lay over the second row's names, above it over the
+        // widgets' lower half (8 of 16 themes, 2026-11-05)
+        fun at(v: View): IntArray { val o = IntArray(2); var q: View? = v; while (q != null && q !== content) { o[0] += q.left; o[1] += q.top; q = q.parent as? View }; return o }
+        tipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        val b = at(bar); val l = at(headLeft)
+        val bx = b[0] - dp(16) - tipView.measuredWidth
+        val leftEnd = if (headLeft.isShown && headLeft.width > 0) l[0] + headLeft.width else 0
+        if (bx >= leftEnd + dp(24)) { x = bx; at = b[1] + (bar.height - tipView.measuredHeight) / 2; tipBelow = false }   // above the row now: Up from row 1 reaches its ✕
         val lp = tipView.layoutParams as FrameLayout.LayoutParams
-        if (lp.topMargin != at) { lp.topMargin = at; tipView.requestLayout() }
+        if (lp.topMargin != at || lp.leftMargin != x) { lp.topMargin = at; lp.leftMargin = x; tipView.requestLayout() }
     }
 
     /** Shown while focus is on the first row's tiles (or on its ✕); an overlay in the scrolled page, so the grid does not move. */
@@ -1039,11 +1106,13 @@ class HomeActivity : Activity() {
     }
 
     private fun show() {
+        arrange()
         moving?.let { it.carry(false); hint(false); for (o in tiles()) { o.animate().cancel(); o.alpha = 1f } }; moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
         val keep = focusNext ?: (currentFocus as? Tile)?.app?.pkg
         focusNext = null
         val keepAt = tiles().indexOf(currentFocus)                    // its place: an app hidden or a live widget taken off leaves no tile to go back to
         Motion.read(this, conf)
+        Look.read(conf); glass.accent(Look.accent)
         if (!Motion.glass) glass.hide()
         wall()
         clockAndDay()
@@ -1056,7 +1125,7 @@ class HomeActivity : Activity() {
         val hidden = conf.optJSONArray("hidden").let { a -> if (a == null) emptySet() else List(a.length()) { a.optString(it) }.toSet() }
         val shownPins = pins.filter { it.pkg !in byPkg && it.pkg !in dockPkgs }   // a shortcut put on the grid by the picker shows as that tile, not twice
         val inFolder = if (conf.optJSONObject("folders")?.length() ?: 0 == 0) emptySet() else Folders.members(conf)   // none: no work at all
-        val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden && it.pkg !in inFolder }.joinToString(",") { it.pkg } + "|" + apps.filter { it.folder }.joinToString(",") { it.pkg + it.members } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optBoolean("center", false) + "|" + conf.optJSONArray("order") + "|" + conf.optJSONObject("names") + "|" + conf.optJSONObject("pics") + "|" + suggestSetup() + "|" + conf.optBoolean("showAdd", true)
+        val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden && it.pkg !in inFolder }.joinToString(",") { it.pkg } + "|" + apps.filter { it.folder }.joinToString(",") { it.pkg + it.members } + "|" + apps.count { it.pkg in hidden } + "|" + gridCols() + "|" + tileW() + "|" + conf.optBoolean("center", false) + "|" + conf.optJSONArray("order") + "|" + conf.optJSONObject("names") + "|" + conf.optJSONObject("pics") + "|" + suggestSetup() + "|" + conf.optBoolean("showAdd", true) + "|" + Look.tstyle + "|" + Look.accent
         val all = key + "|" + watchAt() + "|" + watch.joinToString(",") { it.first.key + it.first.title + (it.second != null) }
         if (all == shownKey) { badgeTiles(); return }                 // nothing that decides the tiles changed: not one view is rebuilt (the power mark may have)
         shownKey = all
@@ -1067,7 +1136,7 @@ class HomeActivity : Activity() {
         grid.removeAllViews()
         val rest = Tiles.grid(conf, apps.map { it.pkg }, pins.map { it.pkg }) { k -> byKey[k].let { it != null && it.pin != null && !it.grid } }   // the one order (Tiles.kt, TilesTest walks it)
             .drop(dockPkgs.size).map { byKey.getValue(it) }
-        val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
+        val cols = gridCols()
         val gap = dp(GRID_GAP)
         val w = tileW()                                               // one size for every tile: the favourites are only the first ones
         val cells: MutableList<View> = (favs + rest).distinct().map { tile(it, w, made) }.toMutableList()   // one App, one tile: a second addView of it is a crash, not a twin
@@ -1099,7 +1168,7 @@ class HomeActivity : Activity() {
         bg.execute { now.forEach { it.load(this) }; runOnUiThread { if (!isDestroyed) { shownKey = ""; show() } } }
     }
 
-    private fun tileW(): Int { val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT); return (resources.displayMetrics.widthPixels - dp(96) - (cols - 1) * dp(GRID_GAP)) / cols }
+    private fun tileW(): Int { val cols = gridCols(); return (gridRoom() - (cols - 1) * dp(GRID_GAP)) / cols }
 
     /** [breaks]: where a row starts early (the Play Next row stands alone); [strip]: the cells that are one sideways-scrolling [Strip] whatever their number. */
     private fun fill(cells: List<View>, cols: Int, gap: Int, breaks: Set<Int> = emptySet(), strip: IntRange = IntRange.EMPTY) {
@@ -1200,7 +1269,7 @@ class HomeActivity : Activity() {
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> { endMove(true); return true }
             KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE -> { endMove(false); return true }
         }
-        val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
+        val cols = gridCols()
         val d = when (code) {
             KeyEvent.KEYCODE_DPAD_LEFT -> -1; KeyEvent.KEYCODE_DPAD_RIGHT -> 1
             KeyEvent.KEYCODE_DPAD_UP -> -cols; KeyEvent.KEYCODE_DPAD_DOWN -> cols
@@ -1304,12 +1373,16 @@ class HomeActivity : Activity() {
         if (row == 0 && tipOn && !tipPast && dir == (if (tipBelow) Nav.Dir.DOWN else Nav.Dir.UP)) { go(tipClose); return true }   // the tip's ✕ is the next stop away from row 1 (below or above it); the key again goes on
         val here = grid.getChildAt(row) as? Strip
         val sideways = dir == Nav.Dir.LEFT || dir == Nav.Dir.RIGHT
+        if (sideways && ((dir == Nav.Dir.LEFT && place() == "left" && col == 0) || (dir == Nav.Dir.RIGHT && place() == "right" && col == rows[row] - 1)) && sideNow()) {
+            widgetFrom(v)?.let { go(it); return true }                // the row's end on the widgets' side: the column, not the row above or below
+        }
         var to = Nav.grid(rows, row, col, wantCol, dir)
         if (to != null && sideways && (here != null && to.row != row || grid.getChildAt(to.row) is Strip && to.row != row)) to = null   // a sideways row ends at its ends: the next row is Up / Down
         val vert = to != null && !sideways && (here != null || grid.getChildAt(to.row) is Strip)
         if (vert && to != null) to = Nav.At(to.row, maxOf(0, Nav.nearest(centres(grid.getChildAt(to.row) as ViewGroup), centre(v))))   // to or from a scrolled row: the nearest tile by position, not by column number
         if (to == null) {
             if (dir == Nav.Dir.UP) { val hot = widgets.hotAt(centre(v), fromBelow = true); topAt = v; topVia = hot; (hot ?: run { up(v); null })?.requestFocus() }               // Android 9 (a BRAVIA) found nothing above the first row by itself
+            // the grid's last row: the widgets under it
             else v.nudge(if (dir == Nav.Dir.RIGHT) 1 else if (dir == Nav.Dir.LEFT) -1 else 0, if (dir == Nav.Dir.DOWN) 1 else 0)
             return true
         }
@@ -1536,7 +1609,7 @@ class HomeActivity : Activity() {
     }
 
     private fun tile(a: App, w: Int, made: HashMap<String, Tile>): Tile {
-        val k = "${a.pkg}|$w|${a.label}|${Pics.ids[a.pkg]}"
+        val k = "${a.pkg}|$w|${a.label}|${Pics.ids[a.pkg]}|${Look.tstyle}|${Look.accent}"
         val t = tileCache[k]?.takeIf { it.app === a } ?: makeTile(a, w)
         made[k] = t
         return t
@@ -1606,6 +1679,11 @@ class HomeActivity : Activity() {
      */
     private fun reveal(v: View) {
         if (grid.indexOfChild(v.parent as? View) <= 0) { scrollToY(0); return }
+        revealAt(v)
+    }
+
+    /** The page scrolls only as far as [v] needs to be whole on screen. */
+    private fun revealAt(v: View) {
         var y = 0; var p: View? = v
         while (p != null && p !== scroll) { y += p.top; p = p.parent as? View }
         val margin = dp(40)
@@ -1994,6 +2072,7 @@ class HomeActivity : Activity() {
     }
 
     private fun clockAndDay() {
+        rule.setBackgroundColor(if (Look.accent != 0) (Look.accent and 0xFFFFFF) or RULE_ALPHA else HEAD_RULE)
         val h24 = conf.optBoolean("clock24", true)
         clock.format24Hour = if (h24) "HH:mm" else "h:mm"
         clock.format12Hour = clock.format24Hour
@@ -2007,8 +2086,9 @@ class HomeActivity : Activity() {
         greetLine.text = HomeConfig.headLine(conf, "g", t)
         headType(greetLine, "g", Font.regular); headType(dateLine, "d", Font.medium)
         greetLine.visibility = if (conf.optBoolean("greet", true)) View.VISIBLE else View.GONE
-        clock.visibility = if (conf.optBoolean("showClock", true)) View.VISIBLE else View.GONE
-        dateLine.visibility = if (conf.optBoolean("showDate", true)) View.VISIBLE else View.GONE
+        val placed = placedNow ?: HomeConfig.placed(conf)             // what the widgets really placed once read; a guess before
+        clock.visibility = if (HomeConfig.barClock(conf, placed)) View.VISIBLE else View.GONE   // a clock widget is the clock then
+        dateLine.visibility = if (HomeConfig.barDate(conf, placed)) View.VISIBLE else View.GONE
         rule.visibility = if (clock.isShown && (dateLine.isShown || greetLine.isShown)) View.VISIBLE else View.GONE   // the line between them only while there are two sides
         netPill.visibility = if (conf.optBoolean("showNet", true)) View.VISIBLE else View.GONE
         inputsPill.visibility = if (conf.optBoolean("showInputs", false)) View.VISIBLE else View.GONE
@@ -2749,31 +2829,50 @@ open class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -
     private var shownMark: Badges.Mark? = null
     private val keyBadge = BadgeView(c, dp, k)
     private var shownKeys: List<Int> = emptyList()
+    private var iconTile = false                                      // an "icon" / "glass" tile ([Look.tstyle]) drawing the app's icon; false: a card with the banner
+    private val styledIcon: Drawable? get() = if (iconTile) app?.icon else null   // held by the App only: its release() lets it go with the banner
+    private val styled get() = styledIcon != null || (app == null && art == null && Look.tstyle != "banner")
 
     init {
         Font.on(name); name.textSize = 13f * k
         contentDescription = label                                    // TalkBack reads the tile's name (and tests find a tile by it)
         val h = w * 9 / 16
         val banner = app?.banner ?: art                                // art: a tile that is not an app (TV Setup suggested)
+        val look = Look.tstyle
+        if (look != "banner" && app != null && !app.live && !app.folder && app.pin == null && Pics.ids[app.pkg] == null)   // a picture of its own stays a card
+        {
+            if (app.icon == null) app.icon = app.info?.let { try { dev.tvremote.home.apps.shrink(c, it.loadIcon(c.packageManager), 512) } catch (e: Exception) { null } }   // only right after a switch to this style: App.load makes it off the main thread from then on
+            iconTile = app.icon != null
+        }
         val liveFace = if (app?.live == true) LiveFace(c, w, h, label, say).also { it.set(LiveWidgets.cached(app.pkg), animate = false) } else null
-        faceColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: ""))
+        val styledNow = styled && liveFace == null
+        if (styledNow && look == "icon") { faceColor(Color.TRANSPARENT); flat() }
+        else if (styledNow) face.background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(FROST_TOP, FROST_BOTTOM)).apply { cornerRadius = this@Tile.corner; setStroke(dp(1), FROST_EDGE) }   // the frost: a lighter top, a hairline edge, no blur (weak boxes)
+        else faceColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: ""))
+        if (Look.accent != 0) accent(Look.accent)
         if (liveFace != null) {                                       // a live widget draws itself ([LiveWidgets]); its state comes from [live]
             content = liveFace
             fill(content)
-        } else if (banner != null) {
+        } else if (banner != null && !styledNow) {
             content = ImageView(c).apply { setImageDrawable(banner); scaleType = ImageView.ScaleType.CENTER_CROP }
             pic = content as ImageView
             fill(content)
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dp(6), dp(4), dp(6), dp(4)) }
             val ts = (12f * k).coerceAtLeast(9f)                      // many columns make small tiles: the name was cut under the icon (the user, 2026-10-26)
-            val icon = minOf(h * 45 / 100, h - dp(12) - ((ts + if (corner != null) ts - 2 else 0f) * 1.35f * c.resources.displayMetrics.scaledDensity).toInt() - dp(2))   // what is left once the name and paddings fit
+            val icon = minOf(h * (if (styledNow && look == "icon") 58 else 45) / 100, h - dp(12) - ((ts + if (corner != null) ts - 2 else 0f) * 1.35f * c.resources.displayMetrics.scaledDensity).toInt() - dp(2))   // what is left once the name and paddings fit
             inner.addView(ImageView(c).apply {
-                if (app?.icon != null) { setImageDrawable(app.icon); pic = this } else { setImageResource(mark); imageTintList = ColorStateList.valueOf(Color.WHITE) }
+                if (styledIcon != null) { setImageDrawable(styledIcon); pic = this }
+                else if (app?.icon != null) { setImageDrawable(app.icon); pic = this }
+                else {
+                    setImageResource(mark); imageTintList = ColorStateList.valueOf(Color.WHITE)
+                    if (styledNow) { setPadding(icon / 4, icon / 4, icon / 4, icon / 4); background = android.graphics.drawable.GradientDrawable().apply { shape = android.graphics.drawable.GradientDrawable.OVAL; setColor(FROST_DISC) } }   // a glyph tile in the style: a disc of frost
+                }
             }, LayoutParams(icon, icon))
             inner.addView(Font.on(TextView(c)).apply {
                 text = label; textSize = ts; includeFontPadding = false; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
                 setPadding(0, dp(4), 0, 0)
+                if (styledNow) setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), WALL_SHADOW)   // on the wall itself the name needs its shadow
             }, LayoutParams(-1, -2))
             if (corner != null) inner.addView(Font.on(TextView(c)).apply {   // whose it is, under the name: as a corner pill it sat on the icon of a small tile (the user, 2026-10-26)
                 text = corner; textSize = ts - 2; setTextColor(SUB_INK); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER; includeFontPadding = false
@@ -2788,7 +2887,7 @@ open class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -
             text = corner; textSize = 12f * k; setTextColor(Color.WHITE); setPadding((dp(10) * k).toInt(), (dp(3) * k).toInt(), (dp(10) * k).toInt(), (dp(4) * k).toInt())
             background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(PILL_BG); setStroke(dp(1), PILL_EDGE) }
         }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, (dp(8) * k).toInt(), (dp(8) * k).toInt(), 0) })
-        name.text = if (banner != null) label else ""                 // a tile without a banner already shows its name inside
+        name.text = if (banner != null && !styledNow) label else ""                 // a tile without a banner already shows its name inside
     }
 
     /** A live widget's newest state from its provider (null: no answer); [animate] when motion is on and not calm. */
@@ -2796,7 +2895,7 @@ open class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -
 
     /** The picture let go (memory is short while the screen is hidden) and put back; the tile keeps its place and its colour meanwhile. */
     fun release() { pic?.setImageDrawable(null) }
-    fun restore() { pic?.setImageDrawable(app?.banner ?: app?.icon ?: art) }
+    fun restore() { pic?.setImageDrawable(styledIcon ?: app?.banner ?: app?.icon ?: art) }
 
     /** The lock or the time left on the corner; nothing when [m] is null. Set only when it differs, so nothing is laid out for the same mark. */
     fun mark(m: Badges.Mark?, label: (Int) -> String) {
@@ -2829,6 +2928,7 @@ const val DIM = 0.6f                                                  // the til
 const val STRIP_PAD = 28                                              // dp a Play Next row's bounds reach past the grid each side
 const val STRIP_PAD_V = 16
 const val WATCH_ROW = 20                                             // Play Next items a row of their own holds (it scrolls sideways)
+const val SIDE_GAP = 32                                            // dp between a side column of widgets and the grid
 const val GRID_GAP = 32                                               // dp between tiles, across and down: room under a focused tile for its name
 private val OPENS = setOf("weather", "news", "market")             // the widgets that open a screen on OK; the others open their menu
 private const val EDIT_EDGE = 0x80FFFFFF.toInt()                       // an element's outline in edit mode
@@ -2837,6 +2937,13 @@ private const val PILL_BG = 0xE6101420.toInt()                          // the d
 private const val PILL_EDGE = 0x33FFFFFF                                // its 1 dp edge
 private const val SUB_INK = 0xB3FFFFFF.toInt()                          // a second, softer line on a tile: whose it is
 private const val PILL_INK = 0xFF111318.toInt()                         // a dark glyph on a white (focused) circle
+private const val SIDE_TOP = 20                                 // dp: a side column and the grid beside it, under the head
+private const val FROST_TOP = 0x47FFFFFF                             // the "glass" tile style: a lighter top,
+private const val FROST_BOTTOM = 0x24FFFFFF
+private const val FROST_EDGE = 0x59FFFFFF                            // its hairline edge
+private const val FROST_DISC = 0x40FFFFFF                            // the disc under a glyph tile (+ Add) in the icon / glass styles
+private const val WALL_SHADOW = 0xCC000000.toInt()                   // a name written on the wall itself
+private const val RULE_ALPHA = 0xB3000000.toInt()                    // the accent as the top bar's rule
 private const val HEAD_RULE = 0x40FFFFFF                             // the line between the clock and the day
 private const val POWER_INK = 0xFF7EE0A1.toInt()                    // the power mark: the green of "on", apart from the lock's red and the limit's amber
 

@@ -31,13 +31,17 @@ const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.
   190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings' };
 const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7
 const homeThemeName = (t) => (t.names || {})[window.LANG] || (t.names || {}).en || t.id;   // a ready-made theme's name in the page's language (the signed list's)
-const HOME_THEME_KEYS = ['wall', 'walls', 'wurl', 'wmode', 'wsnap', 'wkeep', 'wevery', 'shade', 'wfit', 'wfade', 'widgets', 'wsize', 'wopt', 'cols', 'center', 'rows', 'focus', 'motion', 'anim', 'clock24', 'greet'];   // HomeConfig.THEME_KEYS
+const HOME_THEME_KEYS = ['wall', 'walls', 'wurl', 'wcol', 'wdir', 'wmode', 'wsnap', 'wkeep', 'wevery', 'shade', 'wfit', 'wfade', 'widgets', 'wsize', 'wopt', 'wplace', 'cols', 'center', 'rows', 'focus', 'tstyle', 'accent', 'motion', 'anim', 'clock24', 'greet'];   // HomeConfig.THEME_KEYS (tvcopy.test.js keeps them equal)
 const HOME_THEME_FILE_MAX = 32768;                                 // a theme file is a few KB; more is not one
 const HOME_THEMES_MAX = 12;                                           // HomeConfig.THEMES_MAX
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
 let homeShots = { mine: {}, ready: {}, now: null };                  // the theme previews' backgrounds (TV Home's themeshots), by theme id; now: {key, jpg} the wall in use
 const homeFaces = new Map();                                         // a theme's drawn preview, by what it is made of: drawn once, put back on every redraw
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
+const HOME_TSTYLE_WORDS = { banner: 'home.tstyle_banner', icon: 'home.tstyle_icon', glass: 'home.tstyle_glass' };
+const HOME_ACCENT_WORDS = { '': 'home.accent_none', blue: 'home.accent_blue', teal: 'home.accent_teal', green: 'home.accent_green', amber: 'home.accent_amber',
+  orange: 'home.accent_orange', red: 'home.accent_red', pink: 'home.accent_pink', violet: 'home.accent_violet' };
+function swatch(hex) { const s = el('span', { className: 'sw' }); s.style.background = hex; return s; }   // a colour from the palette, not words
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'air', 'recent', 'adblock', 'clock', 'market', 'news', 'prayer'];          // HomeConfig.WIDGETS, in the order drawn
 // A TV Home with "wsizes" sizes each widget (big / small) and packs them (homePack); one older than that has only the preset layouts below
 const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather', 'air', 'market', 'news', 'prayer', 'qr1', 'qr2', 'qr3', 'qr4'];     // HomeConfig.defaultSize: these are big until chosen otherwise
@@ -55,6 +59,29 @@ function homePack(keys, big, note) {
       const w = !isBig ? HOME_W.small : k === 'calendar' ? HOME_W.cal : HOME_W.big;
       if (sum + w > HOME_W.budget) break;
       cols.push({ keys: group, weight: w }); sum += w; i += group.length;
+    }
+    return { cols, waiting: ks.slice(i) };
+  };
+  if (!note) return run(keys);
+  for (let n = keys.length; n >= 0; n--) {
+    const p = run([...keys.slice(0, n), 'note']);
+    if (!p.waiting.length) return { cols: p.cols, waiting: keys.slice(n) };
+  }
+  return { cols: [], waiting: keys };
+}
+// HomeConfig.packColumn, the side column ("wplace" left / right): the same walk with the screen's height (dp) as the budget; a block's weight is its height
+const HOME_H = { full: 180, half: 90, gap: 12 };   // HomeConfig.H_FULL / H_HALF / H_GAP
+const HOME_PLACES = ['top', 'left', 'right'];   // HomeConfig.WPLACES
+const HOME_PLACE_WORDS = { top: 'home.wplace_top', left: 'home.wplace_left', right: 'home.wplace_right' };
+function homePackColumn(keys, big, note, room) {
+  const run = (ks) => {
+    const cols = []; let sum = 0, i = 0;
+    while (i < ks.length) {
+      const k = ks[i], isBig = big.includes(k);
+      const group = !isBig && i + 1 < ks.length && !big.includes(ks[i + 1]) ? [k, ks[i + 1]] : [k];
+      const h = (isBig || group.length === 2 ? HOME_H.full : HOME_H.half) + HOME_H.gap;
+      if (cols.length && sum + h > room + HOME_H.gap) break;
+      cols.push({ keys: group, weight: h - HOME_H.gap }); sum += h; i += group.length;
     }
     return { cols, waiting: ks.slice(i) };
   };
@@ -101,7 +128,7 @@ function layGlyph(k) {
 // The words the schema names by id (HomeConfig.options: label `home.o_<option>`, value `home.ov_<value>`), listed so the id check sees them used
 const HOME_OPT_WORDS = ['home.o_size', 'home.o_face', 'home.o_theme', 'home.o_look', 'home.ov_big', 'home.ov_small', 'home.ov_classic', 'home.ov_minimal', 'home.ov_roman', 'home.ov_modern', 'home.ov_digital', 'home.ov_month', 'home.ov_date',
   'home.ov_dark', 'home.ov_light', 'home.ov_glass', 'home.ov_tonal', 'home.ov_solid', 'home.ov_none', 'home.ov_off', 'home.ov_on',
-  'home.o_layout', 'home.o_show', 'home.o_btc', 'home.o_src', 'home.ov_card', 'home.ov_ticker', 'home.ov_all', 'home.ov_gold', 'home.ov_rates', 'home.ov_auto', 'home.ov_mine', 'home.ov_both',
+  'home.o_layout', 'home.o_show', 'home.o_btc', 'home.o_fuel', 'home.o_src', 'home.ov_card', 'home.ov_ticker', 'home.ov_all', 'home.ov_gold', 'home.ov_rates', 'home.ov_auto', 'home.ov_mine', 'home.ov_both',
   'home.o_method', 'home.o_asr', 'home.o_hijri', 'home.ov_mwl', 'home.ov_isna', 'home.ov_egypt', 'home.ov_ummalqura', 'home.ov_karachi', 'home.ov_jakim', 'home.ov_kemenag', 'home.ov_singapore',
   'home.ov_turkey', 'home.ov_tehran', 'home.ov_morocco', 'home.ov_standard', 'home.ov_hanafi', 'home.ov_hijri_m1', 'home.ov_hijri_0', 'home.ov_hijri_p1'];
 // A widget's options, from the schema its TV Home reports ("wschema": HomeConfig.options): what was chosen, else the default
@@ -454,6 +481,7 @@ async function homeOpen() {
   const ddarkFrom = el('input', { type: 'time', step: 1800, onchange: ddarkSend }), ddarkTo = el('input', { type: 'time', step: 1800, onchange: ddarkSend });
   const ddarkTimes = el('div', { className: 'ddark' }, el('label', {}, el('span', { textContent: T('home.ddark_from') }), ddarkFrom), el('label', {}, el('span', { textContent: T('home.ddark_to') }), ddarkTo));
   const center = el('input', { type: 'checkbox', onchange: () => send({ center: center.checked }) });   // the app grid's tiles in the middle of their row (HomeConfig "center", default off)
+  const wplaceHead = el('h3', { textContent: T('home.wplace') }), wplace = el('div', { className: 'fchips wrap' });   // where the widgets sit (HomeConfig "wplace", default top); only a TV Home that reports it
   // remote keys that open an app, and the app that opens each time the TV turns on (HomeConfig keyon / keyapps / autoon / autoapp).
   // Both default off. TV Home answers a key on its own screen; TV Setup does it everywhere and the power-on app: said under each
   const keyOn = el('input', { type: 'checkbox', onchange: () => send({ keyon: keyOn.checked }) });
@@ -479,6 +507,9 @@ async function homeOpen() {
   const langHead = el('h3', { textContent: T('home.lang') }), langs = el('div', { className: 'fchips' });
   // how the focused app shows (HomeConfig "focus"); absent from a TV Home older than the glass
   const focusHead = el('h3', { textContent: T('home.focus') }), focus = el('div', { className: 'fchips' });
+  // how an app tile looks (HomeConfig "tstyle") and the one accent colour (HomeConfig "accent"); absent from a TV Home older than the two
+  const tstyleHead = el('h3', { textContent: T('home.tstyle') }), tstyle = el('div', { className: 'fchips wrap' });
+  const accentHead = el('h3', { textContent: T('home.accent') }), accent = el('div', { className: 'fchips wrap swatches' });
   // app tiles per row (HomeConfig "cols", 4..8); only a TV Home that reports "colsOk"
   const colsHead = el('h3', { textContent: T('home.cols') }), cols = el('div', { className: 'fchips' });
   // rows of apps on the first screen (HomeConfig "rows", tenths, 0 = by itself), up to "rowsMax" the TV measured; a TV Home that reports "rowsOk"
@@ -630,10 +661,17 @@ async function homeOpen() {
     focusHead.hidden = focus.hidden = c.focus === undefined;
     focus.replaceChildren(...[['glass', 'home.focus_glass'], ['ring', 'home.focus_ring']].map(([k, id]) =>
       el('button', { type: 'button', className: (c.focus || 'glass') === k ? 'on' : '', onclick: () => send({ focus: k }) }, T(id))));
+    tstyleHead.hidden = tstyle.hidden = c.tstyle === undefined;
+    tstyle.replaceChildren(...HOME_TSTYLES.map((k) =>
+      el('button', { type: 'button', className: (c.tstyle || 'banner') === k ? 'on' : '', onclick: () => send({ tstyle: k }) }, T(HOME_TSTYLE_WORDS[k]))));
+    accentHead.hidden = accent.hidden = c.accent === undefined;
+    accent.replaceChildren(...[['', null], ...Object.entries(HOME_ACCENTS)].map(([k, hex]) =>
+      el('button', { type: 'button', className: (c.accent || '') === k ? 'on' : '', title: T(HOME_ACCENT_WORDS[k]), 'aria-label': T(HOME_ACCENT_WORDS[k]), onclick: () => send({ accent: k }) },
+        hex ? swatch(hex) : T(HOME_ACCENT_WORDS['']))));
     colsHead.hidden = cols.hidden = !c.colsOk;
     cols.replaceChildren(...[4, 5, 6, 7, 8].map((n) =>
       el('button', { type: 'button', className: (c.cols || 5) === n ? 'on' : '', 'aria-pressed': String((c.cols || 5) === n), onclick: () => send({ cols: n }) }, String(n))));
-    rowsHead.hidden = rowsLine.hidden = rowsNote.hidden = !c.rowsOk;
+    rowsHead.hidden = rowsLine.hidden = rowsNote.hidden = !c.rowsOk || c.wplace === 'left' || c.wplace === 'right';   // beside a widget column every row shows: the setting would do nothing
     if (document.activeElement !== rowsIn) rowsIn.value = c.rows >= 1 ? String(c.rows) : '';
     rowsIn.placeholder = T('home.rows_auto'); if (c.rowsMax >= 1) rowsIn.max = String(c.rowsMax);
     rowsNote.textContent = c.rowsMax >= 1 ? T('home.rows_note', { n: c.rowsMax }) : T('home.rows_note0');
@@ -694,6 +732,8 @@ async function homeOpen() {
     ddarkOn.checked = !!dk; ddarkTimes.hidden = c.ddark === undefined || !dk;
     if (dk) { ddarkFrom.value = dk[1]; ddarkTo.value = dk[2]; }
     center.checked = !!c.center;
+    wplaceHead.hidden = wplace.hidden = c.wplace === undefined;      // a TV Home older than it
+    wplace.replaceChildren(...HOME_PLACES.map((k) => el('button', { type: 'button', className: (c.wplace || 'top') === k ? 'on' : '', 'aria-pressed': String((c.wplace || 'top') === k), onclick: () => send({ wplace: k }) }, T(HOME_PLACE_WORDS[k]))));
     center.closest('label').hidden = c.center === undefined;          // a TV Home older than it
     const ka = c.keyapps || {}, kOk = !!c.keysOk;                     // an older TV Home has neither: shown, with its update
     keyOn.checked = !!c.keyon;
@@ -932,8 +972,11 @@ async function homeOpen() {
       [T('home.wall'), themeWall(conf.wall) + (set.length > 1 ? ' · ' + T('home.td_set', { n: set.length, every: T(HOME_EVERY[conf.wevery] || HOME_EVERY.off).toLowerCase() }) : '')],
       [T('home.shade'), (conf.shade ?? 50) + '%'],
       [T('home.widgets'), cards.length ? cards.join(', ') : none],
+      [T('home.wplace'), T(HOME_PLACE_WORDS[HOME_PLACES.includes(conf.wplace) ? conf.wplace : 'top'])],
       [T('home.cols'), String(conf.cols || 5)], [T('home.rows'), conf.rows >= 1 ? String(conf.rows) : T('home.rows_auto')],
       [T('home.focus'), T(conf.focus === 'ring' ? 'home.focus_ring' : 'home.focus_glass')],
+      [T('home.tstyle'), T(HOME_TSTYLE_WORDS[HOME_TSTYLES.includes(conf.tstyle) ? conf.tstyle : 'banner'])],
+      [T('home.accent'), T(HOME_ACCENT_WORDS[HOME_ACCENTS[conf.accent] ? conf.accent : ''])],
       [T('home.anim'), on(conf.anim !== false)],
       [T('home.motion'), T(conf.motion === 'calm' ? 'home.motion_calm' : conf.motion === 'full' ? 'home.motion_full' : 'home.motion_auto')],
       [T('home.clock24'), on(conf.clock24 !== false)], [T('home.greet'), on(conf.greet !== false)],
@@ -1057,8 +1100,8 @@ async function homeOpen() {
       sect('home.sec_head', check(clock, 'home.clock24'), check(greet, 'home.greet'), gstyleHead, gstyle, gnameLine, gtextLine, gtokens, gtype, hsplit, dstyleHead, dstyle, dtextLine, dtokens, dtype),
       sect(showHead, check(shows.showClock, 'home.show_clock'), check(shows.showDate, 'home.show_date'), check(shows.showNet, 'home.show_net'), check(showInputs, 'home.show_inputs'), check(shows.showGear, 'home.show_gear'),
         check(shows.showAdd, 'home.show_add'), check(shows.showSuggest, 'home.show_suggest'), check(shows.showWatch, 'home.show_watch'), check(infold, 'home.show_infold'), watchAtHead, watchAt),
-      sect('home.sec_motion', check(anim, 'home.anim'), motionHead, motion, focusHead, focus),
-      sect('home.sec_grid', colsHead, cols, check(center, 'home.center'), rowsHead, rowsLine, rowsNote),
+      sect('home.sec_motion', check(anim, 'home.anim'), motionHead, motion, focusHead, focus, tstyleHead, tstyle, accentHead, accent),
+      sect('home.sec_grid', colsHead, cols, check(center, 'home.center'), wplaceHead, wplace, rowsHead, rowsLine, rowsNote),
       sect('home.sec_edit', orderHead, orderBox, foldHead, foldNote, foldBox),
       sect(null, tilesHead, tilesNote, addHome, tilesList),
       sect(null, el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden),
