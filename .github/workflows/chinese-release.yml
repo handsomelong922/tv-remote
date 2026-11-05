@@ -58,7 +58,27 @@ jobs:
       - name: Build unsigned Release only
         run: |
           set -euo pipefail
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0' >/dev/null
+          # Hosted images expose ANDROID_HOME, but sdkmanager is not necessarily on PATH.
+          export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          test -d "$ANDROID_HOME" || { echo 'Android SDK directory not found.' >&2; exit 1; }
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$ANDROID_HOME" "$ANDROID_HOME" >> "$GITHUB_ENV"
+          bt="$ANDROID_HOME/build-tools/35.0.0"
+          packages=()
+          if [ ! -f "$ANDROID_HOME/platforms/android-35/android.jar" ]; then packages+=('platforms;android-35'); fi
+          if [ ! -x "$bt/aapt" ] || [ ! -x "$bt/aapt2" ] || [ ! -x "$bt/apksigner" ] || [ ! -x "$bt/zipalign" ]; then
+            packages+=('build-tools;35.0.0')
+          fi
+          if [ "${#packages[@]}" -gt 0 ]; then
+            manager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+            if [ ! -x "$manager" ]; then
+              manager=$(find "$ANDROID_HOME/cmdline-tools" -mindepth 3 -maxdepth 3 -type f -path '*/bin/sdkmanager' -print 2>/dev/null | sort -V | tail -n 1 || true)
+            fi
+            test -n "$manager" && test -x "$manager" || { echo 'Required SDK package missing, and sdkmanager not found in SDK cmdline-tools.' >&2; exit 1; }
+            "$manager" --sdk_root="$ANDROID_HOME" "${packages[@]}" >/dev/null
+          fi
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          for tool in aapt aapt2 apksigner zipalign; do test -x "$bt/$tool"; done
           cd app/gradle
           ./gradlew --no-daemon --console=plain :android:assembleRelease --dry-run > "$RUNNER_TEMP/task-plan.txt"
           cat "$RUNNER_TEMP/task-plan.txt"
@@ -92,13 +112,34 @@ jobs:
           artifact-ids: ${{ needs.build.outputs.artifact_id }}
           path: unsigned
           merge-multiple: true
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - name: Check APK before accessing private key
         run: |
           set -euo pipefail
           test "$(find unsigned -type f | wc -l)" -eq 1
           test -f unsigned/tv-remote.apk && test ! -L unsigned/tv-remote.apk
-          sdkmanager 'build-tools;35.0.0' >/dev/null
+          # Hosted images expose ANDROID_HOME, but sdkmanager is not necessarily on PATH.
+          export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          test -d "$ANDROID_HOME" || { echo 'Android SDK directory not found.' >&2; exit 1; }
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$ANDROID_HOME" "$ANDROID_HOME" >> "$GITHUB_ENV"
           bt="$ANDROID_HOME/build-tools/35.0.0"
+          packages=()
+          if [ ! -x "$bt/aapt" ] || [ ! -x "$bt/aapt2" ] || [ ! -x "$bt/apksigner" ] || [ ! -x "$bt/zipalign" ]; then
+            packages+=('build-tools;35.0.0')
+          fi
+          if [ "${#packages[@]}" -gt 0 ]; then
+            manager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+            if [ ! -x "$manager" ]; then
+              manager=$(find "$ANDROID_HOME/cmdline-tools" -mindepth 3 -maxdepth 3 -type f -path '*/bin/sdkmanager' -print 2>/dev/null | sort -V | tail -n 1 || true)
+            fi
+            test -n "$manager" && test -x "$manager" || { echo 'Required SDK package missing, and sdkmanager not found in SDK cmdline-tools.' >&2; exit 1; }
+            "$manager" --sdk_root="$ANDROID_HOME" "${packages[@]}" >/dev/null
+          fi
+          for tool in aapt aapt2 apksigner zipalign; do test -x "$bt/$tool"; done
           "$bt/aapt" dump badging unsigned/tv-remote.apk > "$RUNNER_TEMP/badging.txt"
           grep -q "^package: name='dev.tvremote.phone' " "$RUNNER_TEMP/badging.txt"
           ! grep -q '^application-debuggable' "$RUNNER_TEMP/badging.txt"
