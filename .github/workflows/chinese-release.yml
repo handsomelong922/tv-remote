@@ -82,8 +82,20 @@ jobs:
           cd app/gradle
           ./gradlew --no-daemon --console=plain :android:assembleRelease --dry-run > "$RUNNER_TEMP/task-plan.txt"
           cat "$RUNNER_TEMP/task-plan.txt"
-          if grep -E '^:[^[:space:]]*[Dd]ebug[^[:space:]]*[[:space:]]' "$RUNNER_TEMP/task-plan.txt"; then
-            echo 'Debug task detected; refusing to build.' >&2; exit 1
+          # These two AGP tasks process native debug-symbol metadata for a Release APK;
+          # they do not build the Debug variant. Match task names, not project/module names.
+          if ! awk '
+            /^:[^[:space:]]+[[:space:]]/ {
+              n = split($1, parts, ":"); task = parts[n]
+              if (tolower(task) ~ /debug/ &&
+                  task != "stripReleaseDebugSymbols" &&
+                  task != "mergeReleaseNativeDebugMetadata") {
+                print "Blocked Debug task: " $1; blocked = 1
+              }
+            }
+            END { exit blocked ? 1 : 0 }
+          ' "$RUNNER_TEMP/task-plan.txt"; then
+            echo 'Debug variant task detected; refusing to build.' >&2; exit 1
           fi
           ./gradlew --no-daemon --console=plain :android:assembleRelease
           cd ../..
