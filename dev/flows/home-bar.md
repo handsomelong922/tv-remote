@@ -19,7 +19,7 @@ Home again (or the Home item) goes to the home screen. Off (default): Home is ex
 
 The system sends Home to the launcher before any app sees it, and an app in the background cannot draw over another without the
 overlay permission. TV Setup's key filter (the add-on TV Setup Keys, `KeysBridge`) is the one piece that sees Home first, and TV Setup
-is exempt from Android 14's background-start block (the appop SYSTEM_ALERT_WINDOW, `KeyFix.prepare`). So the filter eats Home, looks at
+is exempt from Android 14's background-start block (the appop SYSTEM_ALERT_WINDOW, `KeyFix.prepare`, which reads it back and tries again on the next ADB link when it is not "allow"). So the filter eats Home, looks at
 what is in front (`Usage.front`), and starts TV Home's see-through activity `DockBarActivity` (theme Ghost, like the Control Center):
 the app beneath stays visible and running. No service, receiver or timer of our own; the setting rides TV Home's "keys" push to TV Setup
 (`homebar` is kept in `HomeKeys`), and with it off the filter is not asked about Home for the bar.
@@ -47,3 +47,8 @@ is left out, and so is the app under the bar (TV Setup passes it as `front`: pic
 
 9 and 14 take the same path (a see-through activity of TV Home started by TV Setup); on 14 it needs the appop above, which every ADB
 link sets. Without TV Setup nothing starts it, so there is no bar and Home is the system's.
+
+## Other keys (not Home)
+
+A key given "Voice command" (target `do:voice`, `KeyFix.VOICE`, `SetupNeed` "voicekey") opens TV Setup's `MicActivity` from the key
+filter, the same way the bar is started; the key is taken only when a voice recognizer is on the TV. Home is never such a key.

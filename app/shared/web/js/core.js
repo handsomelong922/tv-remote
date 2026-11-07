@@ -102,7 +102,8 @@ document.addEventListener('click', async (e) => {
   const name = l.textContent.trim(); if (!name || /^(✕|⋯)$/.test(b.textContent.trim())) return;
   e.preventDefault(); e.stopImmediatePropagation();
   const ico = (b.querySelector(':scope > .ico') || {}).textContent || '', why = b.title && b.title.trim() !== name ? b.title.trim() : '';
-  if (!await ask((ico + ' ' + (why || name)).trim() + '?', { ok: name, danger: b.classList.contains('danger') })) return;
+  if (!await ask(T('common.ask_what', { what: (ico + ' ' + (why || name)).trim() }), {   // the question mark is the language's own (Arabic ؟)
+     ok: name, danger: b.classList.contains('danger') })) return;
   const input = b.tagName === 'LABEL' && b.querySelector('input');
   iconSure = true; try { (input || b).click(); } finally { iconSure = false; }
 }, true);
@@ -119,16 +120,26 @@ async function api(path, data, quiet, ms) {
   if (b) { b.classList.add('busy'); b.busyN = (b.busyN || 0) + 1; }
   try { return await call(path, data, quiet, ms); } finally { if (b && !--b.busyN) b.classList.remove('busy'); }
 }
+// Only the router's own miss (Server.kt dispatch: "not found", or no JSON body at all) means the server is older than the page; the
+// 404s a route answers on purpose ("no such job", "unknown job", "no picture", "no icon") are real answers and keep their words.
+const isStale = (status, e) => status === 404 && CORE === 'pc' && (!e || e === 'Not Found' || e === 'not found');
 // "adb:allow", "adb: <Java's words>": what a person can do about it
 const adbWords = (status, e) => status === 503 && /^adb/.test(e) && !/adb (pair|tls)/.test(e)
   ? (/allow/.test(e) ? T('core.adb_allow') : T('core.adb_not_yet')) : e;
+// What a page shows for a failed call it made itself (not through api()): the ADB words, then the friendly ones
+const errWords = (status, e) => friendly(adbWords(status, e));
 // A read that must not hang (a TV gone silent holds the socket): ms opts in, never for an upload, a download, an install or a wait
 // on slow TV work, which end when they end. AbortSignal.timeout is missing in old WebViews: a timer and a controller do the same.
 function timeoutSignal(ms) {
   if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) return AbortSignal.timeout(ms);
   const c = new AbortController(); setTimeout(() => c.abort(), ms); return c.signal;
 }
+// A read of one TV whose answer lands after another TV was picked is dropped (null, quiet): the old TV's apps, cards and
+// Health facts must not overwrite the new one's. What is not about one TV (the list of TVs, Several TVs, a job, the app) is kept.
+let tvGen = 0;                                                       // +1 on each change of TV (refresh): what call() compares
+const TV_FREE = /^\/api\/(tvs|fleet|discover|adb\/discover|job|settings|update|tailscale|log|census|speed)\b/;
 async function call(path, data, quiet, ms) {
+  const gen = tvGen;
   try {
     const r = await fetch(path, { ...(data ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : {}), ...(ms ? { signal: timeoutSignal(ms) } : {}) });
     if (r.status === 401 && CORE === 'tv') { refresh(); return null; }   // this browser is no longer paired with the TV
@@ -137,12 +148,13 @@ async function call(path, data, quiet, ms) {
       if (!quiet && needSetup(e)) return null;                         // asked as a question with its button, not a toast
       if (!quiet && /channels:old/.test(e)) { chanOld(); return null; }   // TV Channels is there but too old for the link: Update, not "missing"
       if (r.status === 403 && e === 'scope') { refresh(); if (!quiet) toast(scopeWhy()); return null; }   // the owner may have just changed it
-      if (r.status === 404 && CORE === 'pc') e = STALE;
+      if (isStale(r.status, e)) e = STALE;
       if (adbWords(r.status, e) !== e) { e = adbWords(r.status, e); setTimeout(refresh, 300); }
       if (!quiet) toast(T('common.error_msg', { msg: friendly(e) })); return null;
     }
-    return await r.json();
-  } catch { if (!quiet) toast(T('core.server_unreachable')); return null; }
+    const j = await r.json();
+    return data || gen === tvGen || TV_FREE.test(path) ? j : null;
+  } catch { if (!quiet && gen === tvGen) toast(T('core.server_unreachable')); return null; }
 }
 
 // A small menu under a button (⋯ on each app): items are [icon, words, fn, class]; null items are left out. A click elsewhere,
@@ -174,7 +186,7 @@ addEventListener('resize', closePop);
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
 // ids of i18n/*.json: the words of each feature, said in the question below
-const SETUP_NEEDS = { mic_freespeech: 'core.need_mic_freespeech', mic_engine: 'core.need_mic_engine', schedule: 'core.need_schedule', schedule_windows: 'core.need_schedule_windows', rules: 'core.need_rules', draw: 'core.need_draw', video: 'core.need_video', invite: 'core.need_invite', ram: 'core.need_ram', ramauto: 'core.need_ramauto', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', speak: 'core.need_speak', homebar: 'core.need_homebar', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', home_usage: 'core.need_home_usage', holdkeys: 'core.need_holdkeys', mic: 'core.need_mic', checkout: 'core.need_checkout', telegram: 'core.need_telegram', kids: 'core.need_kids', homekey: 'core.need_homekey', keytest: 'core.need_keytest', support: 'core.need_support', scenepin: 'core.need_scenepin', mic_offline: 'core.need_mic_offline', family: 'core.need_family' };
+const SETUP_NEEDS = { scenetime: 'core.need_scenetime', sceneon: 'core.need_sceneon', mic_freespeech: 'core.need_mic_freespeech', mic_engine: 'core.need_mic_engine', schedule: 'core.need_schedule', schedule_windows: 'core.need_schedule_windows', rules: 'core.need_rules', draw: 'core.need_draw', video: 'core.need_video', invite: 'core.need_invite', ram: 'core.need_ram', ramauto: 'core.need_ramauto', idleoff: 'core.need_idleoff', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', speak: 'core.need_speak', homebar: 'core.need_homebar', voicekey: 'core.need_voicekey', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', home_usage: 'core.need_home_usage', holdkeys: 'core.need_holdkeys', mic: 'core.need_mic', checkout: 'core.need_checkout', telegram: 'core.need_telegram', kids: 'core.need_kids', homekey: 'core.need_homekey', keytest: 'core.need_keytest', support: 'core.need_support', scenepin: 'core.need_scenepin', mic_offline: 'core.need_mic_offline', family: 'core.need_family' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => { const what = SETUP_NEEDS[m[2]] ? T(SETUP_NEEDS[m[2]]) : m[2];
   return m[1] === 'missing' ? T('core.setup_missing', { what }) : T('core.setup_old', { what, min: m[3], have: m[4] }); };
@@ -225,7 +237,7 @@ const FRIENDLY = [
   [/stream closed|socket closed|broken pipe/i, T('core.fr_connection_lost')],   // ADB cut: another TV chosen, or the network dropped
   [/no sign-in link/i, T('core.fr_no_signin_link')],
   [/storage full: file=(\d+) free=(\d+) need=(\d+) apk=([01])/, (m) => T(m[4] === '1' ? 'core.fr_storage_apk' : 'core.fr_storage_file', { free: fmtSize(+m[2]), size: fmtSize(+m[1]), need: fmtSize(+m[3]) })],
-  [/INSUFFICIENT_STORAGE|No space left/i, T('core.fr_no_space')],
+  [/INSUFFICIENT_STORAGE|No space left|not enough space/i, T('core.fr_no_space')],
   [/no app that can open/i, T('core.fr_no_viewer_app')],
   [/cannot be opened \(no launcher screen\)|no launcher activity/i, T('core.fr_no_launcher')],
   [/adb pair: wrong code/i, T('core.fr_pair_wrong_code')],
@@ -268,9 +280,22 @@ const FRIENDLY = [
   [/apps:offline/, T('core.fr_tvapps_offline')],
   [/launcher:home/, T('core.fr_launcher_home')],
   [/launcher:play/, T('core.fr_launcher_play')],
+  [/launcher:noplay/, T('core.fr_launcher_noplay')],
   [/launcher:self/, T('core.fr_launcher_self')],
   [/launcher:fit/, T('core.fr_launcher_fit')],
+  [/^launcher:install:removed$/, T('core.fr_removed_after_install')],   // before the general one, which would word the bare 'removed'
   [/launcher:install:(.*)/, (m) => T('core.fr_launcher_install', { msg: friendly(m[1]) })],
+  [/home:pic_full/, T('core.fr_home_pic_full', { n: 40 })],       // HomeConfig.PICS_MAX
+  [/home:theme_missing|^theme_missing$/, T('core.fr_home_theme_missing')],
+  [/privacy:stalled/, T('core.fr_tv_stopped')],
+  [/setup:nothing_to_restore/, T('core.fr_nothing_to_restore')],
+  [/^no_home$/, T('core.fr_no_home')],
+  [/themeshare:busy/, T('core.fr_themeshare_busy')],
+  [/^video: (no answer|closed)$/, T('core.fr_video_noanswer')],
+  [/upload cut short/, T('core.fr_copy_incomplete')],
+  [/the TV did not store the whole file|the TV could not store the file/, T('core.fr_copy_not_stored')],
+  [/^the TV did not answer$/, T('core.fr_tv_noanswer')],
+  [/^no such scene$/, T('core.fr_no_scene')],
   [/home:missing/, T('core.fr_home_missing')],
   [/home:pin_old/, T('errors.pin_old')],
   [/pin_bad_link/, T('errors.pin_bad_link')],
@@ -293,6 +318,8 @@ const FRIENDLY = [
   [/home:video_busy/, T('core.fr_home_video_busy')],
   [/home:video_old/, T('core.fr_home_video_old')],
   [/home:pic_old/, T('core.fr_home_pic_old')],
+  [/home:frame_old/, T('core.fr_home_frame_old')],
+  [/home:frame_full/, T('home.photos_full', { n: 10 })],          // HomeConfig.FRAME_MAX
   [/home:video_inuse|\binuse$/, T('core.fr_home_video_inuse')],
   [/home:video_(video|gif|transcode|type)|video type/, T('core.fr_home_video_bad')],
   [/home:photos_full/, T('home.photos_full', { n: 10 })],   // before home:photo, which it starts with
@@ -300,6 +327,10 @@ const FRIENDLY = [
   [/home:photo/, T('core.fr_home_photo')],
   [/launcher list not signed/i, T('core.fr_launcher_list')],
   [/launcher file does not match/i, T('core.fr_launcher_file')],
+  [/Failed to initialize audio|audio\/opus/i, T('core.fr_sound_encoder')],   // scrcpy-server died on a TV with no encoder for the codec asked (Tv.soundCodec falls back first)
+  [/^encoders:/, T('core.fr_encoders')],                         // list_encoders did not answer (Tv.watchFirstFrame)
+  [/^decoder$/, T('core.fr_picture_decoder')],                   // the phone's H.264 decoder could not be made again (TvAndroid)
+  [/scrcpy-server did not start/i, T('core.fr_scrcpy_start')],
   [/^net: /, T('core.fr_net_failed')],                            // last: a download or the site failed (Errors.fromInternet), none of the above
 ];
 const LAUNCH_KEPT = ['wifi', 'wifi_unknown', 'cast', 'zte', 'users', 'board', 'boot', 'keys'];   // refused before anything changed (LauncherSwap.REFUSED)
@@ -412,7 +443,7 @@ async function refreshRead() {
     else { setTimeout(refresh, 1000); if (s.name) put('#conname', 'textContent', s.name); }
   }
   if (!justPicked && $('#connecting').open) $('#connecting').close();
-  if (s.host !== curHost) { const first = curHost === null; curHost = s.host; if (!first) tvChanged(); }
+  if (s.host !== curHost) { const first = curHost === null; curHost = s.host; if (!first) { tvGen++; tvChanged(); } }
   if (s.volume && Date.now() > volHold) {
     put('#volv', 'textContent', s.volume.level);
     const mute = $('#r-mute');                                        // none when remote.json could not be read
@@ -428,7 +459,7 @@ async function refreshRead() {
 // An LG or Samsung TV is driven through its own remote link and has no ADB: what needs a capability it lacks is marked
 // data-needs="cap ..." and hidden (cards), greyed (buttons, keys it has no name for: a press says why) or, for a tab, kept
 // greyed with a card of what it does on an Android TV ([data-kindintro], KIND_INTRO): a feature to find out about, not a gap.
-let TV_KIND = 'android', CAPS = null, kindSig = '';
+let TV_KIND = 'android', TV_KEYS = null, CAPS = null, kindSig = '';   // TV_KEYS: the keys a non-Android TV takes (a Roku TV has Volume, a stick has not)
 // A browser let in by a shared QR may have less than the owner (Scope.kt in TV Setup): "remote" presses keys and opens apps,
 // "view" only watches. The page marks those parts data-needs="control" (pressing anything) or "full" (the owner's), as for a
 // TV that cannot; the other tabs are left out for a guest, as they are the owner's only.
@@ -465,14 +496,58 @@ function kindIntro(key) {
       el('span', { className: 'badge', textContent: kindWhy() })),
     el('ul', {}, ...items.map((t) => el('li', { textContent: t }))));
 }
+// [text] on this device's clipboard: true when it got there. The TV's page is plain http on the LAN, where browsers give no
+// navigator.clipboard: a hidden box is copied from instead, put inside the open modal dialog (outside one it is inert).
+async function clipCopy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  const open = [...document.querySelectorAll('dialog[open]')].pop(), a = el('textarea', { value: text, readOnly: true });
+  (open || document.body).append(a); a.select(); a.setSelectionRange(0, text.length);   // iOS selects only through the range
+  let ok = false; try { ok = document.execCommand('copy'); } catch {}
+  a.remove(); return ok;
+}
+/** Copies [t] and says so: Copied / Could not copy. */
+async function copyText(t) { toast(await clipCopy(t) ? T('health.copied') : T('health.copy_failed')); }
+// A first read that failed (a weak TV, a blip): the placeholder ("Reading from the TV...") becomes why, with ↻ Try again, which
+// puts the placeholder back and reads again. Not twice: a poll that fails again leaves it as it is.
+function failed(box, retry) {
+  if (!box || (box.failMsg && box.contains(box.failMsg))) return;
+  const was = [...box.childNodes];
+  box.failMsg = el('p', { className: 'warnline', textContent: T('core.read_failed') });
+  box.replaceChildren(box.failMsg, el('div', { className: 'actions' }, el('button', { type: 'button', className: 'small', textContent: T('core.read_again'),
+    onclick: () => { box.replaceChildren(...was); retry(); } })));
+}
+// Search boxes find "truyen hinh" in "Truyền hình": accents, đ and case left out on both sides
+const foldText = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase();
+/** [q] (folded already) is in one of [texts], or there is no q. */
+const foldHas = (q, ...texts) => !q || texts.some((t) => foldText(t).includes(q));
 // What the TVs said and the errors shown (WireLog.kt): what a real TV did is what tells a bug apart. Copied, then the site's
 // page where it is pasted and sent on (a GitHub issue or a message): no log in the link, it leaves only when the person sends it.
+// "What went wrong?" before anything is sent to support (census 2026-11: 34 of 50 reports came with no words): chips + a few words,
+// both optional. → { problem, text } (both '' when skipped), or null when closed. Same ids as SupportRelay.PROBLEMS (Kotlin).
+const SAID_PROBLEMS = ['connect', 'key', 'app', 'media', 'other'];
+const SAID_WORDS = { connect: 'said.connect', key: 'said.key', app: 'said.app', media: 'said.media', other: 'said.other' };   // ids named whole, so a missing word is found
+function askSaid() {
+  return new Promise((done) => {
+    let problem = '';
+    const chips = SAID_PROBLEMS.map((id) => el('button', { type: 'button', textContent: T(SAID_WORDS[id]), onclick: () => {
+      problem = problem === id ? '' : id;
+      chips.forEach((c, i) => c.classList.toggle('on', SAID_PROBLEMS[i] === problem));
+    } }));
+    const box = el('input', { maxLength: 280, spellcheck: false, placeholder: T('said.text') });
+    const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
+      el('p', { textContent: T('said.title') }), el('div', { className: 'fchips', role: 'group' }, ...chips), box,
+      el('div', { className: 'acts' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() }),
+        el('button', { type: 'submit', className: 'primary', textContent: T('said.send') }))));
+    d.addEventListener('close', () => { d.remove(); done(d.returnValue === 'yes' ? { problem, text: box.value.trim() } : null); });
+    document.body.append(d); d.showModal(); chips[0].focus();
+  });
+}
+const saidHeader = (s) => (s && s.problem ? '[said] problem: ' + s.problem + '\n' : '') + (s && s.text ? '[said] text: ' + s.text.replace(/\s+/g, ' ') + '\n' : '');
 async function sendWireLog() {
+  const said = await askSaid(); if (!said) return;
   let text;
   try { const r = await fetch('/api/wirelog'); if (!r.ok) throw 0; text = await r.text(); } catch { toast(T('core.log_unreadable')); return; }
-  let ok = false;
-  try { await navigator.clipboard.writeText(text); ok = true; } catch {}
-  if (!ok) { const a = el('textarea', { value: text }); document.body.append(a); a.select(); try { ok = document.execCommand('copy'); } catch {} a.remove(); }
+  const ok = await clipCopy(saidHeader(said) + text);
   window.open(LOG_PAGE, '_blank');
   toast(ok ? T('core.log_copied') : T('core.log_copy_failed'));
 }
@@ -480,7 +555,7 @@ const LOG_PAGE = 'https://tvremote.pages.dev/log';
 function applyKind(s) {
   const scope = s.scope || 'full', kind = s.kind || 'android', sig = kind + '|' + scope + '|' + (s.caps || []).join() + '|' + (s.keys || []).join();
   if (sig === kindSig) return;
-  kindSig = sig; TV_KIND = kind; CAPS = s.caps ? new Set(s.caps) : null; SCOPE = scope;
+  kindSig = sig; TV_KIND = kind; TV_KEYS = s.keys ? new Set(s.keys) : null; CAPS = s.caps ? new Set(s.caps) : null; SCOPE = scope;
   document.documentElement.dataset.kind = kind; document.documentElement.dataset.scope = scope;
   document.querySelectorAll('nav.tabs [data-tab]').forEach((t) => { t.hidden = scope !== 'full' && t.dataset.tab !== 'remote'; });
   if (scope !== 'full' && currentTab && currentTab !== 'remote') showTab('remote');   // a guest now: the other tabs are the owner's
@@ -555,7 +630,10 @@ function applyAdb() {
   if (bannerKey !== ADB.state) {                                      // rebuild only on change so buttons are not replaced mid-click
     bannerKey = ADB.state;
     document.querySelectorAll('[data-adb-banner]').forEach((b) => b.replaceChildren(...(ready ? [] : [buildBanner()])));
-    if (ready && currentTab === 'tv' && typeof tsState === 'function') { tsState(); restoreState(); loadTvset(); loadHold(); homeCard(); chanCard(); gameCard(); }   // the cards that ask over ADB: opened before it was up, they had stayed empty
+    if (currentTab === 'tv' && typeof tsState === 'function') {
+      if (ready) { tsState(); restoreState(); loadTvset(); loadHold(); }
+      homeCard(); chanCard(); gameCard();                               // ADB gone too: their Open / Installed lines are hidden, not left from before (support 11223000: Open said "no ADB")
+    }   // the cards that ask over ADB: opened before it was up, they had stayed empty
   }
   // a tab already shown with its data keeps it, scroll and all, under a veil that says ADB is coming back (or why not, with Retry);
   // the banner in place of the tab only when nothing was shown yet
@@ -637,11 +715,15 @@ $('#pairstart').addEventListener('click', async () => {
   put('#pairf', 'hidden', false); put('#pairerr', 'textContent', T(r.shown === false ? 'core.code_open_setup' : 'core.code_2min'));   // false: the TV could not put it up
   $('#paircode').value = ''; $('#paircode').focus();
 });
+// RemoteService.pairCheck's answers: wrong (tries left), locked (too many wrong: the code is gone), expired; net: no answer at all
+const PAIR_WHY = { wrong: 'core.wrong_code', locked: 'core.code_tries', net: 'core.no_tv' };
 $('#pairf').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const r = await fetch('/api/pair/finish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: $('#paircode').value }) }).then(async (x) => ({ ok: x.ok, ...(await x.json().catch(() => ({}))) })).catch(() => ({}));
+  const r = await fetch('/api/pair/finish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: $('#paircode').value }) }).then(async (x) => ({ ok: x.ok, ...(await x.json().catch(() => ({}))) })).catch(() => ({ error: 'net' }));
   if (r.ok) { put('#pairerr', 'textContent', ''); refresh(); return; }
-  put('#pairerr', 'textContent', r.error === 'wrong' ? T('core.wrong_code') : T('core.code_expired')); if (r.error !== 'wrong') put('#pairf', 'hidden', true); $('#paircode').select();
+  put('#pairerr', 'textContent', T(PAIR_WHY[r.error] || 'core.code_expired'));
+  if (r.error !== 'wrong' && r.error !== 'net') put('#pairf', 'hidden', true);   // the code is gone: Show the code again; a blip keeps it
+  $('#paircode').select();
 });
 
 // ---------- the TV's page on a phone: it can live on the home screen like an app (manifest.json) ----------

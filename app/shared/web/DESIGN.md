@@ -99,6 +99,10 @@ the same classes.
 | A filter/sort row above a list | `div.fchips` of buttons, current `.on` + `aria-pressed` | |
 | A colour to pick | `input[type=color]` in a `.ownstop` (`--ctl` tall, 44 wide, the colour fills it, `--line` edge; `.small.iconbtn` beside it to remove); several in `.ownstops`, which wraps | a hand-made palette; a hex field alone |
 | Key/value facts | `.kv` (dt muted, `.v` bold right) | |
+| Facts at a glance (Health → Now) | `.facts` > `.fact`: `UI.icon(name)` on a `--btn` tile, muted name over a bold value; 2 columns at every width | `.kv` when each fact needs its icon |
+| A share of a whole, live | `.ring` (`ring()` in `js/health.js`): `--accent` arc on a `--btn` track, `.warn` ≥75 %, `.bad` ≥90 %, the number inside, words under | a pie |
+| A figure over the last 60 s | `liveChart()`: 2px lines (`path.lc-a` `--accent`, `path.lc-b` `--boot`), one scale, the values in the row above (hover moves them) | a second y-axis |
+| Parts of a whole | `.sbar` > `i.p-a / .p-b / .p-c / .p-f` (2px gaps) + a `.sl-leg` legend with the figures | colour alone |
 | A small tag | `.badge` (`.badge.ok`) | coloured spans; on a theme's tile (`.homewalls small.badge`): ▶ Video, 🖼 ×N, 🖼 Slideshow (`homeMediaBadges`) |
 
 ```js
@@ -257,7 +261,7 @@ hue; in `button`, `label.filebtn`, `a.linkbtn`, `#toast` and the state marks (`I
 - Three chip-row looks: `.places` (pills, `--chip`), `.fchips` (same + `margin-top:4px`), `.seg` (segmented, `min-height:34px`,
   `.seg.mini` 28px, `css/remote.css:54-69`). Tabs are `42px` (`css/page.css:102`).
 - Undefined vars and `var(--x, #hex)` fallbacks are gone and `tests/css.test.js` keeps them out (a hover tint is `color-mix(in srgb, var(--ink) 8%, transparent)`; JS-set names are in its allow-list). Still open: raw hex `color:` on the dark surfaces (`.term`, `.screenbox`, `.qkbadge`, `.wallx`).
-- Small controls keep their drawn size and get a 44px hit area from an `::after { inset:-8px }` (`.wallx` -12px, `.chstar`); `.seg.mini` buttons are `--ctl-sm`.
+- Small controls keep their drawn size and get a 44px hit area from an `::after { inset:-8px }` (`.wallx` -12px, `.chstar`); `.seg.mini` buttons are `--ctl-sm`. On a finger (`pointer:coarse`) every `.small` / `.iconbtn` gets one too (`css/kit.css`, at the end).
 - Radii are raw px everywhere but cards: 10px x19, 12px x17, 8px x10, 6/9/5/16/7px; only `--radius` is a token.
 - Font sizes off the scale: 12.5px, 13.5px, 15px, 17px in dialogs and the about box.
 - `.danger` is red text on the page but a red fill inside `dialog.ask` (`css/page.css:200`).

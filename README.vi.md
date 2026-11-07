@@ -45,28 +45,26 @@ Mọi thứ đi thẳng từ máy bạn tới TV: không qua đám mây, không 
 |---|---|---|---|
 | Điện thoại Android | **App điện thoại** (*TV Remote*) | [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk) | **`2973135`** |
 | iPhone, hoặc trình duyệt bất kỳ | **Web của TV**: cài **App TV** (*TV Setup*) lên TV, mở `http://<IP của TV>:8765` | [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk) | **`2397346`** |
-| Mac | **App máy tính** (*TV Remote*, khoảng 20 MB) | [TV-Remote-mac.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip) | |
+| Mac | **App máy tính** (*TV Remote*, khoảng 35 MB) | [TV-Remote-mac.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip) | |
 | Windows 10 / 11 | **App máy tính** | [TV-Remote-windows-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip) | |
 | Linux | **App máy tính** | [x64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz) · [arm64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz) | |
 | Tùy chọn, trên TV | TV Home · TV Channels · TV Games · TV Apps | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) · [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) · [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) · [tv-apps.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-apps.apk) | **`4356026`** · **`8135635`** · **`2294968`** · **`1082201`** |
 
 Tự cập nhật app điện thoại: [Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22dev.tvremote.phone%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FHoangTran0410%2Ftv-remote%22%2C%22author%22%3A%22HoangTran0410%22%2C%22name%22%3A%22TV%20Remote%22%2C%22additionalSettings%22%3A%22%7B%5C%22apkFilterRegEx%5C%22%3A%20%5C%22%5Etv-remote%5C%5C%5C%5C.apk%24%5C%22%2C%20%5C%22releaseDateAsVersion%5C%22%3A%20true%2C%20%5C%22includePrereleases%5C%22%3A%20false%7D%22%7D) (chỉ theo dõi `tv-remote.apk`). TV hay box chạy được, hay không? Gửi một [báo cáo thiết bị](https://github.com/HoangTran0410/tv-remote/issues/new?template=device_report.yml) giúp rất nhiều.
 
-Mã nhập trong app **Downloader** trên TV, luôn trỏ tới bản mới nhất. *tv-voice.apk* (nhận giọng nói ngay trên TV, tiếng Việt, 39 MB) và *tv-voice-en.apk* (tiếng Anh, 47 MB, khi TV Setup ở ngôn ngữ khác) không có mã: TV Setup tự cài khi bạn bật "Nhận giọng nói ngay trên TV" (tab Thiết lập, thẻ Nút remote) và gỡ khi tắt.
+Mã nhập trong app **Downloader** trên TV, luôn trỏ tới bản mới nhất. Không có Downloader: gõ `tvremote.pages.dev/dl/tv-setup.apk` vào trình duyệt TV (tệp nào ở trên cũng được: `/dl/<tên>`). *tv-voice.apk* (nhận giọng nói ngay trên TV, tiếng Việt, 39 MB) và *tv-voice-en.apk* (tiếng Anh, 47 MB, khi TV Setup ở ngôn ngữ khác) không có mã: TV Setup tự cài khi bạn bật "Nhận giọng nói ngay trên TV" (tab Thiết lập, thẻ Nút remote) và gỡ khi tắt.
 
 ## Bắt đầu nhanh
 
-1. **Bật ADB trên TV** (một lần): Cài đặt → Giới thiệu → bấm OK vào **Bản dựng** 7 lần → Tùy chọn nhà phát triển → **Gỡ lỗi ADB**. [Từng bước](https://tvremote.pages.dev/guide#prep-tv) · box nhà mạng (FPT, Viettel…): [đọc trước](https://tvremote.pages.dev/guide#prep-tv).
-2. **Mở app** và chọn TV ([điện thoại](https://tvremote.pages.dev/guide#install-phone) · [máy tính](https://tvremote.pages.dev/guide#install-pc) · [iPhone / trình duyệt](https://tvremote.pages.dev/guide#web-iphone): cài [TV Setup](https://tvremote.pages.dev/guide#install-tv), quét mã QR).
-3. **Trên TV chọn "Luôn cho phép"** khi TV hỏi [Cho phép gỡ lỗi USB?](https://tvremote.pages.dev/guide#allow-usb)
-
-Chưa có ADB? App điện thoại và app máy tính vẫn bấm phím được sau khi ghép bằng mã TV hiện.
+1. **Mở app** và chọn TV ([điện thoại](https://tvremote.pages.dev/guide#install-phone) · [máy tính](https://tvremote.pages.dev/guide#install-pc) · [iPhone / trình duyệt](https://tvremote.pages.dev/guide#web-iphone): cài [TV Setup](https://tvremote.pages.dev/guide#install-tv), quét mã QR).
+2. **Nhập mã TV hiện ra**: phím dùng được ngay, không cần ADB ([phím khi chưa có ADB](https://tvremote.pages.dev/guide#nokeys)).
+3. **Sau đó, để xem màn hình, mở app, quản lý file: bật ADB** (không bắt buộc). Dễ nhất: [cài TV Setup](https://tvremote.pages.dev/guide#install-tv) rồi bấm "Bật ADB giúp tôi". Làm tay: Cài đặt → Giới thiệu → bấm OK vào **Bản dựng** 7 lần → Tùy chọn nhà phát triển → **Gỡ lỗi ADB** ([từng bước](https://tvremote.pages.dev/guide#prep-tv)); box nhà mạng (FPT, Viettel…) thì không làm vậy, box có thể đòi mật khẩu hoặc khóa máy. Rồi chọn "Luôn cho phép" ở [Cho phép gỡ lỗi USB?](https://tvremote.pages.dev/guide#allow-usb)
 
 ## Tính năng
 
 | Tính năng | Làm được gì | Hướng dẫn |
 |---|---|---|
-| 🎮 **Remote** | Mũi tên, âm lượng, kênh, app, gõ chữ, giọng nói; giữ phím như remote thật | [→](https://tvremote.pages.dev/guide#remote) |
+| 🎮 **Remote** | Mũi tên, âm lượng, kênh, app, gõ chữ, giọng nói; giữ phím như remote thật; Remote đơn giản phím to cho ông bà | [→](https://tvremote.pages.dev/guide#remote) |
 | 📺 **Hình TV** | Ngay trên máy bạn, có chạm và tiếng; nghe tiếng TV cả khi tắt màn hình điện thoại | [→](https://tvremote.pages.dev/guide#picture) |
 | ✏️ **Lên màn hình TV** | Vẽ, gửi ảnh, video, camera hoặc lời nhắn; đang phát; clipboard của TV; giảm sáng, lọc ánh sáng xanh | [→](https://tvremote.pages.dev/guide#draw) |
 | 🔒 **Cho trẻ em** | Hẹn giờ tắt, giờ đi ngủ, giới hạn app, giới hạn âm lượng, khóa app bằng PIN: chạy ngay trên TV | [→](https://tvremote.pages.dev/guide#limits) |
@@ -99,7 +97,7 @@ Chưa có ADB? App điện thoại và app máy tính vẫn bấm phím được
 | Bật TV khi đã tắt hẳn (Wake-on-LAN) | ✓ | | ✓ |
 | Bấm phím khi TV chưa cho ADB | ✓ | | ✓ |
 | Remote hồng ngoại (đèn IR của điện thoại, không cần mạng) | ✓ | | |
-| Widget, ô Cài đặt nhanh, phím âm lượng của máy | ✓ | | |
+| Widget, ô Cài đặt nhanh, phím âm lượng của máy, điều khiển ở thanh thông báo và màn hình khóa | ✓ | | |
 | 🎮 Tay cầm chơi game | ✓ | ✓ | ✓ |
 | Link cho Home Assistant, Phím tắt (Siri) | | ✓ | ✓ |
 | Bot Telegram | cần TV Setup | cài đặt tại đây | cần TV Setup |

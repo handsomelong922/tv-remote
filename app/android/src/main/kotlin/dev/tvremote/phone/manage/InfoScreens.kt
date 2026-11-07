@@ -1,5 +1,6 @@
 package dev.tvremote.phone.manage
 
+import dev.tvremote.phone.NotificationRemote
 import dev.tvremote.phone.MainActivity
 import dev.tvremote.phone.R
 import dev.tvremote.phone.ir.title
@@ -118,6 +119,21 @@ internal fun MainActivity.buildSettings(): View {
     buzzLabel()
     box.addView(buzzRow)
 
+    box.addView(head(T("notification_remote.head")), gap(18))     // NotificationRemote.kt: off by default
+    lateinit var notifyRow: Button
+    val notifyLabel = { notifyRow.setToggle(prefs.getBoolean(NotificationRemote.PREF, false), T("notification_remote.switch")) }
+    notifyRow = row("") {
+        val on = !prefs.getBoolean(NotificationRemote.PREF, false)
+        prefs.edit().putBoolean(NotificationRemote.PREF, on).apply()   // off: the service sees it and ends itself
+        notifyLabel()
+        if (on && android.os.Build.VERSION.SDK_INT >= 33 && !NotificationRemote.allowed(this)) requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), NotificationRemote.ASK)
+        else if (on) NotificationRemote.sync(this)
+    }
+    notifyLabel()
+    this.notifyLabel = notifyLabel
+    box.addView(notifyRow)
+    box.addView(note(T("notification_remote.note")))
+
     box.addView(head(T("info_screens.tv_keyboard")), gap(18))
     lateinit var kbdRow: Button
     val kbdLabel = { kbdRow.setToggle(prefs.getBoolean("kbdAuto", true), T("about.tv_keyboard_auto")) }
@@ -220,13 +236,13 @@ internal fun MainActivity.buildAbout(): View {
     box.addView(row("@package|" + T("about.releases")) { web("https://tvremote.pages.dev/#install") })
     // what the TVs said and the errors shown (WireLog): what a real TV did is what tells a bug apart. Copied, then the
     // site's page where it is pasted and sent on (a GitHub issue or a message), as on the page (js/core.js sendWireLog)
-    box.addView(row("@clipboard|" + T("info_screens.send_the_log")) {
-        val log = dev.tvremote.core.WireLog.all.report(basic?.takeIf { it.kind != dev.tvremote.core.remote.Remote.Kind.ANDROID })
+    box.addView(row("@clipboard|" + T("info_screens.send_the_log")) { askSaid { said ->
+        val log = said.header() + dev.tvremote.core.WireLog.all.report(basic?.takeIf { it.kind != dev.tvremote.core.remote.Remote.Kind.ANDROID })
         (getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
             .setPrimaryClip(android.content.ClipData.newPlainText("TV Remote", log))
         Toast.makeText(this, T("core.log_copied"), Toast.LENGTH_LONG).show()
         web("https://tvremote.pages.dev/log")
-    })
+    } })
 
     // let support look at this app for 30 min (PhoneSupport): the same code and Stop as the Manage screen's About
     lateinit var sup: android.widget.Button
@@ -245,8 +261,8 @@ internal fun MainActivity.buildAbout(): View {
         }
     }
     sup = row("") {
-        sup.isEnabled = false
-        Thread { val s = PhoneSupport.act(this, "state").takeIf { it.optBoolean("open") } ?: PhoneSupport.act(this, "start"); ui.post { sup.isEnabled = true; supShow(s) } }.start()
+        fun go(said: dev.tvremote.core.SupportRelay.Said) { sup.isEnabled = false; Thread { val s = PhoneSupport.act(this, "state").takeIf { it.optBoolean("open") } ?: PhoneSupport.act(this, "start", said); ui.post { sup.isEnabled = true; supShow(s) } }.start() }
+        if (PhoneSupport.relay(this).open()) go(dev.tvremote.core.SupportRelay.Said.NONE) else askSaid { go(it) }
     }
     box.addView(sup)
     box.addView(note(T("support.app_sub")))

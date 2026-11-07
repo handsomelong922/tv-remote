@@ -39,6 +39,8 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
 import dev.tvremote.core.adb.AdbLink
+import dev.tvremote.phone.remote.kindOf
+import dev.tvremote.phone.remote.kindOff
 import dev.tvremote.core.web.HttpServer
 import dev.tvremote.core.manage.Manage
 import dev.tvremote.core.ontv.RemoteLabels
@@ -104,7 +106,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 if (w === this@Managing.web) a.ui.post { rebuild() }
                 return true
             }
-            override fun onPageFinished(w: WebView?, url: String?) { pending?.let { pending = null; this@Managing.web.evaluateJavascript(it, null) }; cover(coverB, true) }
+            override fun onPageFinished(w: WebView?, url: String?) { pending?.let { pending = null; this@Managing.web.evaluateJavascript(ours(it), null) }; cover(coverB, true) }
         }
         web.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(w: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
@@ -204,6 +206,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     /** Shows the page for [tvHost], on [tab] when one is named ("auto", "apps"...). */
     fun open(tvHost: String?, tab: String? = null, then: String? = null) {
         if (tvHost == null) return
+        if ((a.basic?.kind ?: a.kindOf(a.entry ?: tvHost)) != dev.tvremote.core.remote.Remote.Kind.ANDROID) { a.kindOff(); return }   // LG / Samsung / Roku / VIDAA: this page works over ADB, which they lack: no connect attempt, no ADB help
         lastTab = tab; lastThen = then
         try {
             if (http == null) {
@@ -224,7 +227,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             } else {
                 link?.check()                                         // the same TV again: make sure its connection still answers
                 if (tab != null) web.evaluateJavascript("showTab('" + tab.filter { it.isLetter() } + "')", null)
-                if (then != null) web.evaluateJavascript(then, null)
+                if (then != null) web.evaluateJavascript(ours(then), null)
             }
             view.visibility = View.VISIBLE
             web.onResume()
@@ -302,7 +305,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             return HttpServer.Response.json(JSONObject().put("core", "phone").put("host", forHost ?: "").put("name", a.name(forHost ?: "")).put("connected", true).put("is_on", true).put("paired", true)
                 .put("adb", JSONObject().put("state", manage?.adbState() ?: "unknown")).put("app_name", "TV Remote").put("version", a.version()).put("released", a.released()))
         if (r.path == "/api/support/app")                              // About: let support look at this phone app (PhoneSupport)
-            return HttpServer.Response.json(PhoneSupport.act(a, if (r.method == "POST") r.json().optString("act") else "state"))
+            return HttpServer.Response.json(PhoneSupport.act(a, if (r.method == "POST") r.json().optString("act") else "state", if (r.method == "POST") dev.tvremote.core.SupportRelay.Said.of(r.json()) else dev.tvremote.core.SupportRelay.Said.NONE))
         if (r.path == "/api/phone/back" && r.method == "POST") {       // a dialog opened from the remote (AdbHelp.kt adbSteps) was closed: straight back to it
             a.ui.post { back() }
             return HttpServer.Response.json(JSONObject())
@@ -382,4 +385,8 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             report(if (ok) "done" else "error", 100, result)
         }.start()
     }
+
+    /** Script the app runs in the page: its stack is only "<anonymous>" frames, which the error box drops as a hosting app's own (Zalo);
+     *  one frame of ours added, so a renamed or missing page function still shows a box and reaches census. */
+    private fun ours(js: String) = "try{$js\n}catch(e){if(e&&e.stack)try{e.stack+='\\n    at phone (phone://then:1:1)'}catch(x){}throw e}"
 }

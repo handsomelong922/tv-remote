@@ -1,4 +1,5 @@
 package dev.tvremote.core.manage
+import dev.tvremote.core.ontv.TvUser
 import dev.tvremote.core.B64
 import dev.tvremote.core.Words
 import dev.tvremote.core.adb.Adb
@@ -59,7 +60,7 @@ internal class SetupApi(core: ManageCore, private val copy: TvCopy) : ManagePart
                 if (k == "home") homeSet(v, r.lang) else text(TvShell.tvset(k, v), 60000) }
             "rules" -> HttpServer.Response.json(rules(r.json()))
             "telegram" -> HttpServer.Response.json(telegram(r))
-            "support/tv" -> HttpServer.Response.json(supportTv(r.json().optString("act")))
+            "support/tv" -> HttpServer.Response.json(supportTv(r.json().optString("act"), r.json()))
             "welcome" -> HttpServer.Response.json(Welcome.call({ sh(it) }, r.json()))
             "setup" -> { val d = r.json(); HttpServer.Response.json(setup(d.optString("mode") == "undo", d.optString("lang").takeIf { it.isNotEmpty() }?.let(Words::pick) ?: r.lang, choice(d))) }
             "setup/update" -> HttpServer.Response.json(setupUpdate())
@@ -92,8 +93,8 @@ internal class SetupApi(core: ManageCore, private val copy: TvCopy) : ManagePart
         if (pkg in Setup.LAUNCHER && swapped) {
             swap.rollback("user")
             if (swap.homeNow().substringBefore('/') != pkg)            // rollback chose the one before, not the one picked
-                sh("c=\$(cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep -m1 '$pkg/'); " +
-                    "[ -n \"\$c\" ] && cmd package set-home-activity \$c >/dev/null 2>&1")
+                dev.tvremote.core.adb.Activities(::sh).query("android.intent.action.MAIN", "HOME")?.firstOrNull { it.startsWith("$pkg/") }
+                    ?.let { sh("cmd package set-home-activity $it >/dev/null 2>&1") }
         } else if (pkg !in Setup.LAUNCHER && (swapped || stockOn())) {
             if (!swap.take(pkg)) {
                 val why = swap.refused.ifEmpty { swap.state()?.why ?: "" }   // the Wi-Fi or casting the wizard holds: what to do about it, not only "refused"
@@ -107,7 +108,7 @@ internal class SetupApi(core: ManageCore, private val copy: TvCopy) : ManagePart
 
     /** Whether one of the TV's own launchers ([Setup.LAUNCHER]) is on: then it, not the HOME role, decides where Home lands. */
     private fun stockOn(): Boolean {
-        val on = sh("pm list packages -e").split("\n").map { it.removePrefix("package:").trim() }
+        val on = sh(TvUser.list("-e")).split("\n").map { it.removePrefix("package:").trim() }
         return Setup.LAUNCHER.any { it in on }
     }
 
@@ -272,8 +273,9 @@ internal class SetupApi(core: ManageCore, private val copy: TvCopy) : ManagePart
      * Let support look at the TV (TV Setup's Support, RulesReceiver "support"): [act] "start", "stop" or "state". The answer is
      * `{open, code, min, left}`, or `{failed: "no_net" | "none_left" | why}`; the browser of the TV has its own route (RemoteService).
      */
-    private fun supportTv(act: String): JSONObject {
+    private fun supportTv(act: String, said: JSONObject? = null): JSONObject {
         val ask = JSONObject().put("do", "support").put("act", act)
+        said?.let { ask.put("problem", it.optString("problem")).put("text", it.optString("text")) }   // an older TV Setup ignores them
         var out = RulesClient.call({ sh(it) }, ask)
         if (out.optString("setup") == "busy") { sh(RulesClient.START); Thread.sleep(2500); out = RulesClient.call({ sh(it) }, ask) }
         val setup = out.optString("setup")

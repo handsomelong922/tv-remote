@@ -57,6 +57,7 @@ import dev.tvremote.home.R
  *   lunar   the lunar date, the next full moon or new month, the days to Tết ([Lunar], worked out here)
  *   timer   the sleep timer or bedtime and the time left (TV Setup's rules, through the same provider); none while neither is set
  *   prayer  the five prayers and the sunrise of today at the weather's place, the next one with its countdown, the Hijri date ([Prayer], offline)
+ *   frame   the person's own photos one after another with a fade ([FrameView], HomeConfig "frame"); kept across the minute's rebuild
  *   note    the family's note (HomeConfig "note"), while there is one
  *   qr1..4  QR widgets (HomeConfig "qrs", [QrView]): big by default, the glass widget with only the code on white
  */
@@ -126,6 +127,43 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                 c.add(Calendar.DAY_OF_MONTH, 1)
             }
             return Moon(day, full, new, tet, Holidays.next(today))
+        }
+
+        /** "3d 17h", "5h 12m", "42m". */
+        fun spanOf(ms: Long): String {
+            val m = ms / 60_000
+            return when {
+                m >= 1440 -> "${m / 1440}d ${m % 1440 / 60}h"
+                m >= 60 -> "${m / 60}h ${m % 60}m"
+                else -> "${m}m"
+            }
+        }
+
+        /** Widgets whose words count the minutes (a countdown, "5 min ago", the headline that turns every 2 min): redrawn each minute. */
+        private val MINUTELY = setOf("timer", "prayer", "news")
+
+        /**
+         * What [show] draws from [f] at [now], as a string ([look]: the settings and the row's size): the same string, the minute's read
+         * leaves the row alone (it was torn down and built again every 60 s, ~480 times in 8 h of a TV left on Home). Each part is the
+         * value as drawn (a percent, the uptime's words); the date and hour always (calendar, lunar, the weekday letters, weather's "as of").
+         */
+        fun drawn(want: List<String>, f: Facts, now: Calendar, look: String): String {
+            val gb = 1024.0 * 1024 * 1024
+            fun pct(p: Pair<Long, Long>) = if (p.second > 0) Math.round(p.first * 100.0 / p.second) else -1L
+            val s = StringBuilder(look).append('|').append(want.joinToString(","))
+            s.append('|').append(now.get(Calendar.YEAR)).append('-').append(now.get(Calendar.DAY_OF_YEAR)).append('-').append(now.get(Calendar.HOUR_OF_DAY))
+            if (want.any { it in MINUTELY }) s.append(':').append(now.get(Calendar.MINUTE))
+            s.append('|').append(pct(f.ram)).append(',').append(Math.round(f.ram.first * 10 / gb)).append(',').append(f.ram.second)
+                .append(',').append(pct(f.disk)).append(',').append(Math.round(f.disk.first / gb)).append(',').append(f.disk.second)
+            s.append('|').append(f.ip).append(f.eth).append(f.rssi).append(f.link).append(f.dns).append(f.adb).append(f.adbPort)
+            s.append('|').append(spanOf(f.up)).append(',').append(f.cpu?.let { Math.round(it * 100) }).append(',').append(f.cores).append(',').append(f.cpuWhy)
+            s.append('|').append(f.usage).append('|').append(f.recent).append('|').append(f.timer).append('|').append(f.icons.keys.sorted())
+            f.wx?.let { w -> s.append("|wx").append(w.at).append(w.place).append(w.temp).append(w.kind).append(w.night).append(w.days.size) }
+            f.air?.let { r -> s.append("|air").append(r.at).append(',').append(r.aqi).append(',').append(r.pm25) }
+            f.market?.let { m -> s.append("|mk").append(m.ratesAt).append(',').append(m.goldAt).append(',').append(m.btcAt).append(',').append(m.fuelAt) }
+            s.append("|nw").append(f.news.size); f.news.firstOrNull()?.let { s.append(it.at).append(it.title) }
+            f.moon?.hol?.let { s.append("|hol").append(it.key).append(it.days) }
+            return s.toString()
         }
     }
 
@@ -215,6 +253,12 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     internal var lastRx = -1L; internal var lastTx = -1L; internal var lastAt = 0L
     internal var speed: TextView? = null; internal var speedUp: TextView? = null
     internal var ghzMemo: Float? = null
+
+    /** The photo frame, kept from one [show] to the next (its picture and its timer go on); null while the widget is off. */
+    private var frame: FrameView? = null
+    /** Home left / back in front (onPause / onResume): the frame's swap timer stops and starts with it. */
+    fun paused(p: Boolean) { pausedNow = p; frame?.resumed = !p }
+    private var pausedNow = false
 
     init {
         orientation = HORIZONTAL; clipChildren = false; clipToPadding = false
@@ -316,6 +360,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         val packed = if (side) HomeConfig.packColumn(keys, big, noteView != null, Math.round((if (roomPx > 0) roomPx else a.resources.displayMetrics.heightPixels * 2 / 3) / a.resources.displayMetrics.density))
             else HomeConfig.pack(keys, big, noteView != null)
         placed = keys - packed.waiting.toSet()
+        if ("frame" !in placed) { frame?.release(); frame = null }       // off, or no room: nothing held, no timer
         if (packed.cols.isEmpty()) { placed = emptyList(); visibility = View.GONE; return }
         fun plain(k: String, alone: Boolean): View? = when (k) {
             "lunar" -> f.moon?.let { lunar(it) }; "timer" -> timerView
@@ -333,7 +378,11 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             col.keys.forEachIndexed { j, k ->
                 val alone = col.keys.size == 1 && !(side && col.keys[0] !in big)   // a lone widget has the column's whole height; in a side column a small one is a half-height pill
                 val full = alone && w >= dp(FULL_MIN)                  // alone it has the whole height: the full form, small or big (a small one alone was a tall card with half its words, 2026-11-05)
-                val v: View = if (tonal(k)) tonalWidget(!full).also { c -> tonalFill(k, c, f, w, !full, label, qrs) }     // one path for every widget: a figure, a caption, a badge
+                val v: View = if (k == "frame") (frame ?: FrameView(a, dp).also { frame = it; it.resumed = !pausedNow }).also { fv ->
+                    (fv.parent as? ViewGroup)?.removeView(fv)                // last minute's column
+                    fv.set(HomeConfig.frame(Store.get(a).optJSONArray("frame")), FrameShow.everyMs(opt("frame", "every")), w,
+                        if (side) dp(col.weight) / col.keys.size else if (alone) dp(BIG_H) else (dp(BIG_H) - dp(12)) / 2)
+                } else if (tonal(k)) tonalWidget(!full).also { c -> tonalFill(k, c, f, w, !full, label, qrs) }     // one path for every widget: a figure, a caption, a badge
                 else if (k in BIG) widget().also { c ->
                     if (full) when (k) {
                         "system" -> system(c, f, w)
@@ -475,15 +524,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         companion object { const val WIDE_DP = 320 }
     }
 
-    /** "3d 17h", "5h 12m", "42m". */
-    internal fun span(ms: Long): String {
-        val m = ms / 60_000
-        return when {
-            m >= 1440 -> "${m / 1440}d ${m % 1440 / 60}h"
-            m >= 60 -> "${m / 60}h ${m % 60}m"
-            else -> "${m}m"
-        }
-    }
+    internal fun span(ms: Long) = spanOf(ms)
 
     /** A widget's "look" when it is "solid" or "none" (glass is how [widget], [pill] and the clock are made; tonal is its own widget). */
     private fun bare(v: View, k: String) {

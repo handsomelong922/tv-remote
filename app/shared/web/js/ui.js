@@ -64,7 +64,7 @@ const ICON = {
   '🧭': ['compass', 175], '🖥️': ['monitor', 210], '🚀': ['rocket', 265], '⌨️': ['keyboard', 230], '🎬': ['scene', 300], '📹': ['camera', 330], '📷': ['camera', 330], '🎞️': ['scene', 300],
   '🌙': ['moon', 250], '😴': ['timer', 280], '⏳': ['hourglass', 38], '🔊': ['vol_up', 160], '🔇': ['mute', 160], '⚡': ['zap', 45], '🔅': ['sun', 45],
   '🌐': ['globe', 200], '🛡️': ['shield', 150], '👁️': ['eye', 210], '🔁': ['refresh', 200], '🔄': ['refresh', 200], '↻': ['refresh', 200],
-  '⚙️': ['gauge', 30], '📊': ['chart', 210], '📶': ['wifi', 190], '🧩': ['cpu', 275], '⬇️': ['download', 205], '⬇': ['download', 205],
+  '⚙️': ['gauge', 30], '📊': ['chart', 210], '📶': ['wifi', 190], '🧩': ['cpu', 275], '🧠': ['memory', 300], '⬇️': ['download', 205], '⬇': ['download', 205],
   '⬆️': ['upload', 205], '📥': ['upload', 205], '📦': ['package', 30], '🖼️': ['image', 330], '🔠': ['type', 230], '🏠': ['home', 140],
   '💤': ['power', 260], '🗂️': ['files', 38], '❓': ['help', 0], 'ℹ️': ['info', 210], '✏️': ['pen', 40], '✎': ['pen', 40],
   '🔍': ['search', 210], '🗑': ['trash', 0], '📋': ['clipboard', 210], '🧹': ['sparkle', 180], '🔥': ['flame', 15], '💾': ['save', 210],
@@ -124,10 +124,17 @@ new MutationObserver((list) => { for (const m of list) m.type === 'characterData
 // a row of chips wider than its card scrolls sideways: the chosen one brought into view, the side with more faded, and the
 // mouse wheel turned sideways over it (a computer has no swipe)
 const CHIP_ROWS = '.places, .fchips, .seg, nav.tabs', chipSeen = new WeakSet();
-const chipEdges = (r) => { const more = r.scrollWidth - r.clientWidth > 2;
-  r.classList.toggle('more-l', more && r.scrollLeft > 2); r.classList.toggle('more-r', more && r.scrollLeft < r.scrollWidth - r.clientWidth - 2); };
+// right to left (Arabic), a row starts at its right and scrollLeft runs from 0 there down to minus the overflow: the far side is
+// measured from where the row starts, and the chosen chip is brought in by its place on screen
+const RTL = () => document.documentElement.dir === 'rtl';
+const chipEdges = (r) => { const max = r.scrollWidth - r.clientWidth, more = max > 2, pos = Math.abs(r.scrollLeft), rtl = RTL();
+  r.classList.toggle('more-l', more && (rtl ? pos < max - 2 : pos > 2)); r.classList.toggle('more-r', more && (rtl ? pos > 2 : pos < max - 2)); };
+const chipBy = (r, c) => { const a = r.getBoundingClientRect(), b = c.getBoundingClientRect(); return { l: b.left - a.left, r: a.right - b.right }; };
 const chipFit = (r) => { const on = r.querySelector(':scope > .on, :scope > [aria-selected=true]');
-  if (on && r.scrollWidth > r.clientWidth) r.scrollLeft = Math.max(0, on.offsetLeft - r.offsetLeft - (r.clientWidth - on.offsetWidth) / 2);
+  if (on && r.scrollWidth > r.clientWidth) {
+    if (RTL()) { const d = chipBy(r, on); r.scrollLeft += (d.l - d.r) / 2; }
+    else r.scrollLeft = Math.max(0, on.offsetLeft - r.offsetLeft - (r.clientWidth - on.offsetWidth) / 2);
+  }
   chipEdges(r); };
 const chipObs = new ResizeObserver((list) => list.forEach((e) => chipFit(e.target)));
 function chipRows(n) {
@@ -140,6 +147,7 @@ function chipRows(n) {
         const left = r.scrollLeft; r.scrollLeft += e.deltaY; if (r.scrollLeft !== left) e.preventDefault(); }, { passive: false });
       r.addEventListener('focusin', (e) => {   // the D-pad or Tab on a chip half under the fade: browsers leave it there
         let c = e.target; while (c && c.parentElement !== r) c = c.parentElement; if (!c) return; const room = 40;
+        if (RTL()) { const d = chipBy(r, c); if (d.l < room) r.scrollLeft -= room - d.l; else if (d.r < room) r.scrollLeft += room - d.r; return; }
         const x = c.offsetLeft - r.offsetLeft, w = c.offsetWidth;
         if (x - room < r.scrollLeft) r.scrollLeft = x - room; else if (x + w + room > r.scrollLeft + r.clientWidth) r.scrollLeft = x + w + room - r.clientWidth; }); }
     requestAnimationFrame(() => chipFit(r));

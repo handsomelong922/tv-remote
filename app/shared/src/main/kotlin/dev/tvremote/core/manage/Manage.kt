@@ -61,7 +61,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private val files by lazy { FilesApi(core, copy, installs, setupApi) }
     private val apps by lazy { AppsApi(core) }
     private val healthApi by lazy { HealthApi(core) }
-    private val parts by lazy { listOf(apps, files, installs, healthApi, setupApi, HomeApi(core), copy, AdbApi(core)) }
+    private val parts by lazy { listOf(apps, files, installs, healthApi, setupApi, HomeApi(core), copy, AdbApi(core), BackupApi(core, apps)) }
 
     private val playing = helper?.let { NowPlaying({ link.get() }, it) }      // the now playing bar: null where tvr-helper.jar is not at hand
     private val kbdReader = dev.tvremote.core.adb.TvKeyboard.Reader()   // /api/tvkbd: the proto, or the text dump on a TV without it
@@ -262,7 +262,14 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         } catch (e: IOException) {
             // GitHub or the site out of reach is not the TV's ADB: 503 "adb: …" made the page say ADB was not on yet
             if (dev.tvremote.core.Errors.fromInternet(e)) return HttpServer.Response.error(502, "net: " + e.javaClass.simpleName + ": " + e.message)
-            return HttpServer.Response.error(503, if (link.waitingForUser()) "adb:allow" else "adb: " + e.message)
+            // a step's own code ("games:missing", "home:frame_full"): the TV answered, so not ADB either; friendly() has its words
+            // (as "adb: games:missing" the page said "no ADB connection to the TV yet", support 11223000)
+            val why = e.message ?: e.javaClass.simpleName                 // never "adb: null"
+            if (APP_CODE.containsMatchIn(why)) return HttpServer.Response.error(422, why)
+            // the link still works: the TV answered, the step failed ("pin_bad_link", "the TV did not answer", a full disk on
+            // this side); a regex of codes missed every one without a colon, and each one read "no ADB connection to the TV yet"
+            if (link.up() && !link.waitingForUser()) return HttpServer.Response.error(422, why)
+            return HttpServer.Response.error(503, if (link.waitingForUser()) "adb:allow" else "adb: $why")
         }
     }
 
@@ -300,13 +307,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     fun adbState(): String = link.state()
 
     @Throws(IOException::class)
-    private fun sh(cmd: String): String = link.get().shell(cmd)
+    private fun sh(cmd: String): String = link.shell(cmd)   // one redial when the TV dropped the link (AdbLink.shell)
 
     // ---------------------------------------------------------------- terminal
     /** Runs one command as the TV's shell user and returns what it printed (at most 30 s and 200 KB). */
     private fun shell(cmd: String): HttpServer.Response {
         if (cmd.trim().isEmpty()) throw IllegalArgumentException("empty command")
-        val s = link.get().open("shell:$cmd 2>&1")
+        val s = link.open("shell:$cmd 2>&1")
         val out = ByteArrayOutputStream()
         val b = ByteArray(16384)
         val until = System.nanoTime() / 1_000_000 + 30000
@@ -326,6 +333,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     companion object {
+        /** A step's own error code ("games:missing", "home:frame_full", "launcher:install:…"), not ADB's words ("refused: shell:…", "adb pair: …"). */
+        val APP_CODE = Regex("^(?!adb)[a-z]+:[a-z_]+")
+
         /** `/api/app/meta` and each app of `/api/apps`: its name (the package's last part without one), whether it has a picture, and [Labels.stamp] as "iv". */
         fun meta(labels: Labels?, pkg: String): JSONObject {
             val label = try { labels?.label(pkg) } catch (e: Exception) { null }

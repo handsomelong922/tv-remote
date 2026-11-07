@@ -9,6 +9,8 @@ Read [README.md](README.md) first: change the row a fault belongs to, and this f
 
 **Tests:** `app/tvsetup/src/test/kotlin/dev/tvremote/setup/MicVoiceTest.kt`, `app/tvsetup/src/test/kotlin/dev/tvremote/setup/home/HomeControlTest.kt`, `app/tvvoice/src/test/kotlin/dev/tvremote/setup/voice/VoiceProtocolTest.kt`; the numbers: `dev/test/voice_wer.py`.
 
+Turning Google's own listener off or back on (`MicVoice`) acts on the user in front (`TvUser`, Google TV profiles; dev/decisions/tv-setup.md "Profiles").
+
 ## The goal, for the person
 
 Press the remote's mic button, say a command, the TV does it: with Google's recognizer where the TV has one (it understands any
@@ -79,9 +81,10 @@ is still poor in real use, the next step is Google's recognizer for searches onl
 | 5 | has a recognizer, stalls | off | one fresh try with Google's; nothing again → "Didn't catch that" |
 | 6 | none (a box without Google, Google app switched off) | on | TV Setup Voice listens, with the commands, this TV's apps and scenes as its words (`MicVoice.words`) |
 | 7 | none | off | "No speech recognizer on this TV" and the key goes to the TV for 10 min; the page's switch is the way out |
-
-| 8 | any, `mic_engine` "tv" and the add-on ready | on | TV Setup Voice listens first (`MicActivity.tvFirst`); Google's is not asked |
-| 9 | any, `mic_engine` "tv" but the add-on removed / failed | any | as rows 1-7 (`MicVoice.offline` null) |
+| 8 | has a recognizer; TV Setup Voice listens (row 3, 4 or 10) but its model or word list does not load (corrupt or missing files) | on | `VoiceService` answers `VoiceProtocol.ERROR_NO_MODEL` (not ERROR_SERVER); TV Setup asks the TV's own at once, "say it again" on the card (`MicActivity.noModel`, `MicVoice.useAddon`), once per press; it fails too = as row 1 (before: "Speech model could not load" and 10 min of nothing though Google's worked) |
+| 9 | none, and the model does not load | on | the card says "Speech model could not load", the key goes to the TV for 10 min like the other failures (`MicVoice.broke`); no network wording |
+| 10 | any, `mic_engine` "tv" and the add-on ready | on | TV Setup Voice listens first (`MicActivity.tvFirst`); Google's is not asked (unless row 8) |
+| 11 | any, `mic_engine` "tv" but the add-on removed / failed | any | as rows 1-7 (`MicVoice.offline` null) |
 
 ## How the mic key reaches TV Setup (before any row above), by what the TV allows
 

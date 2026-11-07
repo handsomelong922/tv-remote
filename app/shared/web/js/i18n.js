@@ -36,6 +36,9 @@ const LANGS = (() => {
     location.reload();
   };
   document.documentElement.lang = LANG;
+  // right to left for a language written so (Arabic): told by its own name in langs.json, so a new one needs no list here.
+  // css/rtl.css turns the page; the remote's keys and the TV's picture keep their sides (◀ is the TV's left in every language)
+  document.documentElement.dir = /[֐-ࣿיִ-﷿ﹰ-ﻼ]/.test(LANGS[LANG] || '') ? 'rtl' : 'ltr';
   try { document.cookie = 'tvr-lang=' + LANG + '; path=/; max-age=31536000; SameSite=Strict'; } catch {}   // the server's words come in it (Words.kt)
 
   // read at once, as remote.json is: the page is drawn in its words from the first frame. ?v= of this script: an update brings new words
@@ -43,13 +46,18 @@ const LANGS = (() => {
   const load = (l) => {
     try { const x = new XMLHttpRequest(); x.open('GET', 'i18n/' + l + '.json' + v, false); x.send(); return x.status === 200 ? JSON.parse(x.responseText) : {}; } catch { return {}; }
   };
-  const books = [...new Set([LANG, 'en', 'vi'])].map(load);
+  // only the viewer's language before the first paint; English, then Vietnamese, the first time an id is missing from it (a
+  // language a few ids behind): one blocking read instead of three
+  const order = [...new Set([LANG, 'en', 'vi'])], books = [load(order[0])];
   let rule = null;
   try { rule = new Intl.PluralRules(LANG); } catch {}
   /** The words of [id] in the viewer's language; {name} in them is args.name; a { one, other } entry is picked by args.n. */
   window.T = (id, args) => {
     let s;
-    for (const b of books) if (Object.prototype.hasOwnProperty.call(b, id)) { s = b[id]; break; }
+    for (let i = 0; i < order.length; i++) {
+      if (i === books.length) books.push(load(order[i]));
+      if (Object.prototype.hasOwnProperty.call(books[i], id)) { s = books[i][id]; break; }
+    }
     if (s == null) return id;
     if (typeof s === 'object') s = s[rule && args && args.n != null ? rule.select(Number(args.n)) : 'other'] ?? s.other;
     return args ? s.replace(/\{(\w+)\}/g, (m, k) => (k in args ? String(args[k]) : m)) : s;

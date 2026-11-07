@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="css/health.css">
 <link rel="stylesheet" href="css/setup.css">
 <link rel="stylesheet" href="css/auto.css">
+<link rel="stylesheet" href="css/rtl.css">
 <link rel="stylesheet" href="css/kit.css">
 <script src="js/old.js"></script>
 <script src="js/theme.js"></script>
@@ -42,6 +43,7 @@
       <span class="chip" id="chipTv"><i></i><span>TV: ...</span></span>
       <span class="chip" id="chipAdb"><i></i><span>ADB: ...</span></span>
       <button class="small" id="switchtv" data-for="pc" title="Chọn TV khác, tìm TV mới" data-i18n-title="page.choose_another_tv_find"><span class="ico">📺</span><span class="lbl" data-i18n="page.change_tv"> Đổi TV</span></button>
+      <button class="small" id="suptv" data-needs="adb" title="Người hỗ trợ đọc trạng thái và nhật ký của TV 30 phút, không đổi gì. Bạn đọc cho họ mã 8 số." data-i18n-title="support.tv_note"><span class="ico">👁️</span><span class="lbl" data-i18n="support.short"> Hỗ trợ</span></button>   <!-- up here: people asked to read a code out should not hunt for it -->
       <button class="small" id="aboutbtn" data-for="pc tv" title="Cài đặt, giới thiệu" data-i18n-title="page.settings_about"><span class="ico">🛠️</span><span class="lbl" data-i18n="page.settings"> Cài đặt</span></button>
     </div>
   </header>
@@ -109,6 +111,7 @@
       <section class="card">
         <div class="card-head"><h2 data-i18n="page.find_a_tv">🔍 Tìm TV</h2><button class="small primary" id="scan" data-i18n="page.scan">🔍 Quét mạng</button></div>
         <p class="note" id="scaninfo"></p>
+        <div class="actions" id="scannone" hidden><button class="primary" id="scaninstall" data-i18n="setup.none_install">📺 Cài lên TV</button><button id="scanip" data-i18n="setup.none_ip">⌨️ Nhập IP</button><button id="scanagain" data-i18n="setup.none_again">↻ Quét lại</button></div>   <!-- nothing found: the next steps, not a dead end -->
         <form class="line" id="ipf"><input id="ipin" placeholder="Nhập IP của TV, vd 192.168.1.88" title="Xem IP trên TV: Cài đặt → Mạng và Internet → bấm vào tên Wi-Fi đang kết nối." autocomplete="off" inputmode="decimal" data-i18n-title="page.to_see_the_ip" data-i18n-placeholder="page.type_the_tv"><button class="primary" data-i18n="page.connect">Kết nối</button></form>
         <div class="list" id="scanlist"></div>
       </section>
@@ -116,7 +119,7 @@
   </div>
 
   <nav class="tabs" role="tablist">
-    <button role="tab" data-tab="remote" data-for="pc tv" aria-selected="true"><span class="ico">🎮</span><span class="lbl"> Remote</span></button>
+    <button role="tab" data-tab="remote" data-for="pc tv" aria-selected="true"><span class="ico">🎮</span><span class="lbl" data-i18n="page.tab_remote"> Remote</span></button>
     <button role="tab" data-tab="apps" data-needs-adb data-needs="adb" aria-selected="false"><span class="ico">📱</span><span class="lbl" data-i18n="page.apps"> Ứng dụng</span><span class="needs" data-i18n="page.needs_adb">cần ADB</span></button>
     <button role="tab" data-tab="files" data-needs-adb data-needs="adb" aria-selected="false"><span class="ico">📁</span><span class="lbl" data-i18n="page.files"> Tệp</span><span class="needs" data-i18n="page.needs_adb">cần ADB</span></button>
     <button role="tab" data-tab="health" data-needs-adb data-needs="adb" aria-selected="false"><span class="ico">🩺</span><span class="lbl" data-i18n="page.health"> Sức khỏe</span><span class="needs" data-i18n="page.needs_adb">cần ADB</span></button>
@@ -126,6 +129,10 @@
 
   <!-- ============ Remote ============ -->
   <div class="panel" data-panel="remote" data-for="pc tv">
+    <section class="card" id="simple" data-needs="control" hidden aria-label="Remote đơn giản" data-i18n-aria-label="rkey.simple">   <!-- the Simple remote: remote.json "simple", js/remote.js setSimple -->
+      <button class="small" id="simpleexit" title="Giữ nút 2 giây để thoát" data-i18n-title="simple.hold" data-i18n="simple.exit">Thoát remote đơn giản</button>
+      <div class="simplekeys" id="simplekeys"></div>
+    </section>
     <div class="remote-grid">
       <div class="col">
         <section class="card" id="screencard" data-needs="adb" aria-label="Màn hình TV" data-i18n-aria-label="remote.tv_screen">
@@ -145,7 +152,7 @@
           <div class="screenbox" id="screenbox"><img id="screen" alt="Màn hình TV" hidden data-i18n-alt="remote.tv_screen"><video id="screenv" muted playsinline autoplay hidden></video><canvas id="screenc" hidden></canvas><div class="ph" id="screenph"></div><span class="watchers" id="watchers" hidden></span><canvas id="drawcv" hidden></canvas><div class="blackhint" id="screenblack" hidden><span data-i18n="remote.the_tv_does_not">TV không cho chiếu hình lên đây</span><small data-i18n="remote.the_tv_s_chip">(do chip của TV hoặc phim có bản quyền)</small></div><div class="blackhint enc" id="screenblackenc" hidden><span data-i18n="screen.black_try_sw">Chỉ thấy màn hình đen? Bộ mã hoá của TV có thể đang gửi hình đen.</span><button class="small" id="screenblacksw" data-i18n="screen.use_software">Dùng Phần mềm</button></div></div>
           <div class="drawbar" id="drawbar" hidden>
             <span class="pickc"><button class="swatch" id="drawcolor" style="--c:#ff3b30" aria-label="Màu" title="Màu" data-i18n-title="remote.colour" data-i18n-aria-label="remote.colour"></button><span class="swatches" id="drawcolors" hidden><button class="swatch on" data-color="#ff3b30" style="--c:#ff3b30" aria-label="Đỏ" title="Đỏ" data-i18n-title="remote.red" data-i18n-aria-label="remote.red"></button><button class="swatch" data-color="#ff9f0a" style="--c:#ff9f0a" aria-label="Cam" title="Cam" data-i18n-title="remote.orange" data-i18n-aria-label="remote.orange"></button><button class="swatch" data-color="#ffd60a" style="--c:#ffd60a" aria-label="Vàng" title="Vàng" data-i18n-title="remote.yellow" data-i18n-aria-label="remote.yellow"></button><button class="swatch" data-color="#32d74b" style="--c:#32d74b" aria-label="Xanh lá" title="Xanh lá" data-i18n-title="remote.green" data-i18n-aria-label="remote.green"></button><button class="swatch" data-color="#40c8ff" style="--c:#40c8ff" aria-label="Xanh dương" title="Xanh dương" data-i18n-title="remote.blue" data-i18n-aria-label="remote.blue"></button><button class="swatch" data-color="#0a5cff" style="--c:#0a5cff" aria-label="Xanh đậm" title="Xanh đậm" data-i18n-title="remote.dark_blue" data-i18n-aria-label="remote.dark_blue"></button><button class="swatch" data-color="#bf5af2" style="--c:#bf5af2" aria-label="Tím" title="Tím" data-i18n-title="remote.purple" data-i18n-aria-label="remote.purple"></button><button class="swatch" data-color="#ff6ac1" style="--c:#ff6ac1" aria-label="Hồng" title="Hồng" data-i18n-title="remote.pink" data-i18n-aria-label="remote.pink"></button><button class="swatch" data-color="#ffffff" style="--c:#ffffff" aria-label="Trắng" title="Trắng" data-i18n-title="remote.white" data-i18n-aria-label="remote.white"></button><button class="swatch" data-color="#000000" style="--c:#000000" aria-label="Đen" title="Đen" data-i18n-title="remote.black" data-i18n-aria-label="remote.black"></button><span class="sizes"><input type="range" id="drawwidth" min="20" max="250" step="10" value="60" aria-label="Độ dày nét" title="Độ dày nét" data-i18n-title="remote.line_size" data-i18n-aria-label="remote.line_size"><span class="dotbox"><i id="drawdot"></i></span></span></span></span>
-            <button class="small" id="drawpic" title="Đưa một ảnh trong máy lên TV" data-i18n-title="remote.put_a_picture_from" data-i18n="remote.picture">🖼️ Ảnh</button><button class="small" id="drawtext" title="Gõ một lời nhắn, hiện to trên TV" data-i18n-title="remote.type_a_message_shown" data-i18n="remote.text">💬 Chữ</button><input type="file" id="drawfile" accept="image/*" hidden>
+            <button class="small" id="drawpic" title="Đưa một ảnh trong máy lên TV" data-i18n-title="remote.put_a_picture_from" data-i18n="remote.picture">🖼️ Ảnh</button><button class="small" id="drawvid" title="Phát video hoặc camera trong một khung trên TV" data-i18n-title="remote.video_tip" data-i18n="remote.video">🎞️ Video</button><button class="small" id="drawtext" title="Gõ một lời nhắn, hiện to trên TV" data-i18n-title="remote.type_a_message_shown" data-i18n="remote.text">💬 Chữ</button><input type="file" id="drawfile" accept="image/*" hidden>
             <button class="small" id="drawundo" title="Bỏ nét vừa vẽ" data-i18n-title="remote.take_back_the_last">↩</button>
             <button class="small" id="drawclear" data-i18n="remote.clear_all">🗑 Xóa hết</button>
             <button class="small primary" id="drawdone" data-i18n="remote.done">✓ Xong</button>
@@ -160,7 +167,7 @@
         </section>
         <div data-adb-banner></div>
         <section class="card wide-only" data-needs="control">
-          <h2 data-i18n="remote.open_an_app">🚀 Mở ứng dụng <span class="muted adbnote lower" data-for="pc" data-i18n="remote.needs_adb">· cần ADB</span></h2>
+          <h2 data-i18n="remote.open_an_app">🚀 Mở app <span class="muted adbnote lower" data-for="pc" data-i18n="remote.needs_adb">· cần ADB</span></h2>
           <input id="quickq" type="search" placeholder="Tìm theo tên app" autocomplete="off" data-i18n-placeholder="common.search_by_app_name">
           <div class="tiles" id="quick"><div class="muted" data-i18n="remote.apps_appear_when_adb">Danh sách app hiện khi ADB sẵn sàng.</div></div>
         </section>
@@ -214,6 +221,7 @@
   <div class="panel" data-panel="kind" hidden><div id="kindtab"></div></div>
   <div class="panel" data-panel="apps" hidden>
     <div data-adb-banner></div>
+    <section class="card" id="appssusp" hidden><h2 data-i18n="health.susp_title">🔒 App bị chặn</h2><div id="appssuspl"></div></section>   <!-- the same card as Health's: a locked app is looked for here first -->
     <section class="card" data-adb-gated id="tvappscard">
       <h2 data-i18n="tvapps.title">📦 Kho app</h2>
       <p class="note" data-i18n="tvapps.note">App miễn phí, mã nguồn mở cho TV. Tải thẳng từ nhà làm app, cài một chạm.</p>
@@ -250,17 +258,17 @@
         </div>
         <p class="note" id="space"></p>
         <div class="list" id="fileslist"></div>
-        <label class="drop"><input type="file" id="upfile" multiple><span data-i18n="files.choose_files_to_send">＋ Chọn file gửi lên thư mục này<span class="fine" data-i18n="files.or_drop_them_here"> (hoặc kéo thả vào đây)</span></span></label>
+        <label class="drop"><input type="file" id="upfile" multiple><span data-i18n="files.choose_files_to_send">＋ Chọn tệp gửi lên thư mục này<span class="fine" data-i18n="files.or_drop_them_here"> (hoặc kéo thả vào đây)</span></span></label>
       </section>
       <div class="stack">   <!-- one column: opening the terminal does not send cards to the other one -->
         <section class="card">
-          <h2 data-i18n="files.download_to_the_tv">⬇️ Tải file về TV</h2>
+          <h2 data-i18n="files.download_to_the_tv">⬇️ Tải tệp về TV</h2>
           <form class="line" id="fetchf"><input id="fetchurl" placeholder="https://.../file.zip" inputmode="url" autocomplete="off"><button class="primary" data-i18n="files.download">⬇️ Tải</button></form>
         </section>
         <section class="card">
           <h2 data-i18n="files.install_an_apk">📦 Cài APK</h2>
-          <form class="line" id="instf"><input id="insturl" placeholder="Link tới file .apk, .apks, .xapk hoặc .apkm" inputmode="url" autocomplete="off" data-i18n-placeholder="files.link_to_an_apk"><button class="primary" data-i18n="files.install">📦 Cài</button></form>
-          <label class="drop" data-i18n="files.or_choose_an_apk"><input type="file" id="apkfile" accept=".apk,.apks,.xapk,.apkm,application/vnd.android.package-archive,application/zip,application/octet-stream">Hoặc chọn file .apk, .apks, .xapk, .apkm từ máy này</label>
+          <form class="line" id="instf"><input id="insturl" placeholder="Link tới tệp .apk, .apks, .xapk hoặc .apkm" inputmode="url" autocomplete="off" data-i18n-placeholder="files.link_to_an_apk"><button class="primary" data-i18n="files.install">📦 Cài</button></form>
+          <label class="drop" data-i18n="files.or_choose_an_apk"><input type="file" id="apkfile" accept=".apk,.apks,.xapk,.apkm,application/vnd.android.package-archive,application/zip,application/octet-stream">Hoặc chọn tệp .apk, .apks, .xapk, .apkm từ máy này</label>
         </section>
         <!-- Terminal: for people who know shell commands, so folded away -->
         <details class="card" id="termcard">
@@ -289,12 +297,28 @@
       <div id="hpriv" class="stack" hidden></div>
       <div id="hnow">
       <div class="muted" id="hwait" data-i18n="health.reading_from_the_tv">Đang đọc từ TV...</div>
-      <section class="card"><div class="card-head"><h2 data-i18n="health.overview">📊 Tổng quan</h2><span class="muted" id="hwhen"></span></div><div class="kv" id="hsum"></div><p class="note" id="hnight" hidden></p></section>
-      <section class="card"><div class="card-head"><h2 data-i18n="health.system_load">⚙️ Mức dùng của máy</h2><button type="button" class="small" id="freeram" data-i18n="health.free_up_ram">🧹 Dọn RAM</button></div><div id="hload"></div><h3 data-i18n="health.top_cpu_processes">🔥 Tiến trình tốn CPU nhất</h3><div class="ptable" id="htop"></div></section>
+      <div id="hsub" class="places" role="tablist"><button type="button" class="on" data-v="tv" data-i18n="health.sub_tv">📺 TV này</button><button type="button" data-v="cpu">🧩 CPU</button><button type="button" data-v="ram">🧠 RAM</button><button type="button" data-v="net" data-i18n="health.sub_net">📶 Mạng</button></div>
+      <div class="hpane" data-v="tv">
+      <section class="card"><div class="card-head"><h2 data-i18n="health.overview">📊 Tổng quan</h2><span class="muted" id="hwhen"></span></div><div class="rings" id="hrings"></div><div class="lchart" id="hnetchart"></div></section>
+      <section class="card"><h2 data-i18n="health.facts">ℹ️ Tình trạng</h2><div class="facts" id="hfacts"></div><p class="note" id="hnight" hidden></p></section>
+      <section class="card" id="hsusp" hidden><h2 data-i18n="health.susp_title">🔒 App bị chặn</h2><div id="hsuspl"></div></section>
       <section class="card" id="htempc" hidden><h2 data-i18n="health.temperature">🌡️ Nhiệt độ</h2><div class="kv" id="htemp"></div></section>
-      <section class="card"><div class="card-head"><h2 data-i18n="health.network">📶 Mạng</h2><button type="button" class="small" id="speedgo" data-i18n="speed.go">⚡ Đo tốc độ</button></div><div class="kv" id="hspeed" hidden></div><div class="kv" id="hrate"></div><div class="kv" id="hnet"></div></section>
       <section class="card" id="hbtc" hidden><h2>🔵 Bluetooth</h2><div class="kv" id="hbt"></div></section>
       <section class="card"><h2 data-i18n="health.hardware">🧩 Phần cứng</h2><div class="kv" id="hhw"></div></section>
+      </div>
+      <div class="hpane" data-v="cpu" hidden>
+      <section class="card"><h2>🧩 CPU</h2><div class="hlive" id="hcpu"></div></section>
+      <section class="card"><h2 data-i18n="health.cpu_apps">📱 App đang chạy</h2><div id="hcpuapps"></div></section>
+      </div>
+      <div class="hpane" data-v="ram" hidden>
+      <section class="card"><div class="card-head"><h2>🧠 RAM</h2><button type="button" class="small" id="freeram" data-i18n="health.free_up_ram">🧹 Dọn RAM</button></div><div class="hlive" id="hram"></div></section>
+      <section class="card"><h2 data-i18n="health.ram_apps">📱 App giữ bộ nhớ</h2><div id="hramapps"></div></section>
+      </div>
+      <div class="hpane" data-v="net" hidden>
+      <section class="card"><div class="card-head"><h2 data-i18n="health.network">📶 Mạng</h2><button type="button" class="small" id="speedgo" data-i18n="speed.go">⚡ Đo tốc độ</button></div><div class="kv" id="hspeed" hidden></div><div class="hlive" id="hnetlive"></div></section>
+      <section class="card"><h2>📡 Wi-Fi</h2><div class="kv" id="hnet"></div></section>
+      <section class="card"><h2 data-i18n="health.net_apps">📱 App dùng mạng</h2><div id="hnetapps"></div></section>
+      </div>
       </div>
     </div>
   </div>
@@ -317,6 +341,12 @@
         <div class="list" id="beds"></div>
         <p class="state" id="bedstate"></p>
         <div class="actions" id="bedacts"></div>
+      </section>
+      <section class="card" id="idlecard">
+        <h2 data-i18n="auto.idle_title">📺 Tự tắt khi không ai dùng</h2>
+        <p class="note" data-i18n="auto.idle_note">Quá số giờ này không bấm phím, TV hỏi “Còn xem không?” rồi tắt sau 1 phút. Xem phim mà không bấm phím cũng tính.</p>
+        <div class="fchips" id="idlehrs" role="group" aria-label="Số giờ không bấm phím" data-i18n-aria-label="auto.idle_hours_label"></div>
+        <p class="state" id="idlestate"></p>
       </section>
       <section class="card" id="limitcard">
         <div class="card-head"><h2 data-i18n="auto.daily_app_limits">⏳ Giới hạn app mỗi ngày</h2><button class="small primary" data-open="limitdlg" data-i18n="common.add">＋ Thêm</button></div>
@@ -379,7 +409,6 @@
       <section class="card" data-adb-gated id="tvsetcard">
         <div class="card-head"><h2>📺 TV</h2><button class="small" id="tvreboot" data-asks><span class="ico">🔁</span><span class="lbl" data-i18n="tv.restart_the_tv"> Khởi động lại TV</span></button></div>
         <div class="tvset" id="tvset"><div class="muted" data-i18n="tv.reading_the_tv_s">Đang đọc cài đặt TV...</div></div>
-        <div class="actions"><button class="small" id="suptv" title="Người hỗ trợ đọc trạng thái và nhật ký của TV 30 phút, không đổi gì. Bạn đọc cho họ mã 8 số." data-i18n-title="support.tv_note" data-i18n="support.this_tv">👁️ Cho hỗ trợ xem TV này</button></div>
       </section>
       <section class="card" data-adb-gated id="tscard" data-for="tv phone">
         <h2 data-i18n="tv.tailscale_control_away_from">🌐 Tailscale · điều khiển khi không ở nhà</h2>
@@ -410,6 +439,10 @@
           <button id="homeupd" hidden></button>
           <button id="launchback" data-i18n="launcher.back">Dùng màn hình chính gốc của TV</button>
         </div>
+      </section>
+      <section class="card" data-adb-gated id="backupcard">
+        <h2 data-i18n="backup.title">📦 Chuyển sang TV mới</h2>
+        <div class="stack" id="backup"></div>
       </section>
       <section class="card" data-adb-gated id="tvcopycard">
         <h2 data-i18n="tvcopy.title">📋 Chép cài đặt sang TV khác</h2>
@@ -575,12 +608,22 @@
   <div class="scenebox">
     <div class="presets" id="scenetpl"></div>
     <div class="line2"><input id="sceneicon" maxlength="4" aria-label="Biểu tượng" placeholder="🎬" data-i18n-aria-label="scenedlg.icon"><input id="scenename" maxlength="40" placeholder="Tên cảnh, vd Xem phim" data-i18n-placeholder="scenedlg.scene_name_e_g"></div>
-    <h3 data-i18n="scenedlg.say">Câu gọi</h3>
-    <input id="scenesay" maxlength="200" aria-label="Câu gọi" placeholder="vd bật phim, xem phim đi" data-i18n-aria-label="scenedlg.say" data-i18n-placeholder="scenedlg.say_e_g">
-    <p class="note" data-i18n="scenedlg.say_note">Nói câu này (hoặc gõ vào ô “Hỏi TV”) là cảnh chạy. Cách nhau bằng dấu phẩy, tối đa 5.</p>
     <h3 data-i18n="scenedlg.steps">Các bước</h3>
     <div id="scenesteps"></div>
     <div class="line2"><select id="stepkind" aria-label="Loại bước" data-i18n-aria-label="scenedlg.kind_of_step"><option value="wake" data-i18n="scenedlg.turn_the_tv_on">☀️ Bật TV</option><option value="app" data-i18n="scenedlg.open_an_app">📱 Mở app</option><option value="volume" data-i18n="scenedlg.set_the_volume">🔊 Đặt âm lượng</option><option value="key" data-i18n="scenedlg.press_a_key">🎮 Bấm phím</option><option value="link" data-i18n="scenedlg.open_a_link">🔗 Mở link</option><option value="wait" data-i18n="scenedlg.wait">⏱️ Chờ</option><option value="input" data-i18n="scenedlg.switch_input">📺 Chuyển nguồn vào</option><option value="timer" data-i18n="scenedlg.sleep_timer">😴 Hẹn giờ tắt</option><option value="notify" data-i18n="scenedlg.send_a_notification">🔔 Gửi thông báo</option><option value="sleep" data-i18n="scenedlg.turn_the_tv_off">🌙 Tắt TV</option></select><span id="stepargs"></span><button class="small" id="stepadd" data-i18n="scenedlg.add_step">＋ Thêm bước</button></div>
+    <!-- optional, folded under the steps: a line under each title says what is set (sceneSums in js/auto.js) -->
+    <details class="sect scenefold" id="scenesayfold"><summary><h3 data-i18n="scenedlg.say">Câu gọi</h3><span class="sum" id="scenesaysum"></span></summary>
+      <input id="scenesay" maxlength="200" aria-label="Câu gọi" placeholder="vd bật phim, xem phim đi" data-i18n-aria-label="scenedlg.say" data-i18n-placeholder="scenedlg.say_e_g">
+      <p class="note" data-i18n="scenedlg.say_note">Nói câu này (hoặc gõ vào ô “Hỏi TV”) là cảnh chạy. Cách nhau bằng dấu phẩy, tối đa 5.</p>
+    </details>
+    <details class="sect scenefold" id="sceneatbox"><summary><h3 data-i18n="scenedlg.at">Bắt đầu lúc</h3><span class="sum" id="sceneatsum"></span></summary>
+      <div id="sceneat"></div>
+      <p class="note" data-i18n="scenedlg.at_note">TV tự chạy cảnh đúng giờ, không cần mở điện thoại. Để trống thì chỉ chạy khi bạn bấm.</p>
+    </details>
+    <details class="sect scenefold" id="sceneonbox"><summary><h3 data-i18n="scenedlg.on">Bắt đầu khi</h3><span class="sum" id="sceneonsum"></span></summary>
+      <div id="sceneon"></div>
+      <p class="note" data-i18n="scenedlg.on_note">TV tự chạy cảnh khi sự việc xảy ra, không cần mở điện thoại. Mỗi lần mở app hoặc bật TV chạy một lần.</p>
+    </details>
   </div>
   <div class="actions"><button class="primary" id="scenesave" data-i18n="scenedlg.save">💾 Lưu</button><button id="scenetry" data-i18n="scenedlg.try">▶ Thử</button><button id="scenepin" data-i18n="scenedlg.add_to_home">📌 Thêm vào TV Home</button><button class="danger" id="scenedel" data-i18n="scenedlg.delete">🗑 Xóa</button></div>
 </div></dialog>
@@ -603,6 +646,9 @@
 </div></dialog>
 <dialog id="infodlg"><div class="card assistbox"><div class="card-head"><h2 id="infotitle">ℹ️</h2><div class="tools"><button class="small iconbtn" id="infoclose" title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div></div>
   <div id="infobody"></div>
+</div></dialog>
+<dialog id="spacedlg"><div class="card assistbox"><div class="card-head"><h2 id="spacetitle" data-i18n="space.title">TV không đủ chỗ trống</h2><div class="tools"><button class="small iconbtn" id="spaceclose" title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div></div>
+  <div id="spacebody"></div>
 </div></dialog>
 <dialog id="rebootdlg"><div class="allowbox"><div class="spin" id="rebootspin"></div><h1 id="reboottitle" data-i18n="rebootdlg.the_tv_is_restarting">TV đang khởi động lại</h1><p class="muted" id="rebootstep"></p><button id="rebootclose" data-i18n="common.hide">Ẩn</button></div></dialog>
 <dialog id="heardlg"><div class="card heard"><h2 data-i18n="heardlg.listening">🎤 Đang nghe</h2>   <!-- Speak: talk.js -->
@@ -629,6 +675,7 @@
 <script src="js/tvread.js"></script>
 <script src="js/apps.js"></script>
 <script src="js/recents.js"></script>
+<script src="js/space.js"></script>
 <script src="js/files.js"></script>
 <script src="stats.js"></script>
 <script src="js/health.js"></script>
@@ -669,6 +716,8 @@
 <script src="js/tvset.js"></script>
 <script src="js/tvcopy.js"></script>
 <script src="js/tvcopy_ui.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/backup_ui.js"></script>
 <script src="js/checkout.js"></script>
 <script src="js/fleet.js"></script>
 <script src="js/tvstatus.js"></script>

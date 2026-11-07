@@ -23,7 +23,7 @@ Tìm dòng giống bạn, bấm từng mục để xem cách làm. Đa số cầ
 Cách dễ nhất: chưa cần cài gì lên TV, bấm phím được ngay ([xem](#nokeys)). Bật ADB để có thêm hình TV, app, tệp.
 
 1. Trên điện thoại Android, mở trang chủ này, bấm tải **tv-remote.apk** rồi mở file. Android hỏi “ứng dụng không rõ nguồn” thì cho phép trình duyệt cài.
-2. Mở **TV Remote**, bấm **Quét Wi-Fi** rồi chọn TV (hoặc gõ địa chỉ TV).
+2. Mở **TV Remote**, bấm **Quét Wi-Fi** rồi chọn TV (hoặc gõ địa chỉ TV; ADB ở cổng khác 5555 thì gõ `ip:cổng`, ví dụ `192.168.1.5:5877`).
 3. Lần đầu TV hỏi “Cho phép gỡ lỗi USB?”: tích **Luôn cho phép** rồi OK. Xem [phần này](#allow-usb).
 4. Xong: hình TV hiện trên điện thoại. TV chưa bật ADB thì vẫn [bấm phím được](#nokeys).
 
@@ -38,7 +38,7 @@ Cách dễ nhất: chưa cần cài gì lên TV, bấm phím được ngay ([xem
 1. Tải bản cho máy bạn (link bên dưới) rồi giải nén.
 2. Mở app: Mac kéo **TV Remote** vào Applications rồi mở; Windows chạy `TV Remote.exe`; Linux chạy `tv-remote/bin/tv-remote`.
 3. Lần đầu máy chặn? Mac: Cài đặt hệ thống → Quyền riêng tư & Bảo mật → **Vẫn mở**. Windows: **More info → Run anyway**.
-4. App tự quét mạng tìm TV (hoặc gõ địa chỉ rồi **Kết nối**). Rồi làm theo “[Cho phép gỡ lỗi USB?](#allow-usb)”.
+4. App tự quét mạng tìm TV (hoặc gõ địa chỉ, có thể kèm cổng `ip:cổng`, rồi **Kết nối**). Rồi làm theo “[Cho phép gỡ lỗi USB?](#allow-usb)”.
 
 | Máy | Tải |
 | --- | --- |
@@ -223,6 +223,8 @@ Trên app điện thoại, nút **Thu nhỏ hình** cạnh toàn màn hình th�
 | Tắt tiếng · Phát/Dừng · Bài trước/sau · Tua | Hàng phím media. |
 | Nói | Nói điều muốn TV làm (vd: mở YouTube). Giữ: mở Trợ lý của TV. |
 | Thêm phím | Mở trên TV, Nguồn vào, Air Mouse, Hẹn giờ, Chụp màn hình, Vẽ, Cảnh, Thông báo, Cài đặt, Phụ đề, Thông tin; **Tiện ích**: TV, Giảm độ sáng, Lịch phát, Chia sẻ, Dừng, TV Home, Hồng ngoại, phím game. |
+| 👵 Remote đơn giản | Thêm phím → **Tiện ích**. Cho ông bà: chỉ phím to có chữ (Nguồn, mũi tên + OK, Quay lại, Home, âm lượng, Tắt tiếng, kênh, Nói). Máy nhớ chế độ này. |
+| Thoát remote đơn giản | Giữ nút nhỏ ở trên 2 giây. Chạm nhầm không thoát. |
 
 **Mở trên TV** (trong Thêm phím): **Mở app đã cài** (chọn app, có ô tìm), **Tải app** (CH Play, YouTube, Kodi…), mở link, **Gửi lên TV** (ảnh, video, nhạc, clipboard).
 
@@ -347,6 +349,8 @@ Nghe TV bằng tai nghe của bạn để không làm phiền người khác. C�
 
 > 💡 Trên app điện thoại, 🎧 vẫn nghe khi tắt màn hình.
 
+> 💡 Tiếng dừng thì app nói lý do. TV không có Opus (NVIDIA Shield) vẫn nghe được. Chỗ tiếng ngắt có trong nhật ký.
+
 ## Chất lượng hình và “Nhịp hình”
 
 Hình giật hoặc mờ? Mở **🖥️ Chất lượng hình** từ nút chất lượng cạnh ▶ Xem. Mọi thứ đặt sẵn đã ổn cho đa số TV.
@@ -360,7 +364,7 @@ Hình giật hoặc mờ? Mở **🖥️ Chất lượng hình** từ nút chấ
 | TV dưới 1,5 GB RAM | Tự giữ 720p, 20 hình/giây cho đỡ giật. Chọn mức khác thì theo bạn. |
 | Nhịp hình | **Nhanh nhất** (mặc định) hiện ngay. **Đều hơn** thêm khoảng 33 ms để hình mượt đều. Chỉ hiện ở trình duyệt có WebCodecs. |
 
-> 💡 Hình xa nhà (qua Tailscale) giật là bình thường: giảm cỡ hình và bitrate.
+> 💡 Xa nhà (qua Tailscale), app điện thoại tự lấy hình từ TV Setup trên TV nên mượt hơn; vẫn giật thì giảm cỡ hình và bitrate.
 
 ## Dùng tay cầm chơi game làm remote
 
@@ -388,6 +392,7 @@ Giữ mũi tên, âm lượng hay kênh thì nó lặp lại. Khi đang **xem h�
 
 Tab **📱 Ứng dụng** liệt kê app đã cài. Gõ tên vào ô tìm, hoặc lọc bằng chip: Tất cả, Đang mở, 🚀 Tự chạy, 🔒 Cần giữ, ⏸ Đã tắt.
 
+- **🔒 App bị chặn**: nếu có app bị app khác chặn, thẻ này hiện đầu tab với nút **Bỏ chặn** (khác với [khóa app bằng PIN](#lock)).
 - **Đang mở**: app gần đây, mới nhất trước, kèm RAM.
 - **Chuyển** quay lại app, **Đóng** đóng app.
 - **Đóng nhiều app**: tích các app cần đóng (app TV cần giữ, và app đang bật trợ năng như app đổi phím, không đóng được).
@@ -398,6 +403,7 @@ Bấm **⋯** trên một dòng:
 | --- | --- |
 | Mở · Dừng | Chạy hoặc tắt app. |
 | Chi tiết & quyền | Xem quyền app. |
+| Mở khóa | Chỉ hiện với app bị khóa (app khác tạm khóa, ví dụ Google TV). Mở khóa xong app chạy lại. |
 | Sao chép tên gói | Dùng cho phím tắt hay cảnh. |
 | Đổi tên | Tên app trên TV Home (cùng tên khi giữ OK ở TV Home). Chỉ có khi TV có TV Home. |
 | Sao lưu (tải về) | Lưu app thành file. |
@@ -528,6 +534,7 @@ TV Home có thêm hai widget lấy số liệu thẳng từ nguồn, không qua 
 | Mở gần đây | 4-6 app vừa mở; Trái / Phải chọn, OK mở |
 | Chặn quảng cáo | OK bật / tắt DNS chặn quảng cáo (AdGuard…). Không chặn quảng cáo trong video YouTube. DNS không chạy thì ~10 giây sau tự trả về |
 | Giờ cầu nguyện | Buổi sắp tới kèm đếm ngược, 3 buổi kế tiếp, ngày Hijri. Theo nơi của widget Thời tiết. Tính ngay trên TV, không cần mạng. Chọn cách tính, giờ Asr, chỉnh ngày Hijri ±1 |
+| Khung ảnh | Ảnh của bạn lần lượt hiện, mỗi tấm 30 giây (⚙ đổi từ 10 giây tới 15 phút). Thêm tối đa 10 ảnh từ điện thoại: **Widget** → **Khung ảnh** |
 
 ### Cài đặt từng widget
 
@@ -735,6 +742,7 @@ Phím màu, phím số và nút đã hết tác dụng có thể mở app bạn 
 | 0-9 | Ở TV Home: bấm. App khác: giữ 2 giây (cần TV Setup) |
 | YouTube, Netflix, Prime Video | Luôn luôn: gán app khác thì nút mở app đó thay app gốc (cần TV Setup) |
 | TV, Input, PatchWall, Tất cả app, Cài đặt | Chỉ khi nút đã chết. Nút còn chạy thì không bị lấy |
+| Lệnh giọng nói (trong danh sách, cạnh app) | Cho phím màu hoặc phím app, khi nút Assistant bị hệ thống giữ (Xiaomi). Cần TV Setup 0.46.1+ |
 
 > 💡 Ô mờ ghi "remote không có": remote này không có phím đó. Chưa cài TV Setup thì phím chỉ chạy khi đang ở TV Home.
 
@@ -760,6 +768,8 @@ Cần TV Setup trên TV và ADB đang bật. Các việc dưới đây tự ch�
 | Vì sao tách riêng | Để Google Play Protect không chặn TV Setup khi bạn cài bằng Downloader. |
 
 > 💡 Nút lạ của vài đời TV (vd. Xiaomi MiTV-MOOQ0: nút Nguồn vào) được sửa theo danh sách trên site, không cần cập nhật app. Remote của bạn có nút lạ: gửi mã hỗ trợ.
+
+> 💡 TV TCL: nút Netflix, YouTube, Prime, Apple TV mở app đó khi đang ở [TV Home](#home). Trong app khác thì không: bắt phím mọi nơi làm giữ nút âm lượng chỉ tăng 1 nấc.
 
 > 💡 TV không có ADB: add-on này cũng mở menu nguồn của hệ thống cho nút Tắt TV trên TV Home ([Cài đặt nhanh](#home-control)).
 
@@ -805,6 +815,14 @@ Chỉ có remote của TV: cài bằng Downloader, mã **2294968**. Link trực 
 7. Game nghiêng điện thoại (Bóng bay, Bida, Máy bay giấy…): bấm **Bật nghiêng**. Trình duyệt cảnh báo vì chuyển sang https: bấm **Nâng cao** rồi **Tiếp tục** (iPhone thêm **Cho phép**).
 8. Game web bị treo hay mới cập nhật? Trên TV giữ OK ở game web → **Mở bản mới nhất**; trên điện thoại menu ⚙ → **Tải lại game**.
 
+| Bàn phím cắm vào TV: hai tay cầm | Người A | Người B |
+| --- | --- | --- |
+| Di chuyển | W A S D | ← &uarr; &darr; → |
+| A B X Y | J K U I | Num 1 2 4 5 (laptop:,. /;) |
+| L R | Q E | Num 7 8 (laptop: [ ]) |
+| Start | Enter | Num Enter (laptop: right Shift) |
+| Select | Tab | Num 0 (laptop: right Ctrl) |
+
 ### Mẹo
 
 ## TV Apps, kho app cho TV
@@ -840,6 +858,7 @@ Tab **📁 Tệp** là trình quản lý tệp của TV.
 ### Mẹo
 
 - APK trùng app hệ thống của TV: bấm **Cài thành app riêng**, file đổi tên gói (.copy) rồi cài cạnh app có sẵn. Không dùng cho.apks /.xapk.
+- TV hết chỗ để cài: bấm **Dọn bộ nhớ đệm rồi thử lại**, hoặc **Xóa dữ liệu** / **Gỡ** một trong 5 app chiếm nhiều chỗ nhất.
 
 ## Sức khỏe TV
 
@@ -847,16 +866,21 @@ Tab **🩺 Sức khỏe** cho biết TV đang khỏe hay mệt.
 
 | Tab con | Cho thấy |
 | --- | --- |
-| Hiện tại | Tổng quan (kèm kết quả bảo trì ban đêm 2-5 giờ: dọn cache, tối ưu app hay dùng), tải hệ thống, nhiệt độ, mạng, Bluetooth, phần cứng. |
+| Hiện tại → TV này | Cập nhật mỗi 2 giây: vòng CPU, RAM, lưu trữ, mạng 60 giây qua, Wi-Fi, MAC (📋 để chép), bảo trì ban đêm 2-5 giờ, nhiệt độ, Bluetooth, phần cứng. |
+| Hiện tại → CPU | Từng nhân, phần của app / hệ thống, app nào đang chạy. |
+| Hiện tại → RAM | Đang dùng / bộ đệm / trống, app giữ bộ nhớ (nút Dừng), Dọn RAM. |
+| Hiện tại → Mạng | Tốc độ lúc này, tổng từ lúc bật, số kết nối, app dùng mạng, Đo tốc độ. |
 | Lịch sử | Biểu đồ theo thời gian, và app nào hay bị đóng đột ngột. |
 | Giấc ngủ | TV bật hay tắt lúc nào. |
 | Khả năng | TV hỗ trợ gì. |
 
 > 💡 Lịch sử trống (“Chưa có dữ liệu”) trên TV không cho ADB đọc thư mục của TV Setup, như TCL Android 11? Cập nhật TV Setup bản mới nhất: app sẽ hiện nút **Cập nhật**.
 
-Mạng chậm? Bấm **⚡ Đo tốc độ** ở thẻ **📶 Mạng**: TV tự đo độ trễ, tải xuống, tải lên của chính nó (khoảng 15 giây) và cho biết đủ xem phim 4K, Full HD hay HD.
+Mạng chậm? Bấm **⚡ Đo tốc độ** ở **Hiện tại → 📶 Mạng**: TV tự đo độ trễ, tải xuống, tải lên của chính nó (khoảng 15 giây) và cho biết đủ xem phim 4K, Full HD hay HD.
 
-TV đầy bộ nhớ? Bấm **🧹 Giải phóng RAM**, hoặc **⏹ Dừng** một app đang chạy trong danh sách.
+TV đầy bộ nhớ? Ở **Hiện tại → 🧠 RAM**, bấm **🧹 Dọn RAM**, hoặc **⏹ Dừng** một app trong danh sách.
+
+App nào cũng báo “Ứng dụng không sử dụng được”? Có app (thường là Google TV) đã chặn chúng. Xem thẻ **🔒 App bị chặn** ở **Hiện tại → TV này**, bấm **Bỏ chặn**.
 
 ## Kiểm tra quyền riêng tư
 
@@ -931,7 +955,7 @@ Tắt TV xong, TV có thể ngủ sâu và không trả lời nữa. Tùy chọn
 
 1. Bấm **✏️** cạnh hình TV (hoặc Thêm phím → Vẽ lên TV).
 2. Chọn màu, rồi vẽ ngón tay lên hình. **↩** hoàn tác nét vừa vẽ.
-3. Thêm **💬 Chữ** hoặc **🖼️ Ảnh**. Với ảnh, chỉnh to nhỏ bằng − / + rồi bấm **✓ Đưa lên TV**.
+3. Thêm **💬 Chữ**, **🖼️ Ảnh** hoặc **🎞️ Video** (mở [khung Video trên TV](#video)). Với ảnh, chỉnh to nhỏ bằng − / + rồi bấm **✓ Đưa lên TV**.
 4. Xong bấm **✓ Xong**. Muốn xóa: **🗑 Xóa hết**.
 
 > 💡 Nét vẽ nằm trên mọi app và tự mất sau 10 phút. Cần TV Setup.
@@ -983,8 +1007,13 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 2. Chọn 30 phút, 1 giờ hay 2 giờ. Mốc khác (15p, 45p, 1g30) và **Tự chọn…** (số phút hay giờ như 23:30) nằm trong **Thời gian khác**.
 3. Muốn nghe tiếp nhạc: **Tắt / bật màn hình**. Phím đầu tiên trên remote của TV chỉ bật lại màn hình, không mở app đang chọn.
 4. Hủy bằng **Hủy hẹn giờ**. Cần thêm giờ: **15 phút nữa**.
+5. Hay ngủ quên? Tab **⏰ Tự động → 📺 Tự tắt khi không ai dùng**, chọn 1 đến 4 giờ. Quá chừng đó không bấm phím, TV hỏi “Còn xem không?” rồi tắt.
 
 > 💡 Hẹn giờ nằm trên TV, nên vẫn chạy khi điện thoại đã tắt.
+
+> 💡 Tự tắt khi không ai dùng đếm phím bấm, không đếm hình: phim chiếu mà không bấm phím cũng bị hỏi. Cần TV Setup 0.46.1.
+
+> 💡 TV chưa tắt được (ADB đang tắt)? Hẹn giờ không tự xóa: nó báo một lần và thử lại.
 
 ## Giờ đi ngủ
 
@@ -993,6 +1022,8 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 3. Lưu. Trong khoảng đó, nếu ai bật TV, TV báo trước rồi tự tắt sau 1 phút.
 
 > 💡 Cần TV Setup trên TV. Việc tắt do chính TV làm.
+
+> 💡 TV chưa tắt được (ADB đang tắt)? App báo một lần và thử lại, Telegram không báo “đã tắt” sai.
 
 ## Màn hình chào
 
@@ -1015,6 +1046,8 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 | 🧹 Báo khi RAM đầy | Báo khi RAM đạt 80 đến 95%. **Tự dọn RAM**: RAM quá mức thì TV đóng app nền như nút Dọn RAM (trừ app đang xem, TV Home, app "Giữ lại"), 10 phút một lần. Mặc định tắt. |
 
 > 💡 Tất cả nằm trên TV và cần TV Setup. TV ngủ hay máy bạn tắt vẫn có hiệu lực.
+
+> 💡 Chưa đóng được app (ADB đang tắt)? App báo một lần và thử lại, thông báo “đã đóng app” không gửi sai.
 
 ## Chế độ trẻ em: thiết lập nhanh
 
@@ -1078,6 +1111,12 @@ Chạy cảnh từ **Thêm phím → Cảnh**, bằng giọng nói (nói tên c�
 **📌 Thêm vào TV Home** (trong cảnh): cảnh thành một ô trên TV Home, cũng có trong ＋ Thêm → **Cảnh & lối tắt**. Cần TV Setup mới.
 
 **Câu gọi:** điền tối đa 5 câu, cách nhau dấu phẩy; nói hoặc gõ đúng câu là cảnh chạy.
+
+**Bắt đầu lúc:** chọn giờ, rồi **Lặp lại** (chọn thứ) hoặc **Một lần** (chọn ngày). TV tự chạy cảnh, không cần điện thoại mở. Để trống thì chỉ chạy khi bạn bấm.
+
+**Bắt đầu khi:** **Mở một app** (mở YouTube thì đặt âm lượng 15) hoặc **Bật TV**. Mỗi lần mở hoặc bật chạy một lần. Cần TV Setup mới.
+
+TV tắt hay đồng hồ nhảy qua giờ hẹn thì bỏ lượt đó, không chạy bù. Cần TV Setup mới; không có trên TV LG, Samsung.
 
 Sao lưu: **⬇️ Xuất file sao lưu** và **⬆️ Nhập từ file**.
 
@@ -1167,6 +1206,7 @@ Máy phải cùng Wi-Fi với TV.
 | `volume=20` / `up` / `down` / `mute` | Đặt âm lượng (0 đến 100) hoặc tăng, giảm, tắt tiếng. |
 | `power=on` / `off` / `toggle` | Bật, tắt hay đổi trạng thái. |
 | `minutes=15&for=com.google.android.youtube.tv` | Cho thêm phút xem hôm nay (1 đến 240) cho app đã đặt giới hạn; bỏ `for=` là cộng vào tổng giờ TV mỗi ngày. Hợp với web học bài: làm đạt thì gọi link. Cần TV Setup. |
+| `&tv=Phòng ngủ` | Chỉ app máy tính: làm trên TV đã lưu có tên (hoặc địa chỉ) này, không phải TV đang chọn. Sai tên thì báo lỗi kèm danh sách TV. |
 | `/api/hook/state` | Chỉ đọc: TV đang bật không, đang chạy gì. |
 
 Home Assistant gửi mã qua header `x-tvr-hook`, không lộ trong log.
@@ -1196,6 +1236,8 @@ Home Assistant gửi mã qua header `x-tvr-hook`, không lộ trong log.
 
 > 💡 App TV kia không có thì bị bỏ qua; ảnh nền riêng và mã QR không chép. Khoá app cần PIN: gõ PIN mới cho TV kia, vì PIN cũ không đọc ngược được.
 
+> 💡 **📦 Chuyển sang TV mới** (tab Thiết lập): **Lưu file sao lưu** trên TV cũ, rồi trên TV mới **Mở file sao lưu**, tích mục cần, **Khôi phục**. PIN không nằm trong file.
+
 ## Xem tình trạng mọi TV
 
 Mỗi TV đã thử có một dòng: **Đang bật**, **Chế độ chờ** hoặc **Không thấy TV**, kèm kiểu máy và app đang mở. Tự làm mới 10 giây một lần.
@@ -1215,6 +1257,8 @@ Mỗi TV đã thử có một dòng: **Đang bật**, **Chế độ chờ** ho�
 | 🎮 Chỉ remote | Phím, gõ chữ, hình, mở app, hẹn giờ, chạy cảnh, kênh TV. Không có Quản lý. |
 | 👁️ Chỉ xem | Xem hình và đang phát gì. |
 
+> 👵 Chọn **Remote đơn giản** (thay vì **Remote đầy đủ**) trước khi đưa QR: trang mở thẳng ở remote phím to. Link có thêm `?simple=1`.
+
 > 💡 Đổi hay thu hồi quyền ở **Thiết lập → 📱 Thiết bị đã ghép** (Hủy ghép hoặc Gỡ tất cả).
 
 ## Điều khiển khi không ở nhà (Tailscale)
@@ -1232,6 +1276,8 @@ TV đang ngủ nhẹ thì phím Nguồn đánh thức được, cả qua Tailsca
 ## TV LG, Samsung, Roku, VIDAA
 
 Thử nghiệm (beta). Chỉ có trong app điện thoại và app máy tính.
+
+Roku: **Thêm** › **Tiện ích** › **Màn hình ẩn của Roku** mở các màn hình bí mật (Wi-Fi, mạng, HDMI, chế độ nhà phát triển, khởi động lại). App bấm dãy phím thay bạn và có nút Hủy.
 
 1. Bật TV và nối cùng Wi-Fi.
 2. Quét mạng, chọn TV.
@@ -1276,6 +1322,7 @@ Trong app điện thoại hay máy tính: **Thêm** › **Tiện ích** › **T�
 | --- | --- |
 | Phím âm lượng của điện thoại | Chỉnh âm lượng TV. |
 | Widget · ô Cài đặt nhanh · phím tắt | Chạm là bấm phím hay chạy cảnh, không cần mở app. |
+| Điều khiển ở thanh thông báo | Cài đặt → Thông báo → bật. Âm lượng, Tắt tiếng, Phát / Dừng, Nguồn cho TV dùng gần nhất, cả trên màn hình khóa. Tự ẩn sau 2 giờ không bấm; mở app là hiện lại. |
 | 🎧 Nghe | Vẫn nghe khi tắt màn hình. |
 | Phản chiếu màn hình điện thoại lên TV | Mở trên TV → Chiếu màn hình điện thoại lên TV. |
 | Tay cầm | Xem [Dùng tay cầm](#gamepad). |
@@ -1283,7 +1330,7 @@ Trong app điện thoại hay máy tính: **Thêm** › **Tiện ích** › **T�
 ## Cài đặt của app
 
 1. Bấm **🛠️** ở góc trên để mở **Cài đặt**.
-2. **Giao diện**: theo máy, sáng hoặc tối. **Ngôn ngữ**: Tiếng Việt, English, Русский hoặc Français.
+2. **Giao diện**: theo máy, sáng hoặc tối. **Ngôn ngữ**: Tiếng Việt, English, Русский, Français hoặc العربية (trang đọc từ phải sang trái).
 3. **Khi bấm nút** (điện thoại): rung hoặc không rung. **Bàn phím của TV**: có [tự mở ô gõ](#typing) khi TV chọn ô chữ hay không.
 4. **App trên máy tính**: **🔄 Kiểm tra bản mới** và **Tắt** (dừng chương trình, TV không bị ảnh hưởng).
 5. Các phần dài tự gập (chạm tiêu đề để mở). Cuối trang: [Home Assistant · Phím tắt](#hook), và mục Giới thiệu có [Gửi nhật ký](#log).
@@ -1328,7 +1375,7 @@ Màn hình Quản lý trong app điện thoại dùng trình duyệt của Andro
 ## Gửi nhật ký để được giúp
 
 1. Mở **Cài đặt (🛠️) → Giới thiệu**.
-2. Bấm **📋 Gửi nhật ký**. Nhật ký được chép.
+2. Bấm **📋 Gửi nhật ký**. Chọn “Có chuyện gì?” và viết vài chữ nếu muốn (hoặc bấm Gửi luôn). Nhật ký được chép.
 3. App chép nhật ký và mở [trang gửi nhật ký](https://tvremote.pages.dev/log): dán vào, viết vài dòng, rồi gửi qua GitHub issue hoặc nhắn Facebook cho tác giả.
 
 > 💡 Nhật ký có lệnh đã gửi, câu trả lời của TV và lỗi. Không có khóa ghép, địa chỉ MAC hay chữ bạn đã gõ.
@@ -1341,13 +1388,18 @@ Màn hình Quản lý trong app điện thoại dùng trình duyệt của Andro
 
 > 💡 **Cho hỗ trợ xem 30 phút** chỉ cho đọc trạng thái, không bấm hay đổi gì; dừng được bất cứ lúc nào.
 
-> 💡 Mở cho TV từ điện thoại hay máy tính: tab **Thiết lập**, thẻ TV, **👁️ Cho hỗ trợ xem TV này**. Cho xem chính app điện thoại hay máy tính: **Giới thiệu**.
+> 💡 Mở cho TV từ điện thoại hay máy tính: nút **👁️ Hỗ trợ** trên thanh trên cùng. Cho xem chính app điện thoại hay máy tính: **Giới thiệu**.
+
+> 💡 Các nút hỗ trợ cũng hỏi trước.
+
+> 💡 Nhật ký có cả chỗ tiếng bị ngắt (số lần, độ dài) và lý do hình dừng.
 
 ## Lỗi thường gặp
 
 | Gặp | Thử |
 | --- | --- |
 | Không kết nối được | Xem [Tự kiểm tra](#selfcheck). Cùng Wi-Fi? TV bật? |
+| ADB của TV không ở cổng 5555 | Gõ IP kèm cổng: `192.168.1.5:5877` (bàn phím số của điện thoại: dấu phẩy thay dấu hai chấm). App nhớ cổng cho TV đó. Cổng 5877 (BeeCube) app tự thử. |
 | Phím không phản ứng | [Bật lại ADB](#prep-tv), hoặc khởi động lại TV. |
 | Trang web của TV hỏi mã lại | Ghép lại một lần; đừng dùng cửa sổ riêng tư. |
 | Hình giật | Giảm cỡ hình và bitrate ([Chất lượng hình](#quality)). |
@@ -1357,4 +1409,5 @@ Màn hình Quản lý trong app điện thoại dùng trình duyệt của Andro
 | Fire TV: TV Setup báo không nối được ADB dù đã bật | Amazon chặn app trên TV dùng ADB của chính TV; dùng app điện thoại hoặc máy tính. |
 | Fire TV: nút Home / Alexa chết, các phím khác vẫn chạy | Cài đặt ban đầu chưa xong: app tự báo ở đầu trang, bấm **Sửa** (đặt `user_setup_complete` = 1). |
 | Cài đặt của TV đứng ở trang Chuyển văn bản thành giọng nói | Chạy lệnh `pm clear com.google.android.tts` (mục Terminal, hoặc `adb shell`); giọng đọc tải lại ở lần dùng đầu. |
+| Mọi app báo “Ứng dụng không sử dụng được… do Google TV quản lý” | Tab **Ứng dụng** có thẻ **🔒 App bị chặn**: bấm **Bỏ chặn** (màn hình chính Google TV được đặt lại). Bị lại đúng giờ cũ thì tắt giới hạn giờ trong hồ sơ. |
 | Trang web của TV không hiện mã ghép | TV không có ADB nên chưa tự hiện được: mở app TV Setup trên TV, mã ở màn hình chính (2 phút). Xem [Mở trang web của TV](#web-iphone). |

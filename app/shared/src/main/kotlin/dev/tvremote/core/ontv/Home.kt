@@ -7,6 +7,7 @@ import dev.tvremote.home.Target
 import dev.tvremote.update.Release
 import org.json.JSONObject
 import java.io.File
+import dev.tvremote.core.adb.Pkg
 import java.io.IOException
 
 /**
@@ -26,7 +27,7 @@ object Home {
         val grant = if (change?.optBoolean("dream") == true) "pm grant ${HomeConfig.PKG} ${HomeConfig.WRITE_SECURE} 2>&1; " else ""
         val out = sh(grant + (if (change != null) HomeConfig.GRANT_WIFI else "") + "am broadcast --include-stopped-packages -n ${HomeConfig.RECEIVER}$arg 2>&1; echo '#~#'; " + LauncherSwap.RESOLVE_HOME)
         val m = Regex("data=\"([A-Za-z0-9+/=]+)\"").find(out)
-            ?: return JSONObject().put("installed", false)            // no receiver: TV Home is not on this TV
+            ?: if (Pkg.failed(out.substringBefore("#~#"))) throw IOException("pm: could not ask: " + out.substringBefore("#~#").trim().take(120)) else return JSONObject().put("installed", false)            // no receiver: TV Home is not on this TV
         val r = JSONObject(String(B64.decode(m.groupValues[1]), Charsets.UTF_8))
         if (r.has("error")) throw IOException(r.optString("error"))
         r.put("installed", true).put("home", out.substringAfter("#~#").contains(HomeConfig.PKG + "/"))
@@ -70,7 +71,7 @@ object Home {
     @Throws(IOException::class)
     fun openPin(sh: (String) -> String, key: String) {
         if (!PIN_KEY.matches(key)) throw IOException("pin_bad_link")
-        val r = sh("am start -n ${HomeConfig.PKG}/.OpenActivity --es t " + Adb.q(key) + " 2>&1")
+        val (r, _) = AppRestore.run(sh, HomeConfig.PKG, "am start -n ${HomeConfig.PKG}/.OpenActivity --es t " + Adb.q(key) + " 2>&1") { !it.contains("Error") }
         if (r.contains("Error")) throw IOException("home:missing")
     }
     private val PIN_KEY = Regex("^pin:[A-Za-z][\\w.]*/[\\w.:@+=,~-]{1,200}$")
@@ -143,6 +144,7 @@ object Home {
      */
     @Throws(IOException::class)
     fun appPic(adb: Adb, target: String, jpeg: ByteArray): JSONObject {
+        if (target == HomeConfig.FRAME) return framePic(adb, jpeg)
         if (!Target.valid(target) || HomeConfig.isLive(target) || HomeConfig.isFolder(target)) throw IllegalArgumentException("pic target")
         if (jpeg.size < 4 || jpeg.size > HomeConfig.PIC_BYTES || jpeg[0] != 0xFF.toByte() || jpeg[1] != 0xD8.toByte()) throw IllegalArgumentException("pic image")
         val sh: (String) -> String = { adb.shell(it) }
@@ -157,6 +159,27 @@ object Home {
         sh("mkdir -p " + path.substringBeforeLast('/'))
         if (!adb.put(path, jpeg, true)) throw IOException("home:photo")
         return call(sh, JSONObject().put("pics", JSONObject(have.toString()).put(target, id)))
+    }
+
+    /**
+     * One more photo for the photo frame widget ("frame"): the same small JPEG and folder as [appPic], its id added at the end of the
+     * list. A TV Home from before the frame answers `home:frame_old`, a full one `home:frame_full`.
+     */
+    @Throws(IOException::class)
+    private fun framePic(adb: Adb, jpeg: ByteArray): JSONObject {
+        if (jpeg.size < 4 || jpeg.size > HomeConfig.PIC_BYTES || jpeg[0] != 0xFF.toByte() || jpeg[1] != 0xD8.toByte()) throw IllegalArgumentException("pic image")
+        val sh: (String) -> String = { adb.shell(it) }
+        val now = call(sh, null)
+        if (!now.optBoolean("installed")) throw IOException("home:missing")
+        val conf = now.optJSONObject("config") ?: JSONObject()
+        if (!conf.has("frame")) throw IOException("home:frame_old")
+        val have = HomeConfig.frame(conf.optJSONArray("frame"))
+        if (have.size >= HomeConfig.FRAME_MAX) throw IOException("home:frame_full")
+        val id = String.format("%08x", java.security.SecureRandom().nextInt())
+        val path = HomeConfig.picPath(id)
+        sh("mkdir -p " + path.substringBeforeLast('/'))
+        if (!adb.put(path, jpeg, true)) throw IOException("home:photo")
+        return call(sh, JSONObject().put("frame", org.json.JSONArray(have + id)))
     }
 
     /**

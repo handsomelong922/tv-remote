@@ -177,7 +177,7 @@ class HomeActivity : Activity() {
     private lateinit var body: LinearLayout                         // the widgets and the grid, arranged by "wplace" ([arrange])
     private var arranged = ""
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
-    private val widgetTick = object : Runnable { override fun run() { widgetsRead(); ui.postDelayed(this, 60_000) } }
+    private val widgetTick = object : Runnable { override fun run() { widgetsRead(tick = true); ui.postDelayed(this, 60_000) } }
     private var ticked = 0L                                           // elapsedRealtime of the last TIME_TICK (the wall clock jumps on these boxes)
     // TextClock before Android 12 moves only on TIME_TICK, which some firmware stops sending after a standby (a TCL on Android 9,
     // cleanyourtv #3044): the clock froze until a reboot. Each minute while Home is in front, redrawn only when no tick came.
@@ -221,7 +221,7 @@ class HomeActivity : Activity() {
         shortcutWatch = Pins.watch(this) { r -> bg.execute(r) }
         if (!Pins.listed(this)) bg.execute { Pins.refresh(this) }       // the first Home: + Add has the apps' shortcuts to list
         Store.advance(this, true)                                     // a rotation on "each time Home is shown" (or one that fell due while away): before the first paint, so nothing is drawn twice
-        conf = Store.get(this); readNames(); Pics.ids = picIds(); if (Pics.dir(this).isDirectory) bg.execute { Pics.sweep(this, Pics.ids.values) }; Pins.resize(pinW())
+        conf = Store.get(this); readNames(); Pics.ids = picIds(); if (Pics.dir(this).isDirectory) bg.execute { Pics.sweep(this, Pics.ids.values + Pics.frame) }; Pins.resize(pinW())
         val root = FrameLayout(this)
         backdrop = Backdrop(window.decorView)
 
@@ -380,7 +380,8 @@ class HomeActivity : Activity() {
         if (Store.chooseDue(this)) ui.postDelayed({ if (!isDestroyed && !away) open = Picker.show(this, Picker.Mode.CHOOSE, getString(R.string.pk_choose_title)) }, 600)   // first run only: nothing is hidden without being shown
         bg.execute { forget(null); if (LiveWidgets.refresh(this)) runOnUiThread { if (!isDestroyed) { shownKey = ""; show() } } }   // what TV Setup offers (it may have been installed or updated while away)
         ui.removeCallbacks(liveTick); ui.post(liveTick)
-        ui.removeCallbacks(widgetTick); ui.post(widgetTick)
+        widgetsDrawn = ""; ui.removeCallbacks(widgetTick); ui.post(widgetTick)        // back on Home: drawn again (language, recent apps)
+        widgets.paused(false)                                         // the photo frame's swap timer, stopped in onPause
         ui.removeCallbacks(clockTick); if (Build.VERSION.SDK_INT < 31) ui.postDelayed(clockTick, 61_000 - System.currentTimeMillis() % 60_000)   // 12+: TextClock keeps its own time
         ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS)
         slideGo()                                                     // a slideshow wall: the slide of this slot, the timer again
@@ -554,6 +555,7 @@ class HomeActivity : Activity() {
         val on = Store.list(this, "widgets")
         val items = ArrayList<TvGlass.Item>()
         if (k == "adblock") items.add(gi(R.drawable.ic_shield_ok, getString(R.string.adb_toggle), on = { dev.tvremote.home.widgets.Adblock.on(this) }) { widgets.adblockToggle() })   // the widget's OK, as a switch
+        if (k == "frame") items.add(gi(R.drawable.ic_image, getString(R.string.frame_add)) { PhotoScreen.show(this) {} })   // the photos come from a phone: the page's Widgets tab
         if ("size" in opts) items.add(gi(R.drawable.ic_expand, getString(R.string.el_big), on = { k in HomeConfig.bigs(Store.get(this)) }) {
             val sizes = JSONObject((Store.get(this).optJSONObject("wsize") ?: JSONObject()).toString())   // the key Customize's gear writes
             Store.change(this, JSONObject().put("wsize", sizes.put(k, if (k in HomeConfig.bigs(Store.get(this))) "small" else "big")))
@@ -669,7 +671,7 @@ class HomeActivity : Activity() {
         }
     }
 
-    override fun onPause() { if (moving != null) endMove(false); zoom.paused(); ui.removeCallbacks(widgetTick); ui.removeCallbacks(clockTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(slideTick); ui.removeCallbacks(liveTick); ui.removeCallbacks(skyTick); ui.removeCallbacks(shiftTick); super.onPause() }
+    override fun onPause() { if (moving != null) endMove(false); zoom.paused(); widgets.paused(true); ui.removeCallbacks(widgetTick); ui.removeCallbacks(clockTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(slideTick); ui.removeCallbacks(liveTick); ui.removeCallbacks(skyTick); ui.removeCallbacks(shiftTick); super.onPause() }
 
     private var cpuAgain = false
 
@@ -779,11 +781,14 @@ class HomeActivity : Activity() {
     }
 
     private var placedNow: List<String>? = null
+    private var placedFor = ""                                         // the settings placedNow was read for: after a change the guess holds until the read returns
+    private fun placedKey(o: JSONObject) = listOf(o.optJSONArray("widgets"), o.optString("note"), o.optString("wplace"), o.optJSONObject("wsize"), o.optJSONObject("qrs")?.names()).toString()
     /** The top bar's clock and date follow the widgets really placed (a clock widget with no room, or a timer with nothing to show, changes them). */
-    private fun placedSet(p: List<String>) { if (p != placedNow) { placedNow = p; clockAndDay() } }
+    private fun placedSet(p: List<String>) { val k = placedKey(conf); if (p != placedNow || k != placedFor) { placedNow = p; placedFor = k; clockAndDay() } }
 
-    /** The widgets' numbers, read off the main thread; none at all while they are off. */
-    private fun widgetsRead() {
+    private var widgetsDrawn = ""                                    // Widgets.drawn of the row on screen: the minute's tick skips an unchanged one
+    /** The widgets' numbers, read off the main thread; none at all while they are off. [tick]: the minute's read, which keeps a row that would draw the same. */
+    private fun widgetsRead(tick: Boolean = false) {
         val want = Store.list(this, "widgets")
         val conf = Store.get(this); val note = conf.optString("note"); val sizes = conf.optJSONObject("wsize") ?: JSONObject()
         val none = want.isEmpty() && note.isEmpty()
@@ -798,6 +803,9 @@ class HomeActivity : Activity() {
             val f = widgets.read(want)
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
+                val drawn = Widgets.drawn(want, f, Calendar.getInstance(), listOf(conf, widgets.width, widgets.roomPx, widgets.editing, widgets.visibility, resources.locale0()).toString())
+                if (tick && drawn == widgetsDrawn) return@runOnUiThread
+                widgetsDrawn = drawn
                 widgets.show(want, f, note, { p -> apps.firstOrNull { it.pkg == p }?.label ?: p.substringAfterLast('.') }, sizes, conf.optJSONObject("qrs") ?: JSONObject())
                 // chosen but with nothing to show (the timer with no timer set, a lunar date off): no row, so the grid sits as with none
                 // (FPT, the user 2026-11-03: the timer alone left the grid up under an empty row)
@@ -1623,20 +1631,22 @@ class HomeActivity : Activity() {
     }
 
     private fun picIds(): Map<String, String> {
+        Pics.frame = HomeConfig.frame(conf.optJSONArray("frame"))     // the photo frame's photos live in the same folder: the sweep keeps them
         val g = conf.optJSONObject("pics") ?: return emptyMap()
         return g.keys().asSequence().associateWith { g.optString(it) }
     }
 
     /** The own pictures ("pics") changed: the tiles they touch read again off the main thread, the files nobody names go. Nothing when there are none and were none. */
     private fun readPics() {
+        val wasFrame = Pics.frame
         val now = picIds(); val was = Pics.ids
-        if (now == was) return
+        if (now == was) { if (Pics.frame != wasFrame && Pics.dir(this).isDirectory) { val keep = now.values + Pics.frame; bg.execute { Pics.sweep(this, keep) } }; return }   // a frame photo removed: its file goes
         Pics.ids = now
         val changed = (now.keys + was.keys).filter { now[it] != was[it] }.toSet()
         val mine = (apps + pins).filter { it.pkg in changed }
         bg.execute {
             mine.forEach { it.load(this) }
-            Pics.sweep(this, now.values)
+            Pics.sweep(this, now.values + Pics.frame)
             runOnUiThread { if (!isDestroyed) { shownKey = ""; show() } }
         }
     }
@@ -2086,7 +2096,7 @@ class HomeActivity : Activity() {
         greetLine.text = HomeConfig.headLine(conf, "g", t)
         headType(greetLine, "g", Font.regular); headType(dateLine, "d", Font.medium)
         greetLine.visibility = if (conf.optBoolean("greet", true)) View.VISIBLE else View.GONE
-        val placed = placedNow ?: HomeConfig.placed(conf)             // what the widgets really placed once read; a guess before
+        val placed = placedNow?.takeIf { placedFor == placedKey(conf) } ?: HomeConfig.placed(conf)   // what the widgets really placed once read; a guess before, and right after a change
         clock.visibility = if (HomeConfig.barClock(conf, placed)) View.VISIBLE else View.GONE   // a clock widget is the clock then
         dateLine.visibility = if (HomeConfig.barDate(conf, placed)) View.VISIBLE else View.GONE
         rule.visibility = if (clock.isShown && (dateLine.isShown || greetLine.isShown)) View.VISIBLE else View.GONE   // the line between them only while there are two sides

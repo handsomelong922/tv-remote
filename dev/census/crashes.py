@@ -8,7 +8,7 @@
   crashes.py --json             machine output for agents: [{sig, app, v, kind, msg, count, installs, first, last, device, stack}]
   crashes.py --since 2026-10-01 only crashes first seen on/after that day
   crashes.py --new              what has not been looked at: a crash never marked, or one that happened again after its mark (every version)
-  crashes.py --mark SIG|all [--note "why"]   marks it looked at (its count now), in checked.json (committed: every session and machine sees it)
+  crashes.py --mark SIG|all [--note "why"]   marks it (all = what --new lists) looked at (its count now), in checked.json (committed: every session and machine sees it)
   crashes.py SIG --frames       adds repo path:line for each stack frame that maps to a file here (also with --json: "frames")
   crashes.py --url http://127.0.0.1:8787   a local `wrangler dev`
 """
@@ -40,6 +40,7 @@ def call(base, path, params, method="GET"):
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+ADB_KIND = "TV Setup ADB "   # AdbReport's kind: expected states of a TV that cannot be reached; --new skips them unless --adb
 CHECKED = os.path.join(os.path.dirname(os.path.abspath(__file__)), "checked.json")
 
 
@@ -135,6 +136,7 @@ def main():
     a.add_argument("--json", action="store_true")
     a.add_argument("--since", default="", metavar="YYYY-MM-DD")
     a.add_argument("--new", action="store_true")
+    a.add_argument("--adb", action="store_true", help="--new also lists 'TV Setup ADB ...' (a TV whose own ADB is off: a state, not a crash)")
     a.add_argument("--frames", action="store_true")
     a.add_argument("--mark", metavar="SIG|all")
     a.add_argument("--note", default="")
@@ -142,6 +144,7 @@ def main():
     marks = checked()
     if o.mark:
         rows = call(o.url, "/v1/crashes", {"sig": "" if o.mark == "all" else full(o, o.mark), "v": o.v, "app": o.app})["crashes"]
+        if o.mark == "all": rows = [r for r in rows if unseen(r, marks) > 0]   # only what --new lists: the others keep their own notes
         at = __import__("datetime").datetime.now().astimezone().isoformat(timespec="seconds")
         for r in rows:
             k = r["sig"] + "|" + r["v"]
@@ -153,7 +156,7 @@ def main():
         return
     if o.json or o.since or o.new:
         rows = call(o.url, "/v1/crashes", {"sig": full(o, o.sig) if o.sig else "", "v": o.v, "app": o.app})["crashes"]
-        rows = [r for r in rows if r["first"] >= o.since and (not o.new or unseen(r, marks) > 0)]
+        rows = [r for r in rows if r["first"] >= o.since and (not o.new or (unseen(r, marks) > 0 and (o.adb or not r["kind"].startswith(ADB_KIND))))]
         if o.json:
             out = [normal(r, marks) for r in rows]
             if o.frames:

@@ -127,10 +127,8 @@ object Channels {
 
     /** Opens [words] on the TV; false when TV Channels is not there (the link would open nothing, or a chooser). */
     @Throws(IOException::class)
-    fun open(sh: (String) -> String, words: String): Boolean {
-        val out = sh("$ALLOW_OVERLAY; am start -a android.intent.action.VIEW -d '${link(words)}' $PKG 2>&1")   // URL-encoded: no quote can get in
-        return !out.contains("Error") && !out.contains("unable to resolve", true)
-    }
+    fun open(sh: (String) -> String, words: String): Boolean =
+        app.open(sh, "am start -a android.intent.action.VIEW -d '${link(words)}' $PKG")   // URL-encoded: no quote can get in
 
     /** The link that plays one stream address in TV Channels: percent-encoded, so only [A-Za-z0-9.*_%-] can reach the shell. */
     fun streamLink(url: String): String = "tvchannels://url?u=" + URLEncoder.encode(url, "UTF-8").replace("+", "%20")
@@ -164,8 +162,11 @@ object Channels {
     @Throws(IOException::class)
     fun playResult(sh: (String) -> String, url: String): Play {
         require(validStream(url.trim())) { "channels:bad_link" }
-        val out = sh("am start -a android.intent.action.VIEW -d '${streamLink(url.trim())}' $PKG 2>&1")   // encoded: no quote can get in
-        return verdict(out) { sh("pm path $PKG").contains("package:") }
+        val start = "am start -a android.intent.action.VIEW -d '${streamLink(url.trim())}' $PKG 2>&1"   // encoded: no quote can get in
+        // turned off or kept for another profile it also says "unable to resolve" (and `pm path` still finds it): bring it back and
+        // ask once more, so OLD (update it) is only said of an app that is enabled and still does not know the link
+        val (out, _) = AppRestore.run(sh, PKG, start) { !it.contains("Error") && !it.contains("unable to resolve", true) }
+        return verdict(out) { AppRestore.enabled(sh, PKG) }
     }
 
     /** [playResult] as a yes or no: false when TV Channels is not there or too old. */

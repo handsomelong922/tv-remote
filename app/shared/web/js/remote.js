@@ -1,18 +1,23 @@
 // remote keys, keyboard and mouse passthrough
 // ---------- the rows of keys the page draws from remote.json (the same file the phone app's remote reads) ----------
 // A key is bound below like the hand-made ones (data-k); an action ("do") runs its REMOTE_DO handler (remote_spec.js).
+const remoteKey = (raw) => {
+  const e = remoteEntry(raw);
+  const b = el('button', { className: 'rb lab' + (e.style ? ' ' + e.style : ''), id: 'r-' + e.id, innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + e.icon + '"/></svg><small></small>' });
+  b.querySelector('small').textContent = remoteWords(e.t);
+  if (e.key) b.dataset.k = e.key; else b.addEventListener('click', () => REMOTE_DO[e.do](e.arg));
+  const needs = [...e.needs || [], ...remoteRole(e)];
+  if (needs.length) b.dataset.needs = needs.join(' ');                // greyed on a TV that cannot, or for a guest (applyKind in core.js)
+  b.dataset.rid = e.id;
+  return b;
+};
 document.querySelectorAll('[data-rows]').forEach((box) => {
-  for (const row of REMOTE.rows[box.dataset.rows] || []) for (const raw of row.filter(remoteHere)) {
-    const e = remoteEntry(raw);
-    const b = el('button', { className: 'rb lab' + (e.style ? ' ' + e.style : ''), id: 'r-' + e.id, innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + e.icon + '"/></svg><small></small>' });
-    b.querySelector('small').textContent = remoteWords(e.t);
-    if (e.key) b.dataset.k = e.key; else b.addEventListener('click', () => REMOTE_DO[e.do](e.arg));
-    const needs = [...e.needs || [], ...remoteRole(e)];
-    if (needs.length) b.dataset.needs = needs.join(' ');              // greyed on a TV that cannot, or for a guest (applyKind in core.js)
-    b.dataset.rid = e.id;
-    box.append(b);
-  }
+  for (const row of REMOTE.rows[box.dataset.rows] || []) box.append(...row.filter(remoteHere).map(remoteKey));
 });
+// The Simple remote (remote.json "simple"): its rows of big keys, the D-pad a copy of the one above (bound below with the rest)
+for (const row of (REMOTE.simple && REMOTE.simple.rows) || []) {
+  $('#simplekeys').append(el('div', { className: 'simplerow' }, ...row.filter(remoteHere).map((raw) => raw.expand === 'pad' ? $('.rc .dpad').cloneNode(true) : remoteKey(raw))));
+}
 // A key the connected TV names differently (remote.json "kinds": VIDAA's SETTINGS is its Menu) is relabelled when the kind
 // changes: applyKind (core.js) sets data-kind on <html>, and the rows are drawn before the TV is known.
 const paintRows = () => document.querySelectorAll('[data-rows] [data-rid]').forEach((b) => {
@@ -323,6 +328,44 @@ function kbdGo(at) {
   });
 }
 
+// ---------- the Simple remote: only remote.json's "simple" keys, big, for a parent; the rest of the page hidden (css/remote.css
+// html[data-simple]). Turned on from Tools or by a shared link with ?simple=1; left only by holding its small button for 2 s,
+// so a stray tap never brings the full page back. Remembered on this browser. The Phone app has its own native one (Simple.kt).
+function setSimple(on, quiet) {
+  if (CORE === 'phone' || window.ONTV) on = false;                    // the Manage screen and the TV itself have no remote here
+  document.documentElement.toggleAttribute('data-simple', on);
+  put('#simple', 'hidden', !on);
+  try { localStorage.setItem('simple', on ? '1' : ''); } catch {}
+  if (on && typeof showTab === 'function') showTab('remote');
+  if (on && !quiet) toast(T('simple.on'));
+}
+{
+  const q = new URLSearchParams(location.search);
+  let on = false; try { on = localStorage.getItem('simple') === '1'; } catch {}
+  if (q.has('simple')) {                                              // the share link: once, then this browser remembers
+    on = q.get('simple') !== '0'; q.delete('simple');
+    history.replaceState(null, '', location.pathname + (String(q) ? '?' + q : '') + location.hash);   // a reload must not undo leaving it
+  }
+  setSimple(on, true);
+  const x = $('#simpleexit'); let t = 0;
+  const stop = () => { clearTimeout(t); t = 0; x.classList.remove('holding'); put('#simpleexit', 'textContent', T('simple.exit')); };
+  x.addEventListener('pointerdown', (e) => {
+    if (e.button) return;
+    x.classList.add('holding'); put('#simpleexit', 'textContent', T('simple.keep'));
+    t = setTimeout(() => { stop(); buzz(); setSimple(false); }, 2000);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => x.addEventListener(ev, () => { if (t) stop(); }));
+  x.addEventListener('click', () => { if (document.documentElement.hasAttribute('data-simple')) toast(T('simple.hold')); });   // a tap: say how
+  x.addEventListener('contextmenu', (e) => e.preventDefault());
+  // Speak only where this device can hear (remote.json "when": "voice"); talk.js is read after this file
+  document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('#simplekeys [data-rid]').forEach((b) => {
+    const raw = REMOTE.simple.rows.flat().find((e) => e.id === b.dataset.rid);
+    if (raw && raw.when === 'voice') b.hidden = !(talkable() || (Speech && window.isSecureContext));
+  }));
+  new MutationObserver(() => { const b = $('#r-simple-voice'); if (b) b.classList.toggle('on', $('#voice').classList.contains('on')); })
+    .observe($('#voice'), { attributes: true, attributeFilter: ['class'] });   // lit while it listens, as the top row's
+}
+
 // ---------- the TV's own keyboard came up (someone focused a search box there): the typing box opens here, once a second ----------
 // Same rule as the phone app's (TvKeyboard.Follow in Kotlin): open on the edge, shut when it goes if nothing was typed, never
 // reopen in one keyboard session once the person shut the box. Needs ADB (the TV's input method is read through it).
@@ -366,4 +409,30 @@ function trackingMenu() {
     ['@tag|' + T('track.ads'), T(ads), open],
     ['@mic|' + T('track.mic'), T(mic), open],
     ['@guide|' + T('track.guide'), T('track.guide_sub'), () => window.open('https://tvremote.pages.dev/guide#tracking-other', '_blank')]], -1, true);
+}
+
+// Roku's hidden screens (remote.json "roku", the guide's #brands): Home and arrows pressed one by one over ECP, a pause between. The press times
+// are laid out from the start, not from each answer, so a slow answer does not stretch the gaps. Long enough to stop: a dialog with Cancel.
+const rokuKeys = (s) => s.split(' ').flatMap((t) => { const [k, n] = t.split('*'); return Array(+n || 1).fill(k); });
+async function rokuScreens() {
+  const R = REMOTE.roku, tv = !!TV_KEYS && TV_KEYS.has('VOL_UP');   // a Roku TV, not a stick
+  menuDlg(T('roku.title'), -1, R.screens.filter((x) => !x.tvOnly || tv).map((x) => ['@tv|' + T(x.t), '', async () => {
+    if (x.ask && !await ask(T(x.ask), { ok: T(x.askOk), danger: true })) return;
+    const keys = rokuKeys(x.keys); let stop = false, shown = 0;
+    const line = el('p', { textContent: T('roku.sending', { n: 1, total: keys.length }) });
+    const d = el('dialog', { className: 'ask' }, el('div', { className: 'card' }, line,
+      el('div', { className: 'acts' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => { stop = true; d.close(); } }))));
+    d.addEventListener('close', () => { stop = true; d.remove(); });
+    document.body.append(d); d.showModal();
+    let at = performance.now();
+    for (let i = 0; i < keys.length && !stop; i++) {
+      line.textContent = T('roku.sending', { n: i + 1, total: keys.length });
+      const r = await api('/api/key', { key: keys[i] }); if (!r) { stop = true; break; }
+      const gap = keys[i] === 'HOME' && keys[i + 1] === 'HOME' ? R.homeGap : R.gap;
+      shown++; at = Math.max(at + gap, performance.now() + gap / 2);   // a stalled answer (Wi-Fi): at least half a gap, not the rest at once
+      if (i + 1 < keys.length) await sleep(Math.max(0, at - performance.now()));
+    }
+    if (d.open) d.close();
+    if (shown === keys.length) toast(T('roku.done'));
+  }]), -1, true);
 }

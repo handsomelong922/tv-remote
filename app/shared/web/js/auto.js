@@ -114,6 +114,11 @@ function renderRules() {
   const now = r.volume_now;
   put('#volstate', 'textContent', r.volume === undefined ? '' : r.volume_fixed ? T('auto.vol_fixed')
     : now ? T('auto.vol_now', { max: now.max, to: now.to }) : '');
+  // turn off when nobody uses it; a TV Setup older than it has no "idle_h" in its answer
+  const idle = r.idle_h || 0;
+  $('#idlehrs').replaceChildren(...[0, 1, 2, 3, 4].map((h) => el('button', { type: 'button', className: h === idle ? 'on' : '', textContent: h ? T('auto.idle_h', { n: h }) : T('auto.idle_off'),
+    onclick: () => saveIdle(h) })));
+  put('#idlestate', 'textContent', idle ? T('auto.idle_on', { n: idle }) : '');
   // the memory notice; a TV Setup older than it has no "ram" in its answer
   const ram = r.ram || { on: false, pct: 90 };
   if (document.activeElement !== $('#ramon')) $('#ramon').checked = !!ram.on;
@@ -124,6 +129,7 @@ function renderRules() {
   // folded, each card says what is on (js/fold.js); one that is on starts open
   const off = T('fold.off'), nApps = (n) => T('fold.apps', { n }), ranges = (xs) => xs.map((v) => v.from + ' – ' + v.to).join(', ');
   foldSum('sleepcard', r.sleep_at ? T('fold.sleep', { at: clock(r.sleep_at) }) : off, !!r.sleep_at);
+  foldSum('idlecard', idle ? T('auto.idle_h', { n: idle }) : off, idle > 0);
   foldSum('bedcard', b.on && beds.length ? ranges(beds) : off, !!b.on);
   foldSum('limitcard', rows.length ? nApps(rows.length) : off, rows.length > 0);
   foldSum('lockcard', lock.apps.length ? nApps(lock.apps.length) : off, lock.apps.length > 0);
@@ -179,6 +185,10 @@ $('#bedon').addEventListener('change', async () => {
   const r = await saveBeds(list, $('#bedon').checked);
   if (r && r.bedtime.on) toast(T('auto.bed_enabled'));
 });
+async function saveIdle(hours) {
+  if (hours > 0 && RULES && RULES.idle_h === undefined && !await setupFor('idleoff')) return null;   // an older TV Setup would refuse the action
+  return loadRules({ do: 'idle', hours });
+}
 async function saveRam(on, pct, auto) {
   if (RULES && RULES.ram === undefined && !await setupFor('ram')) { $('#ramon').checked = false; $('#ramauto').checked = false; return null; }
   const cur = (RULES && RULES.ram) || {};
@@ -489,7 +499,7 @@ function renderScenes() {
   foldSum('scenecard', SCENES.length ? T('fold.scenes', { n: SCENES.length }) : T('fold.off'), SCENES.length > 0);
   $('#scenelist').replaceChildren(...(SCENES.length ? SCENES.map((sc) => el('div', { className: 'item' },
     el('div', { className: 'ficon', textContent: sc.icon || '🎬' }),
-    el('div', { className: 'name' }, el('span', { textContent: sc.name }), el('small', { textContent: sc.steps.map(stepText).join(' → ') })),
+    el('div', { className: 'name' }, el('span', { textContent: sc.name }), el('small', { textContent: (sc.at ? '🕗 ' + atText(sc.at) + ' · ' : '') + (sc.on ? '🎯 ' + onText(sc.on) + ' · ' : '') + sc.steps.map(stepText).join(' → ') })),
     el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => runScene(sc) }), '▶', T('auto.run')),
       setLabel(el('button', { className: 'small', onclick: () => editScene(sc) }), '✏️', T('auto.edit')))))
     : [UI.empty(T('auto.no_scenes'))]));
@@ -497,10 +507,59 @@ function renderScenes() {
 
 // the editor: a name, an emoji, and steps added one by one
 let editing = null, draft = [];
+// ---------- "Start at": a time plus days (weekly) or one date; TV Setup starts the scene on the TV (Scenes.kt "at", SceneTimer.kt) ----------
+let atTime = null, atShown = false, atDraft = null;                                                  // null = no time; else { time, once, days: Set, date }
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const atFrom = (at) => at ? { time: at.time, once: !!at.date, days: new Set(at.days || [1, 2, 3, 4, 5, 6, 7]), date: at.date || todayStr() } : null;
+const atOut = () => !atDraft || !atDraft.time ? null : atDraft.once ? { time: atDraft.time, date: atDraft.date } : { time: atDraft.time, days: [...atDraft.days].sort() };
+const atText = (at) => at.time + ' · ' + (at.date || dayText(at.days));
+function drawSceneAt() {
+  const box = $('#sceneat'); if (!box) return;
+  if (!atTime) atTime = el('input', { type: 'time', 'aria-label': T('scenedlg.at_time'),      // one input kept, so typing in it is not interrupted by the redraw
+    oninput: (e) => { if (!e.target.value) atDraft = null; else if (!atDraft) atDraft = atFrom({ time: e.target.value }); else atDraft.time = e.target.value; if (!!atDraft !== atShown) drawSceneAt(); else sceneSums(); } });
+  const time = atTime; time.value = atDraft ? atDraft.time : ''; atShown = !!atDraft;
+  const rows = [el('div', { className: 'atrow' }, time, atDraft ? el('button', { type: 'button', className: 'small', textContent: T('scenedlg.at_clear'), onclick: () => { atDraft = null; drawSceneAt(); } }) : null)];
+  if (atDraft) {
+    const mode = (once, label) => el('button', { type: 'button', className: atDraft.once === once ? 'on' : '', textContent: label, 'aria-pressed': atDraft.once === once, onclick: () => { atDraft.once = once; drawSceneAt(); } });
+    rows.push(el('div', { className: 'fchips' }, mode(false, T('scenedlg.at_repeat')), mode(true, T('scenedlg.at_once'))));
+    if (atDraft.once) rows.push(el('div', { className: 'atrow' }, el('input', { type: 'date', value: atDraft.date, min: todayStr(), 'aria-label': T('scenedlg.at_date'), oninput: (e) => { atDraft.date = e.target.value; sceneSums(); } })));
+    else {
+      const days = el('div', { className: 'fchips schedays' }, ...[1, 2, 3, 4, 5, 6, 7].map((d) => el('button', { type: 'button', className: atDraft.days.has(d) ? 'on' : '', textContent: dayName(d), 'aria-pressed': atDraft.days.has(d),
+        onclick: () => { if (atDraft.days.has(d) && atDraft.days.size === 1) return; atDraft.days.has(d) ? atDraft.days.delete(d) : atDraft.days.add(d); drawSceneAt(); } })));
+      days.setAttribute('role', 'group'); days.setAttribute('aria-label', T('scheddlg.days'));
+      rows.push(days);
+    }
+  }
+  box.replaceChildren(...rows); sceneSums();
+}
+// ---------- "Start when": an app opens, or the TV turns on (Scenes.kt "on", SceneTimer.kt); next to "Start at" ----------
+let onDraft = null;                                                                                   // null | { app } | { power: 'on' }
+const onText = (on) => on.power ? T('scenedlg.on_power') : T('scenedlg.on_app_named', { app: appName(on.app) });
+function drawSceneOn() {
+  const box = $('#sceneon'); if (!box) return;
+  const kind = onDraft ? (onDraft.power ? 'power' : 'app') : 'none';
+  const chip = (k, label, make) => el('button', { type: 'button', className: kind === k ? 'on' : '', textContent: label, 'aria-pressed': kind === k, onclick: () => { onDraft = make(); drawSceneOn(); } });
+  const rows = [el('div', { className: 'fchips' }, chip('none', T('scenedlg.on_none'), () => null), chip('app', T('scenedlg.on_app'), () => ({ app: '' })), chip('power', T('scenedlg.on_power'), () => ({ power: 'on' })))];
+  if (kind === 'app') {
+    const b = el('button', { type: 'button', className: 'appchoice', 'aria-label': T('scenedlg.on_app'), onclick: async () => { const p = await chooseApp(T('scenedlg.on_app'), pickApps.filter((x) => x !== 'dev.tvremote.setup'), onDraft.app); if (p) { onDraft.app = p; drawSceneOn(); } } });
+    appChoice(b, onDraft.app); rows.push(b);
+  }
+  box.replaceChildren(...rows); sceneSums();
+}
+const onOut = () => onDraft && (onDraft.power || onDraft.app) ? (onDraft.power ? { power: 'on' } : { app: onDraft.app }) : null;
+// the line under each folded title: what is set, empty (hidden) when nothing is
+function sceneSums() {
+  const on = onOut(); put('#sceneonsum', 'textContent', on ? onText(on) : '');
+  const say = ($('#scenesay').value || '').split(',').map((x) => x.trim()).filter(Boolean);
+  put('#scenesaysum', 'textContent', say.length ? '“' + say.join('”, “') + '”' : '');
+  const at = atOut(); put('#sceneatsum', 'textContent', at ? atText(at) : '');
+}
+$('#scenesay').addEventListener('input', sceneSums);
 function editScene(sc) {
-  editing = sc; draft = sc ? JSON.parse(JSON.stringify(sc.steps)) : [];
+  editing = sc; atDraft = atFrom(sc && sc.at); onDraft = sc && sc.on ? { ...sc.on } : null; put('#sceneatbox', 'hidden', NATIVE()); put('#sceneonbox', 'hidden', NATIVE()); drawSceneAt(); drawSceneOn(); draft = sc ? JSON.parse(JSON.stringify(sc.steps)) : [];
   put('#scenetitle', 'textContent', T(sc ? 'auto.scene_edit_title' : 'auto.scene_new_title'));
-  $('#scenename').value = sc ? sc.name : ''; $('#sceneicon').value = sc ? sc.icon || '' : ''; $('#scenesay').value = sc && sc.say ? sc.say.join(', ') : '';
+  $('#scenename').value = sc ? sc.name : ''; $('#sceneicon').value = sc ? sc.icon || '' : ''; $('#scenesay').value = sc && sc.say ? sc.say.join(', ') : ''; sceneSums();
+  $('#scenesayfold').open = false; $('#sceneatbox').open = false; $('#sceneonbox').open = false;                   // folded each time: the summary line says what is set
   put('#scenedel', 'hidden', !sc);
   $('#scenetpl').replaceChildren(...(sc ? [] : [el('span', { className: 'muted', textContent: T('auto.examples') }), ...TEMPLATES.map((t) => el('button', { className: 'small', textContent: t.icon + ' ' + t.name, onclick: () => {
     $('#scenename').value = t.name; $('#sceneicon').value = t.icon; draft = JSON.parse(JSON.stringify(t.steps)); drawSteps();
@@ -577,7 +636,10 @@ function draftScene() {
   if (!name) { toast(T('auto.name_scene')); $('#scenename').focus(); return null; }
   if (!draft.length) { toast(T('auto.add_step')); return null; }
   const say = $('#scenesay').value.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 5);   // "Câu gọi": the server drops empties and repeats (Scenes.phrases)
-  return { id: editing ? editing.id : 's' + Date.now().toString(36), name, icon: $('#sceneicon').value.trim(), ...(say.length ? { say } : {}), steps: draft };
+  const at = NATIVE() ? null : atOut(), on = NATIVE() ? null : onOut();
+  if (!NATIVE() && onDraft && !onDraft.power && !onDraft.app) { toast(T('scenedlg.on_pick_app')); return null; }
+  if (atDraft && atDraft.once && !atDraft.date) { toast(T('scenedlg.at_date')); return null; }
+  return { id: editing ? editing.id : 's' + Date.now().toString(36), name, icon: $('#sceneicon').value.trim(), ...(say.length ? { say } : {}), ...(at ? { at } : {}), ...(on ? { on } : {}), steps: draft };
 }
 $('#scenesave').addEventListener('click', async () => {
   const sc = draftScene(); if (!sc) return;

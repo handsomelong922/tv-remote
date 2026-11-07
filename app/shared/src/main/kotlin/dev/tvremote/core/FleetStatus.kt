@@ -23,9 +23,12 @@ object FleetStatus {
 
     private const val SEP = "printf '\\043~\\043\\n'"
     /** wakefulness · app in front · uptime and memory · make, model, Android. dumpsys's "Failed to write" (grep -m1 closes the pipe) goes away with 2>/dev/null. */
-    const val CMD = "dumpsys power 2>/dev/null | grep -m1 mWakefulness=; $SEP; dumpsys window 2>/dev/null | grep -m1 mCurrentFocus; $SEP; " +
-        "cat /proc/uptime; grep -E 'MemTotal|MemAvailable' /proc/meminfo; $SEP; " +
-        "getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release"
+    const val CMD_LIVE = "dumpsys power 2>/dev/null | grep -m1 mWakefulness=; $SEP; dumpsys window 2>/dev/null | grep -m1 mCurrentFocus; $SEP; " +
+        "cat /proc/uptime; grep -E 'MemTotal|MemAvailable' /proc/meminfo"
+    const val CMD = "$CMD_LIVE; $SEP; getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release"
+
+    /** host -> (the ADB connection it was read on, model, Android): they cannot change on one connection, so later rounds send [CMD_LIVE]. */
+    private val fixed = ConcurrentHashMap<String, Triple<Any, String, String>>()
 
     data class Status(val host: String, val state: String = UNKNOWN, val model: String = "", val android: String = "", val app: String = "",
                       val appName: String = "", val home: Boolean = false, val uptime: Long = 0, val memFree: Int = -1, val at: Long = 0) {
@@ -79,13 +82,19 @@ object FleetStatus {
      */
     fun read(host: String, kind: String, open: (Int) -> Boolean, link: AdbLink?, shellMs: Long = 6000, now: () -> Long = System::currentTimeMillis): Status {
         if (kind != Remote.Kind.ANDROID) return Status(host, if (Remote.Kind.ports(kind).any { open(it) }) UP else OFF, at = now())
-        if (!open(5555)) return Status(host, if (open(6466)) UP else OFF, at = now())      // keys only: ADB off, the remote link on
+        if (dev.tvremote.core.adb.AdbPort.candidates(host).none { open(it) }) return Status(host, if (open(6466)) UP else OFF, at = now())      // keys only: ADB off, the remote link on
         val l = link ?: return Status(host, UP, at = now())
         val until = System.nanoTime() + 3_000_000_000L                // a link still dialling gets a moment (the first round after opening the list)
         var st = l.state()
         while (st == "unknown" && System.nanoTime() < until) { Thread.sleep(150); st = l.state() }
         if (st != "ready") return Status(host, UP, at = now())
-        return try { parse(host, l.get().shell(CMD, shellMs), now()) } catch (e: Exception) { Status(host, UP, at = now()) }
+        return try {
+            val adb = l.get()
+            val known = fixed[host]?.takeIf { it.first === adb }
+            val s = parse(host, adb.shell(if (known != null) CMD_LIVE else CMD, shellMs), now())
+            if (known != null) s.copy(model = known.second, android = known.third)
+            else s.also { if (it.model.isNotEmpty()) fixed[host] = Triple(adb, it.model, it.android) }
+        } catch (e: Exception) { Status(host, UP, at = now()) }
     }
 
     /**

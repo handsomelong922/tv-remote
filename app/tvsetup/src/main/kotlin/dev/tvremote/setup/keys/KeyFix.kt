@@ -39,8 +39,14 @@ object KeyFix {
     const val INPUT = "input"; const val APP = "app"; const val HOME = "home"; const val SETTINGS = "settings"; const val LAUNCHER = "launcher"; const val BAR = "homebar"
     /** [CONTROL]: TV Home's Control Center over the app in front (the person gave the key [Target.CONTROL]). */
     const val CONTROL = "controlcenter"
+    /** [VOICE]: TV Setup's own voice command screen ([dev.tvremote.setup.MicActivity]), for a key given [Target.VOICE]. Works with the "mic" rule off: the key is the person's own choice. */
+    const val VOICE = "voice"
     /** A key the person gave [target] (TV Home's map): an app, or TV Home's action. */
-    fun userRule(target: String) = if (target == Target.CONTROL) Rule(CONTROL, listOf(target), true) else Rule(APP, listOf(target), true)
+    fun userRule(target: String) = when (target) {
+        Target.CONTROL -> Rule(CONTROL, listOf(target), true)
+        Target.VOICE -> Rule(VOICE, listOf(target), true)
+        else -> Rule(APP, listOf(target), true)
+    }
 
     /** By key code, as the stock launcher would answer them (cleanyourtv's list, checked on Google TV and Xiaomi remotes). */
     val RULES: Map<Int, Rule> = mapOf(
@@ -108,6 +114,7 @@ object KeyFix {
                 LAUNCHER -> start(HomeKey.intent(c, r.pkgs[0]))
                 BAR -> start(Intent().setClassName("dev.tvremote.home", "dev.tvremote.home.DockBarActivity").putExtra("front", r.pkgs.firstOrNull()))   // the app under the bar: not offered again (it would only restart)
                 CONTROL -> start(Intent().setClassName("dev.tvremote.home", "dev.tvremote.home.ControlCenterActivity"))
+                VOICE -> dev.tvremote.setup.MicActivity.open(c)           // from the key filter's service: exempt from the background-start block (SYSTEM_ALERT_WINDOW appop, prepare)
             }
         } catch (e: Exception) { }
     }
@@ -191,7 +198,7 @@ object KeyFix {
         } catch (e: PackageManager.NameNotFoundException) { false } catch (e: Exception) { true }
     }
 
-    fun launchable(c: Context, pkg: String): Boolean = if (pkg == Target.CONTROL) homeThere(c) else c.packageManager.getLeanbackLaunchIntentForPackage(pkg) != null
+    fun launchable(c: Context, pkg: String): Boolean = if (pkg == Target.CONTROL) homeThere(c) else if (pkg == Target.VOICE) MicVoice.available(c) else c.packageManager.getLeanbackLaunchIntentForPackage(pkg) != null
         || c.packageManager.getLaunchIntentForPackage(pkg) != null
 
     /** The Control Center is TV Home's: no key is taken for it where TV Home is not installed. */
@@ -200,7 +207,7 @@ object KeyFix {
     fun current(c: Context): Map<Int, Rule> = plan(keyMap(c), { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c), forDevice(Build.MODEL, Build.DEVICE), HomeKey.pkg(c))
 
     /** The numbers the person gave an app (TV Home's map): outside TV Home a hold opens it ([HomeKey.DIGITS]). */
-    fun digits(c: Context): Map<Int, String> = HomeKeys.keys(c).filter { (k, p) -> k in HomeKey.DIGITS && p != Target.CONTROL && launchable(c, p) }
+    fun digits(c: Context): Map<Int, String> = HomeKeys.keys(c).filter { (k, p) -> k in HomeKey.DIGITS && p != Target.CONTROL && p != Target.VOICE && launchable(c, p) }
 
     // ---- on or off -------------------------------------------------------------------------------------------------
 
@@ -234,6 +241,9 @@ object KeyFix {
 
     @Volatile var prepared = false
 
+    /** `appops get <pkg> SYSTEM_ALERT_WINDOW` says "SYSTEM_ALERT_WINDOW: allow"; anything else (default, ignore, an error) leaves [prepared] false so it is tried again. */
+    internal fun overlayAllowed(out: String): Boolean = Regex("SYSTEM_ALERT_WINDOW:\\s*allow").containsMatchIn(out)
+
     /**
      * Android 13+ keeps an app that was not put there by a store from switching an accessibility service on (a firmware logs it as
      * "disallowed by device admin policy", as on the FPT box): the shell lifts that for this app, once, while there is ADB.
@@ -243,11 +253,25 @@ object KeyFix {
         // named it; an op the TV does not know is an error that changes nothing. SYSTEM_ALERT_WINDOW: Android 14 blocks an app in
         // the background from starting an activity ("Background activity launch blocked"), and every key that opens an app or the
         // launcher starts one from here; the overlay permission is what exempts it (measured on the emulator: Home did nothing without)
-        try { adb.shell("appops set ${c.packageName} ACCESS_RESTRICTED_SETTINGS allow 2>&1; appops set ${c.packageName} APP_AUTO_START allow 2>&1; appops set ${c.packageName} SYSTEM_ALERT_WINDOW allow 2>&1"); prepared = true } catch (e: Exception) { }
+        try { adb.shell("appops set ${c.packageName} ACCESS_RESTRICTED_SETTINGS allow 2>&1; appops set ${c.packageName} APP_AUTO_START allow 2>&1; appops set ${c.packageName} SYSTEM_ALERT_WINDOW allow 2>&1")
+            // read back, not assumed: the other two may be unknown to this Android (an error that is fine), the overlay one is what the launches need
+            prepared = overlayAllowed(adb.shell("appops get ${c.packageName} SYSTEM_ALERT_WINDOW 2>&1"))
+        } catch (e: Exception) { }
         KeysAddon.prepare(adb)                                        // the service is the add-on's: the same for its package, once it is installed
     }
 
     private var wrote = 0L
+    private var refused = 0                                           // times in a row the system took the service out within the guard
+    const val REARM = 3
+    /** Set by [KeyFixWatch] while it runs: look again in so many ms. */
+    @Volatile internal var later: ((Long) -> Unit)? = null
+
+    /**
+     * Pure: the service was taken out again within 60 s of [wrote] ([tries] times so far): ms until one more look, just past the guard,
+     * or null after [REARM] tries (a policy that always wins: give up, never a fight loop). Without it nothing looked again until the
+     * next package change or boot, and the mic button, hold keys and Home bar stayed dead.
+     */
+    internal fun rearm(t: Long, wrote: Long, tries: Int): Long? = if (tries >= REARM) null else (wrote + 61_000L - t).coerceAtLeast(1_000L)
 
     /** Turn the service on while a dead key needs it and it is wanted, off when not; nothing when this app may not write the settings. */
     fun sync(c: Context) {
@@ -265,9 +289,14 @@ object KeyFix {
                 || HomeKeys.bar(c)                                    // Home over an app shows TV Home's bar ([HomeBar])
                 || HomeKey.pkg(c) != null                             // Home to the launcher picked: asked for on the page, not by the dead-key switch
             if (need && !KeysAddon.current(c)) { KeysAddon.installThen(c) { sync(c) }; return }   // the service is in the add-on: put it on the TV first (it comes back here)
-            if (need == has && !old) return
+            if (need == has && !old) { if (has && System.currentTimeMillis() - wrote >= 60000) refused = 0; return }   // it stayed past the guard: the policy let go
             val t = System.currentTimeMillis()
-            if (need && !old && t - wrote < 60000) return        // the system took it out again just now (a policy): not every few seconds
+            if (need && !old && t - wrote < 60000) {                  // the system took it out again just now (a policy): not every few seconds
+                val wait = rearm(t, wrote, refused)
+                if (wait == null) dev.tvremote.setup.health.AdbReport.once(c, "keyfix_refused", "service taken out ${REARM}x")
+                else { refused++; later?.invoke(wait) }
+                return
+            }
             if (need) wrote = t
             val now = list(was, need)
             Settings.Secure.putString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, now.ifEmpty { null })
@@ -289,6 +318,7 @@ internal class KeyFixWatch(private val c: Context) {
     }
 
     fun start() {
+        KeyFix.later = { ms -> ui.removeCallbacks(again); ui.postDelayed(again, ms) }
         try {
             c.registerReceiver(packages, IntentFilter().apply {
                 addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
@@ -300,6 +330,7 @@ internal class KeyFixWatch(private val c: Context) {
     }
 
     fun stop() {
+        KeyFix.later = null
         try { c.unregisterReceiver(packages) } catch (e: Exception) { }
         try { c.contentResolver.unregisterContentObserver(list) } catch (e: Exception) { }
         ui.removeCallbacks(again)

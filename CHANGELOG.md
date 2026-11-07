@@ -6,6 +6,108 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 ## Unreleased
 
+- A scene can start by itself on an event, next to "Start at": **Start when** an app opens (e.g. YouTube opens, volume 15) or the TV turns on from standby. TV Setup 0.46.1 and later runs it on the TV; one run per opening, a scene that opens its own app does not start itself again, and with no such scene nothing extra runs.
+- Move to a new TV (phone app, TV web page, Computer app; TV tab): one backup file with scenes, the home screen and quick keys, bedtime, limits, schedules, app locks (the list only), favourite channels, the apps Optimize TV turned off and the list of installed apps. On the new TV the page shows what the file holds, you tick what to restore, each part goes back through its own route and a part that fails says so while the rest go on; apps are only listed, with a button to the store or TV Apps. PINs and Telegram keys are never in the file. New `/api/backup` and `/api/backup/restore` carry the TV-side parts.
+- Turn off when nobody uses it (Automation tab, next to Sleep timer): after 1, 2, 3 or 4 hours with no key pressed the TV asks "Still watching?" for a minute, then goes to standby; any key keeps it on. Off by default (nothing runs, nothing is read). TV Setup reads the TV's own last-key time once, when the deadline could first have come; Android's attentive timeout is not used (measured on the Google TV emulator: no warning, and it depends on the stay-awake flag). Playing video is not skipped. Needs TV Setup 0.46.1.
+- TV Home customize page (phone app, TV web page, Computer app): a TV Home that answers a read or a change without its settings no longer throws "Cannot read properties of undefined (themesBuiltin)"; the page keeps what it shows.
+- A TV that drops the ADB link (`adb connection lost: EOFException`; TCL, Skyworth, Xiaomi) no longer fails the page's request: Manage redials once and runs the command again when it never reached the TV, or when it only reads (dumpsys, pm list, getprop, settings get ...); installs, keys and launches are never repeated.
+
+- A package question the TV did not answer (a weak box whose system_server stalls: "Failure calling service package", "Could not access the Package Manager", nothing) is no longer read as an answer, neither "installed" nor "not installed" nor an empty app list. Optimize's checks, Undo, a launcher rollback (retries once after 2 s, then stays undone and says so), TV Setup's version check (never "Install TV Setup" from a failed read), the launcher gallery and TV Apps now stop with an error instead of deciding wrongly. A turned-off launcher / TV app shows "Turned off on the TV", and Use / Open turns it back on first.
+- Remote keys: a colour or app key can now open TV Remote's voice command ("Voice command" next to the apps in Quick keys), for TVs like the Xiaomi Mi TV A2 where the Assistant button belongs to the system (issue #18). Needs TV Setup 0.46.1; works with "Mic button opens TV Remote voice" off.
+- Optimize TV, the Apps tab, scenes and the home-screen swap now work on Android 5-8 TVs, which have no `cmd package query-activities`: they read the package manager's own table instead, and Optimize refuses to turn anything off (with a plain message) when the TV cannot say which apps are Settings or inputs.
+- Send the log, Let support look and TV Setup's Send to support first ask "What went wrong?": Can't connect / A key does nothing / An app won't open / Picture or sound / Something else, plus an optional few words. Both are optional and go at the top of the report, so support knows what you hit.
+- Google TV with a profile switched in: Optimize TV, Undo, the Apps list, Reoptimize and the launcher swap turn apps off and on, and read the list, for the profile in front (they acted on the first profile only, so an app turned off still showed for the second one).
+- A step that fails while ADB still works (a bad link to pin, the TV not answering one command, a full disk on the phone) now says what failed, not "no ADB connection to the TV yet".
+- Wireless debugging: a pairing the TV forgot now says "pair again" instead of a raw "Failure in SSL library", and a TLS port that went away is forgotten instead of being dialled on every try.
+- Installing TV Games / TV Channels / TV Apps while GitHub cannot be reached says so, instead of "it comes in the next release".
+- Phone app: the address box checks what is typed (IPv4, "192 168 1 5" read as dots, a host name, [IPv6]) and says what an address looks like instead of dialing "42" or a Downloader code; an empty address no longer dials localhost on resume (support: `failed to connect to ip6-localhost/::1`).
+- Playing a link in TV Channels, opening a pin and Tailscale bring back an app that is turned off (or kept for another profile) and try once more, as Open does; TV Channels turned off is no longer called "too old". TVs before Android 7 fall back to plainer commands.
+- TV Setup: an unanswered "Allow USB debugging?" is asked 3 times, not every few minutes forever over what is playing; then it says it stopped and asks again when TV Setup is opened or a button on the page is used.
+- TV Setup: a timed-out link to the TV's own ADB says the TV's ADB is not answering (switch debugging off and on, or restart), not "the network is slow".
+- Census: "TV Setup ADB ..." reports are no longer sent from Fire TV (blocked by Amazon), and `crashes.py --new` hides them unless `--adb`.
+- The TV's web page no longer posts the Computer-app-only `/api/assist` stop (a 404) when the ADB help closes.
+
+- First setup with ADB off: the Setup tab's steps and the phone app's How to connect put the remote buttons first (they work at once, no ADB) and ADB after them as an optional "more"; README Quick start has the same order.
+- Computer app: a scan that finds no TV now offers three buttons: Install on the TV (the Downloader code, then the step-by-step guide), Type the IP and Scan again.
+- The "can't reach the TV" banner has a Send the log button next to its fix, for the cases the self-check cannot solve.
+- Phones: the small buttons in lists and card heads (Open / Wake / Delete on a saved TV, ⋯) get a 44 px touch area; they look the same.
+- Telegram history in Settings: a double-tapped More no longer adds the same rows twice, and rows of the chat (or TV) left meanwhile no longer land in the new list.
+- Setup tab steps: switching TV no longer carries over a pairing started on the old one, nor draws the old TV's steps under the new one.
+- Words: Russian counts use the right form for 2-4 (22-24 …) everywhere; Russian has the scene "Add to TV Home" words; the voice settings say the offline commands come in Vietnamese or English (with both sizes, ru/fr); Vietnamese stream errors and the RAM card in plain words; the guest check-out in Russian no longer reads "evict"; Vietnamese says "app" and, in the Files tab, "tệp" throughout.
+- After picking another TV, a slow answer from the old one no longer replaces the new TV's cards, apps, settings or Health figures.
+- The TV's web page: pairing tells a wrong code, too many wrong codes and no network apart, instead of always "the code has expired".
+- Several TVs: one missed progress check no longer freezes the install lines and hides Stop; after ten it says the connection was lost.
+- Copy buttons work on the TV's plain-http web page too (the kids mode backup codes, the app log, the TV's clipboard).
+- Safari 14 to 15.3 (no dialog support) now get "The browser needs an update" instead of questions that silently do nothing.
+- Health, its RAM apps, the Setup tab's TV settings and the Apps list: a first read that fails says so, with Try again, instead of a spinner or a blank list.
+- Searching Apps, Files, Quick launch and Open apps ignores accents ("truyen hinh" finds "Truyền hình").
+- The page loads only its own language's words before it draws; English and Vietnamese only when a word is missing.
+- TV Setup: a timed scene that finds no ADB at its minute is tried again for 5 minutes instead of being dropped.
+- TV Setup: the sleep timer, bedtime, limits and app locks keep running after an unexpected error in a check.
+- TV Setup: when the system takes the key filter out right after it was turned on, TV Setup looks again a few times instead of giving up until the next reboot.
+- TV Setup updates itself on each TV at its own moment within a day of a release (three days on Android 10 and older), so a bad release can be pulled before it reaches most TVs; Update now still installs at once.
+- Voice: when TV Setup Voice cannot load its speech model, the TV's own recognizer listens instead of the mic giving up for 10 minutes.
+- Support: the report sent to support hides link keys (?k=, pass=), tokens and emails in the log; remote support may only read a fixed list of system dumps.
+- Home Assistant / Shortcuts in the Computer app: `tv=` (a saved TV's name or address) aims a call at that TV instead of the one selected in the window; an unknown name answers 404 with the list of saved TVs. Without `tv=` nothing changes. TV Setup's hook (one TV) refuses `tv=` rather than act on the wrong TV.
+- Android TV remote link (keys without ADB): a TV that vanished without closing the link (plug pulled, router restarted) is noticed after 20 s of no pings and dialled again, instead of showing "connected" for about 15 minutes.
+- App names refresh in the background again (a comment had swallowed the thread's start): an app installed since the last run no longer shows its package name.
+- Computer app: switching TVs while a touch or typing request was under way could leave a picture session (scrcpy) running on the old TV until the app quit.
+- Wake-on-LAN refuses a MAC with letters that are not hex ("bad MAC") instead of a server error.
+- Lighter on the TV: the Setup tab's status no longer re-reads the TV's facts after every key press; Health reads the Bluetooth dump once a minute, not twice, and the model/Android/chip once per connection; See every TV at a glance reads make, model and Android once per connection.
+- Support sessions: the Computer app's saved-TV list leaves out each TV's web-page pass and SSH relay settings, and the log scrubber blanks `setup_pass` and `relay_*`.
+- Optimize TV's restore script names the TV's own ADB port (a BeeCube on 5877), and TV Setup's update report lists every known ADB port.
+- Home screen: a failed pick after a launcher set "through TV Setup" no longer leaves the old launcher's record behind (Settings and the watchdog named a launcher Home no longer opened).
+- Blocked apps (was "Locked apps", so the name no longer clashes with PIN-locked apps): Unblock now lifts the block under the Android user (Google TV profile) it was set for, not only user 0.
+- Words sent by the apps (not the page) pick plural forms per language as the page does: Russian 2-4 / 22-24 and Arabic's forms are right.
+- TV Home: the widget row is no longer rebuilt every minute while nothing on it changed (less idle CPU on weak boxes).
+- Site: the TV-only install (Downloader code) shows in the hero, a short link `tvremote.pages.dev/dl/tv-setup.apk` for TVs without Google Play, a one-line note on Android's warning under the download buttons, the live demo has an English address (`/en/demo/`), and the version pill no longer sits at "NEW" when GitHub's API limit is hit.
+- Phone app: a remote in notifications and on the lock screen (Settings → Notifications, off by default): Volume down / up, Play / Pause, Mute and Power for the TV used last, through the same connection as the remote screen when it is open. It closes its connection 2 minutes after a press and goes away after 2 hours unused, when switched off, or when no TV is saved (issue #8).
+- TV Home: a Photo frame widget shows your own photos one after another with a fade (up to 10, added and removed from the phone, 30 s each by default).
+- Simple remote (Tools → Simple remote), for older people: only big keys with words under them (Power, arrows + OK, Back, Home, volume, Mute, channel, Speak), everything else hidden; leaving takes a 2-second hold on a small button. Remembered per device (the page in the browser, the phone app in its settings). The keys are one list in remote.json the page and the phone app both draw. Share → Share the TV can make a link that opens straight in it (`?simple=1`).
+- The Setup tab's TV Home, TV Channels and TV Games cards hide Open and "installed" when ADB goes away, instead of leaving a button that answers "no ADB connection".
+- Open on the TV Games / TV Channels card brings the app back when the TV had it turned off or kept it for another profile (no icon on the TV, yet "installed"), then opens it; an app's own error ("TV Games is not on this TV", a full photo frame …) is no longer shown as "no ADB connection to the TV yet".
+
+## 0.48.0 - 2026-11-07
+
+Web 0.48.0 · Phone app 0.45.0 · TV app 0.46.0 · TV Home 0.29.1 · TV Channels 0.20.0 · TV Games 0.22.0 · TV Apps 0.6.0
+
+- The 👁️ Support button (let support look at this TV for 30 minutes) sits in the top bar now, not at the bottom of the Setup tab's TV card.
+- Draw on the TV: a 🎞️ Video button beside Picture and Text opens the Video on TV box (a video or a camera in a frame on the TV).
+- TV Home photos on the TV's web page: holding OK to delete a photo no longer throws when the list was drawn again meanwhile.
+
+- TV health shows "Locked apps" when another package (usually the Google TV launcher) has suspended apps ("App isn't available... managed by Google TV"): who locked which apps, and an Unlock button that asks first, then resets the locking app (clearing it makes Android lift all its locks; `pm unsuspend` only lifts the shell's own). One filtered `dumpsys package` read a minute while Health is open; nothing shows or runs more when no app is locked. The same card sits on top of the Apps tab, and a locked app's ⋯ menu has Unlock (Google TV Home is protected from Clear data there). Proved on a TCL G10 (Android 12): clearing the Google TV launcher lifted all its locks.
+
+- Scenes can start by themselves: the scene editor has an optional "Start at" (a time plus weekdays to repeat, or one date). TV Setup keeps and starts them on the TV, so the phone and computer need not be on; with no timed scene nothing runs for it. A run missed while the TV was off or its clock jumped is skipped, not made up. Needs a newer TV Setup (the page offers the update).
+
+- ADB on a port other than 5555 (BeeCube Extreme2 uses 5877): TV Setup dials the TV's own port, the phone and computer apps try 5877 too; any other port can be typed with the address (`192.168.1.5:5877`, or a comma on a phone's number pad) and is kept for that TV
+
+- Health → Now: four views, updated every 2 seconds while open (nothing runs once it is left). This TV: CPU, RAM and storage rings, a 60 s network chart and the facts in two columns (on for, screen, Android, patch, Wi-Fi, signal, MAC with copy); CPU: the apps / system / storage-wait split, each core, the apps running; RAM: in use / cached / free, swap, apps by memory with Stop; Network: the speed now, totals since start, open connections and each app's traffic
+
+## 0.47.1 - 2026-11-06
+
+Web 0.47.1 · Phone app 0.44.1 · TV app 0.45.1 · TV Home 0.29.1 · TV Channels 0.20.0 · TV Games 0.22.0 · TV Apps 0.6.0
+
+- Web page: an error from a script the hosting app evaluates (Zalo's in-app browser) no longer shows an error box or a crash report
+- Roku: Tools has "Roku hidden screens" (platform and CPU, Wi-Fi, network, HDMI, developer mode, installed apps, force restart and more); the app sends each secret key sequence over ECP with a pause between presses, shows progress and can be cancelled, and asks before a restart
+- TV Home: a TCL remote's Netflix, YouTube, Prime Video and Apple TV buttons open their app on the home screen again when the stock launcher is off
+- Installing an APK on a TV without room now opens one dialog instead of a one-line error: what the APK needs against what the TV has free, a "Clear cache and try again" button, and the 5 apps using the most space with Clear data and Uninstall (Remove updates for updated system apps); Android 14's "not enough space" from pm is now recognised as a full TV (new `/api/storage`, 0.15 s)
+- TV Home settings page: a picture upload whose answer came back incomplete no longer breaks the page until it is reopened
+- TV Setup, Phone and Computer apps: an ADB key file cut short (power lost while it was written) no longer stops the app at every start; a new key is made and the TV asks to allow it once more
+- Phone app: on an LG, Samsung, Roku or VIDAA TV the Menu key no longer starts the "turn on ADB" help ("did Settings open?" then ADB steps and an ADB connection attempt); no ADB help or Manage screen opens for a TV without ADB.
+- Send the log page: the confirmation scrolls into view after Send.
+
+## 0.47.0 - 2026-11-05
+
+Web 0.47.0 · Phone app 0.44.0 · TV app 0.45.0 · TV Home 0.29.0 · TV Channels 0.20.0 · TV Games 0.22.0 · TV Apps 0.6.0
+
+- Voice: when TV Setup Voice cannot load its speech model, the mic card says so ("Speech model could not load") instead of "No network for speech recognition".
+- TV Setup: the sleep timer no longer clears itself, and Telegram no longer says "slept", when the TV could not be turned off (ADB down): it keeps trying; the same for the "app closed" alert. One word on screen per failure and one report per version. The key filter checks that the overlay permission really took, and the "turn ADB back on" switch shows off when its permission is missing.
+- Silent failures now say so: the Dim dialog tells you when the TV does not answer (and a failing slider once, not on every move), Talk to the TV no longer says "Sent" when the voice upload failed, and the phone app's Open link over ADB says when the TV has no app for it.
+- ADB: `delayed_ack` (adb's own, for TVs that list it, Android 12+ here): a stream may have a window of bytes in flight instead of one packet, so pictures, file pushes, installs and the scrcpy-server push stop crawling on a slow or distant link (Tailscale on 5G, 25-53 ms ping); on a 50 ms round trip a 30 MB read from the TV went from 9.3 s to 1.9 s. Older TVs keep the one-packet way. `dev/test/slowlink.js` adds delay and a bandwidth cap between a client and an emulator.
+- Picture and sound no longer fail in silence: the page and phone stop listening with a reason when the sound decoder fails (it is first made again) or the connection cannot be kept; a browser that mutes the sound (a call, a background tab) is resumed or told so; a refused sound capture on Android 11 or newer says so instead of "needs Android 11"; a TV with no Opus encoder now sends PCM to the web page; why the picture ended (a failed encoder list, a decoder that cannot restart) reaches the page; sound gaps (count and length) go to the log and to `?stats=1`.
+- TV Games: a real keyboard on the TV plays as two pads, each half its own player with its own slot (A: W A S D, J K U I, Q E, Enter, Tab; B: arrows and the number pad, or , . / ; [ ] on a laptop); the Back card lists the keys when a keyboard is plugged in. The TV remote, Map remote keys and menus are untouched.
+- TV Games: Game Boy, Game Boy Color, Mega Drive / Genesis, Master System, Game Gear and PC Engine (cores downloaded when first needed: Gambatte, clownmdemu, SMS Plus, Beetle PCE Fast; all free licences, no non-commercial core). Phone pad layouts: Mega Drive A B C X Y Z, PC Engine I II Run, Master System 1 2. Free homebrew: Tobu Tobu Girl Deluxe (Game Boy).
+- TV Games: SNES, Game Boy Advance and PlayStation cores are now on the download server and switched on (they were listed but off).
 - TV Home: beside a widget column, widgets with nothing to show (a timer not set) no longer rebuild the screen without end; a clock widget with no room leaves the top bar's clock on; icon / glass tiles load their icons at start off the main thread; 9 ready-made themes tuned after a design review (focus ring where the accent met the wallpaper, darker shade on busy photos, fewer columns where icons were too small).
 - TV Home: the Market widget can show Vietnam's fuel prices (RON 95, E5 RON 92, diesel, per litre) next to gold, with the change since the last price move; its own switch, off by default. Read from Saigon Petro's site, else Petrolimex's table on webgia.com, every 3 hours while the widget is on screen.
 - TV Home: a theme file imported on the page keeps where the widgets sit and the custom colours; a theme saved before the newer choices still shows as the one in use; icon / glass tiles load their icons off the main thread; the theme's details list where the widgets sit; App rows is hidden beside a widget column (it did nothing there).
@@ -25,6 +127,13 @@ Web 0.46.0 · Phone app 0.43.0 · TV app 0.44.0 · TV Home 0.28.0 · TV Channels
 - TV Setup Voice (on-TV speech) now hears searches and song or film names: a sentence the command list cannot hold used to come out as forced command words ("Ngày xưa anh nói" became "nghệ xoá hẹn noi phút"); the same sound is also decoded freely and used when the commands do not understand the grammar text. Commands stay exact and instant. A new choice in TV Setup's voice settings (the page and the TV screen): "Commands only (fast)" is the default and runs none of it; "Commands + free speech (slower, finds searches right)" turns it on. The add-on grows by about 14 MB either way (Vietnamese 39 MB, English 47 MB); a search on a weak box can take a few seconds more.
 - Voice commands: pick which installed app "search …" opens and searches in (SmartTube, YouTube; TizenTube is only opened, it takes no search words) and which app the word "YouTube" means; both default to today's behaviour. A scene can have its own voice phrases ("Voice phrases" in the scene editor, up to 5): saying one runs the scene, and TV Setup's offline voice hears them too.
 - TV Setup: says when the remote's mic button cannot reach it (on a Bluetooth voice remote with the Google app on, a warning "if the mic button still opens Google" until a real mic press reaches TV Setup; or another app is the default for voice search) on the page's mic card, in its log and in its Optimize menu; one button turns the Google app off over ADB (Optimize TV's Undo turns it back on), or opens that app's settings without ADB. Nothing is checked while the mic option is off.
+- Phone app away from home (Tailscale): the TV's picture comes from TV Setup on the TV instead of over ADB from the phone, so it stops stuttering on mobile data at every size; touches go the same way. Without TV Setup, or if its picture does not come, it works over ADB as before.
+- Phone app 🎧 on TVs with no Opus encoder (NVIDIA Shield): the sound is sent as AAC instead; it used to stay silent while scrcpy-server died at once.
+- "Software" encoder found on TVs that mark Google's encoder "hybrid" (NVIDIA Shield); it found none there.
+- The picture never asks the TV for a key frame before the first frame came: scrcpy-server died on it on a stuck TV, and every client then started it again and again.
+- Arabic (العربية): the phone app, the web page (TV web page, computer app, the phone's Manage screen) and the TV apps' words; the web page turns right to left, while the remote's arrows, number keys, media keys and the TV's picture keep their sides.
+- Phone app away from home: a quick tap on the picture reaches the TV as one tap (it could arrive as a long press over mobile data); a pass TV Setup no longer takes is dropped and fetched again; the sound's HQ setting works when the TV sends AAC.
+- The TV's encoder list is kept per TV, so 🎧 starts about a second sooner after the first time.
 
 ## 0.45.0 - 2026-11-05
 

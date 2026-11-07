@@ -39,7 +39,7 @@ section.card.pair { text-align:center; padding:28px 16px; align-items:center; }
 #pairerr { min-height:20px; margin-top:10px; }
 /* Until a TV is chosen there is only the list of TVs: no tabs, no remote, nothing that needs a TV. */
 main:not(.picking) #picker { display:none; }
-main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking #chipTv, main.picking #chipAdb, main.picking #switchtv { display:none; }
+main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking #chipTv, main.picking #chipAdb, main.picking #switchtv, main.picking #suptv { display:none; }
 #picker { display:flex; flex-direction:column; gap:14px; }
 #pickcols.solo { grid-template-columns:1fr; max-width:640px; width:100%; margin:0 auto; }
 #picker .item { cursor:pointer; }
@@ -325,3 +325,4 @@ dialog.ldetail .card { width:min(640px, 94vw); }
 .ltag.ours { background:var(--ok-bg); color:var(--ok); box-shadow:inset 0 0 0 1px currentColor; font-weight:600; }
 .ltag.warn, .item .name small.warn { color:var(--warn); }
 .note.warn { background:var(--warn-bg); color:var(--warn); padding:8px 10px; border-radius:8px; }
+dialog.ask .fchips { flex-wrap:wrap; row-gap:8px; }   /* "What went wrong?" (askSaid): every chip in view */

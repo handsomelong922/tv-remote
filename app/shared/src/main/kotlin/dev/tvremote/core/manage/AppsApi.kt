@@ -1,4 +1,5 @@
 package dev.tvremote.core.manage
+import dev.tvremote.core.ontv.TvUser
 import dev.tvremote.core.adb.Adb
 import dev.tvremote.core.adb.TvShell
 import dev.tvremote.core.manage.Procs.KEEP_NOW
@@ -16,15 +17,17 @@ import org.json.JSONObject
 
 /** The Apps tab and the task manager: the TV's apps listed, opened, stopped, turned off, removed, backed up; the privacy check's actions. */
 internal class AppsApi(core: ManageCore) : ManagePart(core) {
+    private val activities get() = dev.tvremote.core.adb.Activities(::sh)
     override fun route(what: String, post: Boolean, r: HttpServer.Request): HttpServer.Response? {
         when (what) {
             "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
+            "storage" -> return HttpServer.Response.json(storage(r.q("size").toLongOrNull() ?: 0L))
             "apps/report" -> return HttpServer.Response.json(appsReport())
             "privacy" -> if (!post) return HttpServer.Response.json(privacy.snapshot(r.q("since").toIntOrNull() ?: 0, r.q("id").toIntOrNull() ?: -1))   // the scan under way or the last one (Privacy.kt); a route nobody but the owner may use (Scope allows none of it)
             "recents" -> if (!post) return HttpServer.Response.json(recents())
             "app/meta" -> {                                       // a name and whether /api/app/icon has a picture (the computer app answers it first)
                 val pkg = r.q("pkg")
-                if (!PKG.matcher(pkg).matches()) return HttpServer.Response.error(404, "not found")
+                if (!PKG.matcher(pkg).matches()) return HttpServer.Response.error(404, "no such app")
                 return HttpServer.Response.json(Manage.meta(labels, pkg))
             }
             "procs" -> return HttpServer.Response.json(procs())
@@ -95,7 +98,7 @@ internal class AppsApi(core: ManageCore) : ManagePart(core) {
     private fun appsReport(): JSONObject {
         // one shell round trip: the parts come back separated by "#~#" lines (meminfo --oom: the full one asks every app, seconds on a slow TV)
         val p = sh("getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; grep MemTotal /proc/meminfo; " +
-            "printf '\\043~\\043\\n'; pm list packages -3 -e; printf '\\043~\\043\\n'; pm list packages -s -e; printf '\\043~\\043\\n'; pm list packages -d; " +
+            "printf '\\043~\\043\\n'; ${TvUser.list("-3 -e")}; printf '\\043~\\043\\n'; ${TvUser.list("-s -e")}; printf '\\043~\\043\\n'; ${TvUser.list("-d")}; " +
             "printf '\\043~\\043\\n'; dumpsys meminfo --oom").split("#~#\n")
         val part = { i: Int -> p.getOrElse(i) { "" } }
         val list = { i: Int -> part(i).split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.sorted() }
@@ -105,7 +108,7 @@ internal class AppsApi(core: ManageCore) : ManagePart(core) {
             .put("android", head.getOrElse(2) { "" }.trim())
             .put("ram_mb", (Regex("MemTotal:\\s+(\\d+)").find(part(0))?.groupValues?.get(1)?.toLongOrNull() ?: 0L) / 1024)
             .put("user", JSONArray(user)).put("system", JSONArray(list(2))).put("disabled", JSONArray(list(3)))
-            .put("memory", JSONArray(memoryByApp(part(4)).map { JSONObject().put("pkg", it.first).put("mb", it.second) }))
+            .put("memory", JSONArray(memoryByApp(part(4), known).map { JSONObject().put("pkg", it.first).put("mb", it.second) }))
         val names = JSONObject()
         for (p in user) labels?.label(p)?.let { names.put(p, it) }
         return o.put("labels", names)
@@ -115,12 +118,13 @@ internal class AppsApi(core: ManageCore) : ManagePart(core) {
     private fun apps(system: Boolean): JSONObject {
         val pkgs = ArrayList<String>()
         // the apps turned off are always listed, so "Turn on" is at hand without showing every system app
-        val listing = sh("pm list packages" + (if (system) "" else " -3") + "; echo '#~#'; pm list packages -d; echo '#~#'; " +
+        val listing = sh(TvUser.list(if (system) "" else "-3") + "; echo '#~#'; " + TvUser.list("-d") + "; echo '#~#'; " +
             "dumpsys package packages | grep -E '^  Package \\[|^    versionName='" +   // every version in one go: ~0.2 s
-            (if (!system) "; echo '#~#'; for c in LEANBACK_LAUNCHER LAUNCHER; do cmd package query-activities --brief -a android.intent.action.MAIN" +
+            (if (!system) "; echo '#~#'; for c in LEANBACK_LAUNCHER LAUNCHER; do cmd package query-activities --brief ${TvUser.USER} -a android.intent.action.MAIN" +
                 " -c android.intent.category.\$c 2>/dev/null; done" else "")).split("#~#")
-        for (line in listing.getOrElse(3) { "" }.jsplit("\n"))
-            if (line.contains('/')) line.trim().substringBefore('/').let { if (it !in pkgs) pkgs.add(it) }
+        val screens = dev.tvremote.core.adb.Activities.brief(listing.getOrElse(3) { "" }).map { it.substringBefore('/') }
+            .ifEmpty { if (system) emptyList() else activities.let { a -> listOf("LEANBACK_LAUNCHER", "LAUNCHER").flatMap { a.packages("android.intent.action.MAIN", it) ?: emptySet() } } }   // Android 8 and older
+        for (p in screens) if (p !in pkgs) pkgs.add(p)
         val versions = HashMap<String, String>()
         var at: String? = null
         for (line in listing.getOrElse(2) { "" }.jsplit("\n")) {
@@ -166,7 +170,7 @@ internal class AppsApi(core: ManageCore) : ManagePart(core) {
             // off and on again, for the system apps nobody uses (Undo-able, unlike uninstalling); never what the TV or this project needs
             "disable" -> {
                 if (Setup.mustKeep(pkg) || pkg == homeNow() || Setup.inUse(::sh, pkg)) throw IllegalArgumentException("protected: the TV needs this app")
-                val out = sh("pm disable-user --user 0 $pkg 2>&1")
+                val out = sh("${TvUser.disable(pkg)} 2>&1")
                 if (!out.contains("disabled")) throw IllegalArgumentException(out.trim().ifEmpty { "disable failed" })
                 return HttpServer.Response.ok()
             }
@@ -177,7 +181,7 @@ internal class AppsApi(core: ManageCore) : ManagePart(core) {
                 return HttpServer.Response.ok()
             }
             "enable" -> {
-                val out = sh("pm enable $pkg 2>&1")
+                val out = sh("${TvUser.enable(pkg)} 2>&1")
                 if (!out.contains("enabled")) throw IllegalArgumentException(out.trim().ifEmpty { "enable failed" })
                 return HttpServer.Response.ok()
             }
@@ -223,9 +227,14 @@ internal class AppsApi(core: ManageCore) : ManagePart(core) {
         } ?: JSONObject.NULL)
     }
 
+    /** Off Optimize TV's way and on its Undo list (the privacy check, and Move to a new TV's restore). Refuses what the TV needs (IllegalArgumentException). */
+    fun turnOff(pkg: String) {
+        app(pkg, "disable")
+        sh("grep -qx '$pkg' ${Setup.OFF_LIST} 2>/dev/null || echo '$pkg' >> ${Setup.OFF_LIST}")
+    }
+
     private fun privacyOff(pkg: String, off: Boolean): JSONObject {
-        app(pkg, if (off) "disable" else "enable")
-        if (off) sh("grep -qx '$pkg' ${Setup.OFF_LIST} 2>/dev/null || echo '$pkg' >> ${Setup.OFF_LIST}")
+        if (off) turnOff(pkg) else app(pkg, "enable")
         return JSONObject().put("ok", true).put("row", privacy.change(pkg) { it.put("off", off) } ?: JSONObject.NULL)
     }
 
@@ -250,12 +259,15 @@ internal class AppsApi(core: ManageCore) : ManagePart(core) {
      * The task manager (Health tab): the apps holding memory now, what each is doing ([Proc.state]) and whether it may be
      * stopped. One shell round trip; meminfo takes a second or more on a slow TV, so the page asks only while it is open.
      */
+    /** An installed app, as the names read from the TV say (all of them when they cannot be read): [Procs.appOf]. */
+    private val known = { p: String -> labels?.let { it.label(p) != null } ?: true }
+
     private fun procs(): JSONObject {
         val p = sh("grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; dumpsys meminfo --oom; printf '\\043~\\043\\n'; " + KEEP_NOW).split("#~#\n")
         val kb = { k: String -> (Meminfo.kb(p[0], k) ?: 0L) * 1024 }
         val list = JSONArray()
-        for (a in procsOf(p.getOrElse(1) { "" }, keepNow(p.getOrElse(2) { "" }))) list.put(JSONObject().put("pkg", a.pkg)
-            .put("label", labels?.label(a.pkg) ?: a.pkg).put("mb", a.mb).put("state", a.state).put("keep", a.keep ?: JSONObject.NULL))
+        for (a in procsOf(p.getOrElse(1) { "" }, keepNow(p.getOrElse(2) { "" }), known)) list.put(JSONObject().put("pkg", a.pkg)
+            .put("label", (if (a.pkg == "android") null else labels?.label(a.pkg)) ?: a.pkg).put("mb", a.mb).put("state", a.state).put("keep", a.keep ?: JSONObject.NULL))
         return JSONObject().put("apps", list).put("mem_total", kb("MemTotal")).put("mem_free", kb("MemAvailable"))
     }
 
@@ -276,6 +288,22 @@ internal class AppsApi(core: ManageCore) : ManagePart(core) {
         if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
         val keep = keepNow(sh(KEEP_NOW))
         if (keepWhy(pkg, keep) != null) throw IllegalArgumentException("protected: the TV needs this app")
+    }
+
+    /** An install did not fit: {free, need, ok, apps}: the TV's free bytes, what [size] (an APK) needs, the biggest apps to trim ([dev.tvremote.core.ontv.Space]). */
+    private fun storage(size: Long): JSONObject {
+        val out = sh(dev.tvremote.core.ontv.Space.READ)
+        val free = dev.tvremote.core.ontv.Space.free(out)
+        val need = if (size > 0) TvPaths.needed(size, 2) else 0L
+        val o = JSONObject().put("need", need).put("ok", free == null || free >= need)
+        if (free != null) o.put("free", free)
+        val apps = JSONArray()
+        val home = homeNow()                                          // its Clear data / Remove would only answer "protected"
+        for (a in dev.tvremote.core.ontv.Space.top(out, { Setup.mustKeep(it) || it == home })) {
+            apps.put(JSONObject().put("pkg", a.pkg).put("bytes", a.bytes).put("data", a.data).put("cache", a.cache).put("user", a.user)
+                .put("meta", Manage.meta(labels, a.pkg)))
+        }
+        return o.put("apps", apps)
     }
 
     /** Closes the apps that are only waiting in the background (what is on screen stays); says how much memory came back, in MB. */

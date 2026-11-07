@@ -154,5 +154,8 @@
   "need_more": {
     "one": "还需 %1$d 位玩家",
     "other": "还需 %1$d 位玩家"
-  }
+  },
+  "keys_title": "键盘双人模式",
+  "keys_p1": "玩家 A：W A S D 移动 · J K U I = A B X Y · Q E = L R · Enter = Start · Tab = Select",
+  "keys_p2": "玩家 B：方向键移动 · 小键盘 1 2 4 5 = A B X Y · 小键盘 7 8 = L R · 小键盘 Enter = Start · 小键盘 0 = Select"
 }

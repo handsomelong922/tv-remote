@@ -209,22 +209,36 @@ object AdbPrompt {
         override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
     }
 
-    /** Asks TV Setup on [host] to answer the TV's question about [fingerprint]. allowed, none, other:…, forgotten (pass no longer valid) or an error. */
-    fun ask(host: String, pass: String, fingerprint: String, waitS: Int): String {
+    /**
+     * A request to TV Setup's API on [host] ([path] with its query) with this device's [pass]. A pass with a fingerprint is only
+     * ever sent over TLS to that certificate; plain HTTP is for a TV Setup too old to have it. Also the picture's relay (Tv.kt).
+     */
+    /** One context per pinned certificate, so a connection after the first resumes its TLS session (the relay's touches, Tv.kt) */
+    private val pinned = java.util.concurrent.ConcurrentHashMap<String, javax.net.ssl.SSLSocketFactory>()
+
+    /** TV Setup's plain-HTTP port; a test moves it to a free one (8765 is the Computer app's on a developer's machine) */
+    @Volatile internal var plainPort = 8765
+
+    fun openSetup(host: String, pass: String, path: String): HttpURLConnection {
         val token = pass.substringBefore(':')
         val pin = pass.substringAfter(':', "")
+        val c = dev.tvremote.core.Lan.open(if (pin.isEmpty()) URL("http://$host:$plainPort$path") else URL("https://$host:8766$path")) as HttpURLConnection
+        if (c is HttpsURLConnection) {
+            c.sslSocketFactory = pinned.getOrPut(pin) { SSLContext.getInstance("TLS").apply { init(null, arrayOf<TrustManager>(Pin(pin)), null) }.socketFactory }
+            c.hostnameVerifier = HostnameVerifier { _, _ -> true }
+        }
+        c.connectTimeout = 4000
+        c.setRequestProperty("Cookie", (if (pin.isEmpty()) "tvr=" else "tvrs=") + token)
+        return c
+    }
+
+    /** Asks TV Setup on [host] to answer the TV's question about [fingerprint]. allowed, none, other:…, forgotten (pass no longer valid) or an error. */
+    fun ask(host: String, pass: String, fingerprint: String, waitS: Int): String {
         return try {
-            // a pass with a fingerprint is only ever sent over TLS to that certificate; plain HTTP is for a TV Setup too old to have it
-            val c = dev.tvremote.core.Lan.open(if (pin.isEmpty()) URL("http://$host:8765/api/adb/allow") else URL("https://$host:8766/api/adb/allow")) as HttpURLConnection
-            if (c is HttpsURLConnection) {
-                c.sslSocketFactory = SSLContext.getInstance("TLS").apply { init(null, arrayOf<TrustManager>(Pin(pin)), null) }.socketFactory
-                c.hostnameVerifier = HostnameVerifier { _, _ -> true }
-            }
-            c.connectTimeout = 4000
+            val c = openSetup(host, pass, "/api/adb/allow")
             c.readTimeout = (waitS + 30) * 1000
             c.requestMethod = "POST"
             c.doOutput = true
-            c.setRequestProperty("Cookie", (if (pin.isEmpty()) "tvr=" else "tvrs=") + token)
             c.setRequestProperty("Content-Type", "application/json")
             c.outputStream.use { it.write(JSONObject().put("fingerprint", fingerprint).put("wait", waitS).put("others", true).toString().toByteArray()) }
             when (c.responseCode) {

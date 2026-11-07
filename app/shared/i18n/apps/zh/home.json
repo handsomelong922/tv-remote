@@ -718,6 +718,7 @@
   "home_ov_both": "两者",
   "wall_loading": "正在加载背景…",
   "cc_title": "快捷设置",
+  "voice_title": "语音指令",
   "cc_android": "Android %1$s",
   "cc_open_settings": "打开设置",
   "cc_customize": "自定义",
@@ -908,5 +909,15 @@
   "folder_items": {
     "one": "%d 项",
     "other": "%d 项"
-  }
+  },
+  "w_frame": "相框",
+  "c_frame_sub": "轮流展示你的照片",
+  "frame_empty": "暂无照片。请在手机上打开“小组件 › 相框”添加照片。",
+  "frame_add": "从手机添加照片",
+  "home_o_every": "切换间隔",
+  "home_ov_s10": "10 秒",
+  "home_ov_s30": "30 秒",
+  "home_ov_m1": "1 分钟",
+  "home_ov_m5": "5 分钟",
+  "home_ov_m15": "15 分钟"
 }

@@ -22,17 +22,20 @@ fun Tv(
     ctx: Context, host: String, surface: Surface?, quality: Int, maxSide: Int, wake: Boolean, listener: Tv.Listener,
     sink: Tv.Sink? = null, audio: String? = null, audioSink: Tv.AudioSink? = null, wantControl: Boolean = true,
     audioShare: Boolean = false, audioBitRate: Int = 64000, fps: Int = 0, bitRate: Int = 0, encoder: String = "auto", hand: Boolean = false,
-    quiet: Boolean = false,
+    quiet: Boolean = false, relay: String? = null,
 ): Tv {
     val app = ctx.applicationContext
     val hear = audioSink ?: if (audio == "opus") object : Tv.AudioSink {
         private val out = AudioOut(far = Tailscale.isAddress(host), host = host)
         override fun audio(config: Boolean, data: ByteArray) = out.feed(config, data)
         override fun end() = out.release()
+        override val aac: Boolean get() = true
+        override fun codec(name: String) = out.codec(name)
     } else null
     val screen = surface?.let { SurfaceScreen(it, host) }
     val tv = Tv(app.filesDir, { app.assets.open("scrcpy-server.jar").use { it.readBytes() } }, host, screen,
-        quality, maxSide, wake, listener, sink, audio, hear, wantControl, audioShare, audioBitRate, fps, bitRate, encoder, hand, quiet)
+        quality, maxSide, wake, listener, sink, audio, hear, wantControl, audioShare, audioBitRate, fps, bitRate, encoder, hand, quiet, relay)
+    screen?.onFail = { listener.onStatus("error", "decoder") }
     screen?.askKey = { Thread { try { tv.resetVideo() } catch (ignored: Exception) { } }.start() }   // off the reading thread
     return tv
 }
@@ -51,6 +54,9 @@ private const val TAG = "TvrPic"
 private class SurfaceScreen(private val surface: Surface, private val host: String) : Tv.Screen {
     /** how the TV is asked for a key frame (scrcpy: reset video); set by [Tv] right after the session exists */
     @Volatile var askKey: (() -> Unit)? = null
+    /** set by [Tv] too: the decoder could not be made again, said once ("error", "decoder") instead of dropping every frame */
+    @Volatile var onFail: (() -> Unit)? = null
+    @Volatile private var failed = false
 
     private class Dec(val codec: MediaCodec, val thread: HandlerThread) { val inputs = LinkedBlockingQueue<Int>() }
 
@@ -72,7 +78,7 @@ private class SurfaceScreen(private val surface: Surface, private val host: Stri
     override fun start(w: Int, h: Int) {
         release()
         this.w = w; this.h = h
-        gate.clear(); ins = 0; outs = 0
+        gate.clear(); ins = 0; outs = 0; failed = false
         if (!away) open()                                             // away: made on resume(), at this size
     }
 
@@ -142,13 +148,14 @@ private class SurfaceScreen(private val surface: Surface, private val host: Stri
         }
         if (config) this.config = data
         if (away) return true
+        if (failed) return false
         var now = SystemClock.elapsedRealtime()
         if (broken || (!config && gate.lagged(now))) catchUp(now)
         if (!gate.admit(config, !config && LiveDecode.isKey(data))) {
             if (gate.wantKey(now)) askKey?.invoke()                   // the key frame asked for did not come: ask again
             return true
         }
-        val d = dec ?: return true
+        val d = dec ?: return !failed
         val t0 = now
         var idx = -1
         while (idx < 0) {
@@ -185,7 +192,11 @@ private class SurfaceScreen(private val surface: Surface, private val host: Stri
     private fun catchUp(now: Long) {
         if (debug) Log.d(TAG, "catch up: decoder made again")
         closeDec()
-        try { open() } catch (e: Exception) { Log.w(TAG, "decoder not made again: $e"); return }
+        try { open() } catch (e: Exception) {
+            Log.w(TAG, "decoder not made again: $e"); WireLog.all.add("·", "picture $host decoder not made again: $e")
+            if (!failed) { failed = true; onFail?.invoke() }          // once; feed() then ends the session, no retry per packet
+            return
+        }
         val d = dec
         val cfg = config
         if (d != null && cfg != null) {

@@ -60,6 +60,14 @@ class Tv(
     private val hand: Boolean = false,
     /** true: a link nobody asked for (TV Setup's own, after every update or ADB reconnect, often at night) never turns the screen on */
     private val quiet: Boolean = false,
+    /**
+     * This device's TV Setup pass (AdbPrompt.token): the picture is taken from TV Setup's own /api/video and touches go to its
+     * /api/touch, instead of a scrcpy-server driven over ADB from here. Over a far link (Tailscale on mobile data) ADB's one
+     * packet in flight per stream, with 25-50 ms between packet and OKAY, stuttered at every size, while TV Setup on the TV
+     * talks to scrcpy at no distance and sends one plain stream (a Shield user, PR #20, 2026-11-04). Picture only; on any failure before
+     * the first frame the session goes on over ADB as before. null: ADB.
+     */
+    private val relay: String? = null,
 ) {
     /** One H.264 packet as scrcpy sends it (Annex B). config: SPS/PPS, needed before the first frame; key: a key frame. */
     fun interface Sink { fun video(config: Boolean, key: Boolean, data: ByteArray) }
@@ -69,6 +77,12 @@ class Tv(
         fun audio(config: Boolean, data: ByteArray)
         /** the sound has stopped for good */
         fun end() {}
+        /** true: plays AAC too, so a TV with no Opus encoder sends AAC ([soundCodec]) */
+        val aac: Boolean get() = false
+        /** true: plays raw PCM too, so a TV with no Opus (and no AAC the sink plays) sends PCM ([soundCodec]) */
+        val raw: Boolean get() = false
+        /** the codec scrcpy was asked for ("opus", "aac", "raw"), before its config packet */
+        fun codec(name: String) {}
     }
 
     /** Shows the picture: [start] at each new size (the decoder is made again), then one H.264 packet at a time. */
@@ -90,6 +104,7 @@ class Tv(
         fun wantsNetwork(): Boolean = true                            // false: nobody uses the address (TV Setup's own session), so skip the `ip addr show`
         fun wantsPass(): Boolean = false                              // no TV Setup pass for this TV yet: fetch one while ADB works
         fun onPass(token: String) {}                                  // lets TV Setup answer "Allow USB debugging?" for us later, see AdbPrompt
+        fun onPassRefused() {}                                        // TV Setup no longer takes our pass (devices forgotten on the TV): drop it
     }
 
     companion object {
@@ -106,13 +121,30 @@ class Tv(
         /**
          * The software H.264 encoder in scrcpy's list_encoders. scrcpy marks "(sw)" only from Android 10 (MediaCodecInfo.isSoftwareOnly
          * is API 29); before, Google's own encoders are the software ones by name (OMX.google.*, c2.android.*): issue #10, Android 9,
-         * "Use Software" found none and the hardware encoder ran again.
+         * "Use Software" found none and the hardware encoder ran again. An NVIDIA Shield (Android 11) marks Google's one "(hybrid)":
+         * read as unmarked, or Software found nothing there either.
          */
         fun softIn(list: String): String? {
             val all = Regex("--video-codec=h264 --video-encoder=(\\S+)(?:\\s+\\((\\w+)\\))?").findAll(list).map { it.groupValues[1] to it.groupValues[2] }.toList()
             return all.firstOrNull { it.second == "sw" }?.first
-                ?: all.firstOrNull { it.second.isEmpty() && (it.first.startsWith("OMX.google.") || it.first.startsWith("c2.android.")) }?.first
+                ?: all.firstOrNull { (it.second.isEmpty() || it.second == "hybrid") && (it.first.startsWith("OMX.google.") || it.first.startsWith("c2.android.")) }?.first
         }
+
+        /**
+         * The sound codec to ask scrcpy for: [asked], unless it is "opus" and the TV has no Opus encoder while the sink also plays
+         * AAC ([aacOk]). An NVIDIA Shield (Android 11) lists only AAC and FLAC: asked for Opus, scrcpy-server died at once
+         * ("Failed to initialize audio/opus") and the phone's 🎧 stayed silent (2026-11-05).
+         */
+        fun soundCodec(asked: String?, list: String?, aacOk: Boolean, rawOk: Boolean = false): String? {
+            if (asked != "opus" || list == null || !list.contains("--audio-codec=")) return asked   // no list: as asked
+            if (list.contains("--audio-codec=opus")) return asked
+            if (aacOk && list.contains("--audio-codec=aac")) return "aac"
+            return if (rawOk) "raw" else asked                        // the web page: PCM, which needs no encoder on the TV
+        }
+
+        /** The words the page and the phone get when the TV's sound capture is refused: "refused:<sdk>" (the phone reads the sdk too). */
+        fun refusedWord(sdk: Int) = "refused:$sdk"
+
 
         private const val MOUSE_ID: Short = 1
         private const val MOUSE_TICK_MS = 8                          // at most ~125 writes a second
@@ -126,7 +158,11 @@ class Tv(
         private val softEncoder = java.util.concurrent.ConcurrentHashMap<String, String>()
         /** Each TV's software encoder by name, from list_encoders: asked once, whether chosen by hand or after a stall */
         private val softName = java.util.concurrent.ConcurrentHashMap<String, String>()
+        /** Each TV's list_encoders, for [softFor] and the sound's codec ([soundCodec]) */
+        private val encoderList = java.util.concurrent.ConcurrentHashMap<String, String>()
         private const val FIRST_FRAME_MS = 8000L
+        private const val TAP_MS = 250L                               // a finger-down held this long for its finger-up (relayTouch)
+        private const val REJOIN_GAP_NS = 5_000_000_000L              // at most one join again for a key frame in 5 s (the relay's)
         /** How long a keys' session goes unused while another carries its keys before its own scrcpy-server rests: see [carry] */
         const val REST_MS = 60_000L
 
@@ -215,6 +251,7 @@ class Tv(
     @Volatile private var stopped = false
     @Volatile private var stalled = false                             // the encoder sent no picture: once more with the software one
     @Volatile private var framed = false
+    @Volatile private var sdkSeen = 0                                 // the TV's Android SDK, for the words of a refused capture
     private val quietLock = Any()
     @Volatile private var quieted = false                             // this session turned the TV's volume to 0 (PrivateListen)
     @Volatile private var quietChecking = false
@@ -273,12 +310,153 @@ class Tv(
     }
 
     private fun run() {
+        if (relay != null && screen != null && sink == null && audio == null) {
+            if (relayed()) return
+            WireLog.all.add("·", "picture $host TV Setup's picture did not come: over ADB")
+        }
         session()
         if (stalled && !stopped) {
             stalled = false
             io = Executors.newSingleThreadExecutor()
             session()
         }
+    }
+
+    // ---- the picture through TV Setup ([relay]) ----
+    @Volatile private var relaying = false                            // TV Setup's stream is showing: touches go there
+    @Volatile private var feedConn: java.net.HttpURLConnection? = null
+    @Volatile private var rejoin = false                              // a key frame wanted: joining again brings one (Feeds.video)
+    @Volatile private var rejoinedAt = 0L                             // nanoTime of the last one: see resetVideo
+    @Volatile private var noFrame = false                             // TV Setup answered but sent no picture in FIRST_FRAME_MS
+    private val touchIo = Executors.newSingleThreadScheduledExecutor()   // sends in order, and times a held finger-down
+    private val pendingMove = java.util.concurrent.atomic.AtomicReference<org.json.JSONObject?>(null)
+    private val touchLock = Any()
+    private var heldDown: org.json.JSONObject? = null                 // a finger-down not sent yet: see relayTouch
+
+    /**
+     * Shows TV Setup's /api/video (Feeds.kt: 1 byte kind, 4 bytes length, the data). False when TV Setup could not be asked (not
+     * reachable, the pass refused, an error answer): the caller goes on over ADB. True otherwise. A stream that brings no frame
+     * in [FIRST_FRAME_MS] ends with "error", not over ADB: TV Setup's own encoder is then running or stuck, and a second one
+     * started from here on the same TV made it worse (a Shield's whole screen went black for every app until restarted,
+     * 2026-11-04). A stream cut after frames is "closed", and the app starts the picture again as for an ADB one.
+     */
+    private fun relayed(): Boolean {
+        val pass = relay ?: return false
+        status("connecting", host)
+        val path = "/api/video?q=$quality" + (if (fps > 0) "&fps=$fps" else "") + (if (bitRate > 0) "&rate=$bitRate" else "") +
+            (if (encoder == "hw" || encoder == "sw") "&enc=$encoder" else "") + (if (hand) "&hand=1" else "")
+        var shown = false
+        var sizeSeen = 0L
+        while (!stopped) {
+            rejoin = false
+            val c = try { dev.tvremote.core.adb.AdbPrompt.openSetup(host, pass, path) } catch (e: Exception) { return shown.also { relayEnd(it, e.toString()) } }
+            c.readTimeout = 20_000                                    // "nothing new" (kind 4) comes every 5 s while the TV is still
+            feedConn = c
+            if (!shown) Thread({                                      // no picture in time: the read ends, see noFrame
+                try { Thread.sleep(FIRST_FRAME_MS) } catch (e: InterruptedException) { return@Thread }
+                if (!framed && feedConn === c && !stopped) { noFrame = true; try { c.disconnect() } catch (ignored: Exception) { } }
+            }, "tv-relay-first-frame").apply { isDaemon = true }.start()
+            try {
+                val code = c.responseCode
+                if (code != 200) {
+                    WireLog.all.add("·", "picture $host TV Setup answered $code")
+                    if (code == 401 || code == 403) listener.onPassRefused()   // as AdbPrompt.ask: "forgotten"; a new pass comes with the next ADB link
+                    return shown.also { relayEnd(it, "http $code") }
+                }
+                val inp = java.io.DataInputStream(java.io.BufferedInputStream(c.inputStream, 65536))
+                var bytes = 0L
+                var since = System.currentTimeMillis()
+                while (!stopped) {
+                    val kind = inp.read()
+                    if (kind < 0) break
+                    val n = inp.readInt()
+                    if (n < 0 || n > (8 shl 20)) throw IOException("bad picture packet")
+                    val data = ByteArray(n)
+                    inp.readFully(data)
+                    bytes += n + 5
+                    val now = System.currentTimeMillis()
+                    if (now - since >= 3000) { listener.onStatus("rate", (bytes * 1000 / (now - since) / 1024).toString()); bytes = 0; since = now }
+                    when (kind) {
+                        0 -> {                                        // the size: again on each join, a new decoder only when it changed
+                            val b = ByteBuffer.wrap(data)
+                            val w = b.int; val h = b.int
+                            val wh = (w.toLong() shl 32) or h.toLong()
+                            if (wh != sizeSeen) { sizeSeen = wh; width = w; height = h; screen?.start(w, h); listener.onVideoSize(w, h) }
+                        }
+                        1 -> screen?.feed(true, 0L, data)
+                        2, 3 -> {                                     // Feeds sends no pts: the time it came, which the decoder only matches out to in
+                            if (screen?.feed(false, System.nanoTime() / 1000, data) == false) return true.also { relayEnd(true, "decoder") }
+                            if (!shown) { shown = true; relaying = true; framed = true; dev.tvremote.core.Census.video(host); status("live", "") }
+                        }
+                        5 -> WireLog.all.add("·", "picture $host fell behind, TV Setup caught up")
+                    }
+                }
+            } catch (e: IOException) {
+                if (noFrame) {
+                    WireLog.all.add("·", "picture $host TV Setup sent no picture in ${FIRST_FRAME_MS / 1000} s")
+                    screen?.release()
+                    if (!stopped) status("error", "TV Setup sent no picture")
+                    return true
+                }
+                if (!rejoin && !stopped) { WireLog.all.add("·", "picture $host TV Setup's stream: $e"); if (!shown) return false.also { relayEnd(false, "") } }
+            } finally {
+                feedConn = null
+                try { c.disconnect() } catch (ignored: Exception) { }
+            }
+            if (!rejoin) break                                        // the stream ended by itself
+        }
+        relayEnd(shown, "")
+        return shown || stopped
+    }
+
+    /** The relay is over: [shown] the session ends here (the caller does not go on over ADB), else nothing is let go yet. */
+    private fun relayEnd(shown: Boolean, why: String) {
+        relaying = false
+        if (!shown) return
+        screen?.release()
+        if (!stopped) status("closed", why)
+    }
+
+    /**
+     * A touch to TV Setup's /api/touch, in order on one thread; moves not yet sent give way to the newest. Each request is a new
+     * connection (TV Setup answers one per connection), 50-300 ms apart on mobile data: a finger-down sent alone and its finger-up
+     * one request later reached the TV as a long press. So a down is held [TAP_MS]: an up in that time makes one "tap" request,
+     * a move or the time running out sends the down first, as it was.
+     */
+    private fun relayTouch(d: org.json.JSONObject) {
+        relay ?: return
+        val a = d.optString("a")
+        synchronized(touchLock) {
+            when (a) {
+                "down" -> {
+                    heldDown?.let { postTouch(it) }
+                    heldDown = d
+                    try { touchIo.schedule({ synchronized(touchLock) { if (heldDown === d) { heldDown = null; postTouch(d) } } }, TAP_MS, java.util.concurrent.TimeUnit.MILLISECONDS) } catch (shuttingDown: RuntimeException) { }
+                    return
+                }
+                "up" -> heldDown?.let { down -> heldDown = null; postTouch(org.json.JSONObject().put("a", "tap").put("x", down.opt("x")).put("y", down.opt("y"))); return }
+                else -> heldDown?.let { down -> heldDown = null; postTouch(down) }
+            }
+            postTouch(d)
+        }
+    }
+
+    /** One request to /api/touch on [touchIo]; a move waiting there is replaced by the newest. */
+    private fun postTouch(d: org.json.JSONObject) {
+        val pass = relay ?: return
+        if (d.optString("a") == "move") { if (pendingMove.getAndSet(d) != null) return } else pendingMove.set(null)
+        try {
+            touchIo.execute {
+                val msg = if (d.optString("a") == "move") pendingMove.getAndSet(null) ?: return@execute else d
+                try {
+                    val c = dev.tvremote.core.adb.AdbPrompt.openSetup(host, pass, "/api/touch")
+                    c.readTimeout = 5000; c.requestMethod = "POST"; c.doOutput = true
+                    c.setRequestProperty("Content-Type", "application/json")
+                    c.outputStream.use { it.write(msg.toString().toByteArray()) }
+                    c.responseCode; c.inputStream.close()
+                } catch (ignored: Exception) { }
+            }
+        } catch (shuttingDown: RuntimeException) { }
     }
 
     private fun session() {
@@ -305,6 +483,7 @@ class Tv(
             if (Trace.on) Trace.log("s.pushed")
             var hearing = audio
             val sdk = facts.sdk
+            sdkSeen = sdk
             val share = hearing != null && audioShare && sdk >= 33
             if (hearing != null && audioShare && !share && sdk >= 30) status("audio", "noshare")
             if (hearing != null && sdk < 30) {                        // scrcpy captures sound from Android 11
@@ -312,6 +491,11 @@ class Tv(
                 hearing = null
                 if (!wantVideo && !wantControl) throw IOException("this TV cannot send its sound (Android 11 or newer is needed)")
             }
+            if (hearing == "opus" && (audioSink?.aac == true || audioSink?.raw == true)) {
+                hearing = soundCodec(hearing, encoders(a), audioSink.aac, audioSink.raw)
+                if (hearing != "opus") WireLog.all.add("·", "picture $host no Opus encoder on the TV: sound as $hearing")
+            }
+            hearing?.let { audioSink?.codec(it) }
             val soft = if (!wantVideo) null else when (encoder) { "hw" -> null; "sw" -> softFor(a); else -> softEncoder[host] }
             soft?.let { WireLog.all.add("·", "picture $host encoder $it") }   // which one ran: the log a person sends says it (issue #10)
             /** Starts scrcpy-server and opens its sockets in the order it takes them; again after [rest]. */
@@ -321,7 +505,7 @@ class Tv(
                 val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
                         + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false clipboard_autosync=false "   // autosync on, GET_CLIPBOARD answers nothing
                         + (if (wantVideo) "video=true $video max_fps=" + fpsFor(quality, fps, soft != null, capped) + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
-                        + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
+                        + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus" || hearing == "aac") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
                         // scrcpy presses POWER at start when the screen is off: TV Setup's own link, made again after a quiet
                         // update at night, turned a TV in standby on (issue #6). A person's remote still wakes it, as before
                         + (if (quiet) " power_on=false" else "")
@@ -427,6 +611,11 @@ class Tv(
         Thread({
             try { Thread.sleep(FIRST_FRAME_MS) } catch (e: InterruptedException) { return@Thread }
             if (stopped || framed) return@Thread
+            if (encoders(a) == null) {                                // list_encoders did not answer: nothing to switch to, and the picture would wait for ever
+                status("error", "encoders: the TV did not list its video encoders")
+                video.close()
+                return@Thread
+            }
             val soft = softFor(a) ?: return@Thread
             if (stopped || framed) return@Thread
             WireLog.all.add("·", "picture $host no frame from the hardware encoder: $soft")
@@ -439,10 +628,26 @@ class Tv(
     /** The TV's software H.264 encoder, from scrcpy's list_encoders (asked once per TV); null if it has none or did not say. */
     private fun softFor(a: Adb): String? {
         softName[host]?.let { return it }
-        val list = try { a.shell("CLASSPATH=$REMOTE app_process / com.genymobile.scrcpy.Server $VER cleanup=false list_encoders=true 2>&1", 15000) } catch (e: IOException) { return null }   // cleanup=false: or scrcpy deletes its jar
+        val list = encoders(a) ?: return null
         val soft = softIn(list) ?: return null.also { WireLog.all.add("·", "picture $host no software encoder") }   // Auto's hardware one then: said, not silent
         softName[host] = soft                                         // not [softEncoder]: "Software" picked once is not Auto's choice
         return soft
+    }
+
+    /**
+     * scrcpy's list_encoders for this TV (a second app_process, ~1 s and ~50 MB on the TV): asked once per TV and kept beside the
+     * ADB key, so the first 🎧 after each app start does not wait for it again; null when it did not answer.
+     */
+    private fun encoders(a: Adb): String? {
+        encoderList[host]?.let { return it }
+        val kept = File(dir, "encoders-" + host.replace(Regex("[^A-Za-z0-9.-]"), "_") + ".txt")
+        try { if (kept.isFile) return kept.readText().also { encoderList[host] = it } } catch (ignored: IOException) { }
+        val list = try { a.shell("CLASSPATH=$REMOTE app_process / com.genymobile.scrcpy.Server $VER cleanup=false list_encoders=true 2>&1", 15000) } catch (e: IOException) { WireLog.all.add("·", "picture $host list_encoders failed: ${e.message}"); return null }   // cleanup=false: or scrcpy deletes its jar
+        if (list.contains("--video-codec=") || list.contains("--audio-codec=")) {
+            encoderList[host] = list
+            try { kept.writeText(list) } catch (ignored: IOException) { }
+        }
+        return list
     }
 
     /**
@@ -561,7 +766,10 @@ class Tv(
         val head = ByteArray(12)
         s.readFully(head, 0, 4)
         val id = ByteBuffer.wrap(head, 0, 4).int
-        if (id == 0 || id == 1) { status("audio", "unsupported"); return }   // e.g. the TV refused the capture
+        if (id == 0 || id == 1) {                                     // the TV refused the capture (a protected app, no permission, a vendor's build)
+            WireLog.all.add("·", "picture $host sound capture refused (codec id $id, Android sdk $sdkSeen)")
+            status("audio", refusedWord(sdkSeen)); return
+        }
         var bytes = 0L
         var heard = false
         var voiced = false                                            // something but silence in this window (raw: a non-zero sample; Opus: judged by the rate)
@@ -599,6 +807,8 @@ class Tv(
 
     fun stop() {
         stopped = true
+        touchIo.shutdown()
+        feedConn?.let { c -> Thread({ try { c.disconnect() } catch (ignored: Exception) { } }, "tv-relay-stop").apply { isDaemon = true }.start() }   // its read ends
         synchronized(restLock) { restLock.notifyAll() }
         val c = capture
         if (c == null) { letGo(); return }
@@ -609,7 +819,7 @@ class Tv(
         }, "scrcpy-stop").apply { isDaemon = true }.start()
     }
 
-    fun ready(): Boolean = (control != null || resting) && !stopped
+    fun ready(): Boolean = (relaying || control != null || resting) && !stopped
 
     /** Back on screen after a while: asks the TV for an echo, in the background. A link that died quietly while the app was
      *  frozen (Tailscale, Wi-Fi changed) gets no answer and is cut, so the session ends ("closed") and the app dials again at
@@ -621,11 +831,12 @@ class Tv(
     }
 
     /**
-     * [by] (the picture's session, once it is live) takes this session's keys, typing and clipboard from now on: one
+     * [taker] (the picture's session, once it is live) takes this session's keys, typing and clipboard from now on: one
      * scrcpy-server on the TV instead of two. After [REST_MS] in which nothing needed our own, it rests ([rest]). null: the
      * picture is going, so our own server comes back now ([back]), before the next key needs it.
      */
-    fun carry(by: Tv?) {
+    fun carry(taker: Tv?) {
+        val by = taker?.takeIf { !it.relaying }                       // TV Setup's picture has no control socket here to take keys
         carrier = by
         if (by == null) { back(); return }
         if (!restable) return
@@ -707,7 +918,19 @@ class Tv(
     fun press(code: Int) { key(0, code, 0, 0); key(1, code, 0, 0) }
 
     /** scrcpy starts its capture again: a new codec config and a key frame now, instead of at the next i-frame interval. */
-    fun resetVideo() = send(byteArrayOf(17))
+    fun resetVideo() {
+        if (relaying) {                                               // TV Setup asks its scrcpy for one when a viewer joins
+            val now = System.nanoTime()
+            if (now - rejoinedAt < REJOIN_GAP_NS) return              // each join is a key frame there, and with another viewer
+            rejoinedAt = now                                          // asking another size a restart of its encoder
+            WireLog.all.add("·", "picture $host joining TV Setup's picture again for a key frame")
+            rejoin = true; feedConn?.disconnect(); return
+        }
+        // never before the first frame: scrcpy 5 has no capture to reset then, and its control thread died on it
+        // (NullPointerException at CaptureControl.reset, a Shield stuck after many restarts, 2026-11-05); it sends a key frame first anyway
+        if (!framed) return
+        send(byteArrayOf(17))
+    }
 
     /** The phone app away for a moment: the picture is kept coming but not drawn, so it is back at once ([Screen.pause]). */
     fun pauseScreen() = screen?.pause()
@@ -715,6 +938,7 @@ class Tv(
 
     /** A finger on the TV screen. action: 0 down, 1 up, 2 move; x, y in 0..1 of the picture. */
     fun touch(action: Int, x: Float, y: Float) {
+        if (relaying) { relayTouch(org.json.JSONObject().put("a", when (action) { 0 -> "down"; 1 -> "up"; else -> "move" }).put("x", x.toDouble()).put("y", y.toDouble())); return }
         val px = Math.round(x.coerceIn(0f, 1f) * (width - 1))
         val py = Math.round(y.coerceIn(0f, 1f) * (height - 1))
         send(ByteBuffer.allocate(32).put(2.toByte()).put(action.toByte()).putLong(-2L).putInt(px).putInt(py)
@@ -723,6 +947,7 @@ class Tv(
 
     /** The mouse wheel at x, y (0..1 of the picture); [dy] as a browser's wheel: 16 is one notch, positive scrolls down. */
     fun scroll(x: Float, y: Float, dy: Float) {
+        if (relaying) { relayTouch(org.json.JSONObject().put("a", "scroll").put("x", x.toDouble()).put("y", y.toDouble()).put("dy", dy.toDouble())); return }
         val px = Math.round(x.coerceIn(0f, 1f) * (width - 1))
         val py = Math.round(y.coerceIn(0f, 1f) * (height - 1))
         val v = Math.round(dy / 16 * 0x7FFF).coerceIn(-0x7FFF, 0x7FFF)
@@ -904,9 +1129,8 @@ class Tv(
     fun apps(): List<String> {
         val out = ArrayList<String>()
         val a = adb ?: return out
-        val m = Pattern.compile("(?m)^\\s+([\\w.]+/[\\w.\$]+)\\s*\$").matcher(
-                a.shell("cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LEANBACK_LAUNCHER"))
-        while (m.find()) if (!out.contains(m.group(1)!!)) out.add(m.group(1)!!)
+        for (c in dev.tvremote.core.adb.Activities { a.shell(it) }.query("android.intent.action.MAIN", "LEANBACK_LAUNCHER") ?: emptyList())
+            if (!out.contains(c)) out.add(c)
         out.sort()
         return out
     }

@@ -110,7 +110,16 @@ internal fun MainActivity.wake(ip: String) {
 }
 
 /** The port that answers while the TV is on: ADB's on an Android TV, the remote link's on an LG or Samsung TV. */
-internal fun MainActivity.upPort(ip: String): Int = kindOf(ip).let { if (it == Remote.Kind.ANDROID) 5555 else Remote.Kind.ports(it).first() }
+/** The address typed in, checked ([TypedAddress]); a port typed after it ("192.168.1.5:5877", or "192.168.1.5 5877" on the number pad) is kept for ADB.
+ *  Null when it is not an address: the box says what one looks like. */
+internal fun MainActivity.typedIp(text: String): String? = when (val a = TypedAddress.parse(text)) {
+    is TypedAddress.Ok -> { message(null, false); if (a.port > 0) dev.tvremote.core.adb.AdbPort.remember(filesDir, a.host, a.port); a.host }
+    TypedAddress.Empty -> null
+    TypedAddress.DownloaderCode -> { message(T("picker.downloader_code"), true); null }
+    TypedAddress.Bad -> { message(T("picker.bad_address"), true); null }
+}
+
+internal fun MainActivity.upPort(ip: String): Int = kindOf(ip).let { if (it == Remote.Kind.ANDROID) dev.tvremote.core.adb.AdbPort.of(ip) else Remote.Kind.ports(it).first() }
 
 // ---------------------------------------------------------------- saved TVs
 internal fun MainActivity.name(ip: String): String = pref("name:$ip")
@@ -149,6 +158,7 @@ internal fun MainActivity.save(ip: String, model: String) {
     val e = prefs.edit().putString("ips", TextUtils.join(",", ips))
     if (model.isNotEmpty()) e.putString("name:$ip", model)
     e.apply()
+    dev.tvremote.phone.NotificationRemote.sync(this)               // the first TV saved: the notification's remote can show
 }
 
 /** Asks each saved TV, every 8 s while the picker shows, whether it answers, and through which of its addresses. */
@@ -160,7 +170,7 @@ internal fun MainActivity.probeSaved() {
             val t0 = System.currentTimeMillis()
             // the saved address first, then the TV's other one: its Tailscale IP when away, its home IP when at home
             val via = listOf(ip, pref("ts:$ip"), pref("lan:$ip")).filter { it.isNotEmpty() }.distinct()
-                .firstOrNull { h -> kindOf(ip).let { k -> if (k != Remote.Kind.ANDROID) Remote.Kind.ports(k).any { open(h, it, 1500) } else open(h, 5555, 2500) || prefs.getBoolean("atv:$ip", false) && open(h, 6466, 1500) } }
+                .firstOrNull { h -> kindOf(ip).let { k -> if (k != Remote.Kind.ANDROID) Remote.Kind.ports(k).any { open(h, it, 1500) } else adbPortUp(h, 2500) > 0 || prefs.getBoolean("atv:$ip", false) && open(h, 6466, 1500) } }
             val up = via != null
             if (!up) try { Thread.sleep((1000 - (System.currentTimeMillis() - t0)).coerceAtLeast(0)) } catch (e: InterruptedException) { }   // a refused port answers at once: "trying again" must still be seen
             val lan = pref("lan:$ip")
@@ -299,7 +309,7 @@ internal fun MainActivity.scan() {
             val lan = lanNetwork()
             val seen = { ip: String ->
                 if (synchronized(found) { if (ip in found) false else found.add(ip) }) {
-                    val adb = open(ip, 5555, 900, lan)
+                    val adb = adbPortScan(ip, 900, lan) > 0
                     if (ip in saved && adb && host == null) ui.post { route[ip] = ip; reach[ip] = true; showReach(ip, true) }   // found here: not "no answer" above
                     val n = name(ip).ifEmpty { dev.tvremote.core.remote.Ssdp.castName(ip) }
                     ui.post { foundList.addView(foundRow(ip, n, adb)) }   // shown as soon as it answers, not after the whole network
@@ -310,7 +320,7 @@ internal fun MainActivity.scan() {
             val pool = Executors.newFixedThreadPool(96)
             for (net in nets) for (i in 1 until 255) {
                 val ip = net + i
-                pool.execute { if (open(ip, 6466, 900, lan) || open(ip, 5555, 900, lan)) seen(ip) }
+                pool.execute { if (open(ip, 6466, 900, lan) || adbPortScan(ip, 900, lan) > 0) seen(ip) }
             }
             pool.shutdown()
             pool.awaitTermination(25, TimeUnit.SECONDS)
@@ -391,11 +401,11 @@ internal fun MainActivity.buildPicker() {
     ipBox.inputType = InputType.TYPE_CLASS_PHONE
     ipBox.imeOptions = EditorInfo.IME_ACTION_GO
     ipBox.setOnEditorActionListener { _, _, _ ->
-        connect(ipBox.text.toString())
+        typedIp(ipBox.text.toString())?.let { connect(it) }
         true
     }
     val go = icon("@right", T("page.connect"), ACCENT)
-    go.setOnClickListener { connect(ipBox.text.toString()) }
+    go.setOnClickListener { typedIp(ipBox.text.toString())?.let { connect(it) } }
     line.addView(ipBox, LinearLayout.LayoutParams(0, dp(48), 1f))
     val lp = LinearLayout.LayoutParams(-2, dp(48))
     lp.leftMargin = dp(8)
@@ -413,7 +423,7 @@ internal fun MainActivity.buildPicker() {
 
 /**
  * How to connect, as numbered steps: the words are blocks split by a blank line, a block of several lines opens a step (its
- * first line the title, "1. ..." giving the badge), a one-line block goes on in the step before. [firstNote] sits in step 1,
+ * first line the title, "1. ..." giving the badge), a one-line block goes on in the step before. [firstNote] sits in step 3 (turn on ADB),
  * set apart (TCL China's hidden switch).
  */
 private fun MainActivity.howSteps(words: String, firstNote: String): View {
@@ -435,7 +445,7 @@ private fun MainActivity.howSteps(words: String, firstNote: String): View {
         val c = col()
         c.addView(label(m?.groupValues?.get(2) ?: lines[0], 15, TEXT).apply { typeface = Typeface.DEFAULT_BOLD })
         if (lines.size > 1) c.addView(label(lines.drop(1).joinToString("\n"), 14, MUTED).apply { setLineSpacing(dp(2).toFloat(), 1f) }, gap(4))
-        if (list.childCount == 0) c.addView(label(firstNote, 13, TEXT).apply {
+        if (m?.groupValues?.get(1) == "3") c.addView(label(firstNote, 13, TEXT).apply {
             background = box(SEL, 10); setPadding(dp(10), dp(8), dp(10), dp(8))
         }, gap(8))
         step.addView(c, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })

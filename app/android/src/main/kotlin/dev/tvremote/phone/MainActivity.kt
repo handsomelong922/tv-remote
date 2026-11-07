@@ -313,6 +313,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     // ---------------------------------------------------------------- lifecycle
     override fun onCreate(b: Bundle?) {
+        dev.tvremote.core.adb.AdbPort.load(filesDir)                 // ports typed with an address ("ip:5877") before
         applyPalette(this)                                        // before the theme and every view: they read the colours
         setTheme(if (LIGHT) R.style.AppLight else R.style.AppDark)   // dialogs and the keyboard's look follow
         super.onCreate(b)
@@ -358,6 +359,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         root.addView(settings, FrameLayout.LayoutParams(-1, -1))
         about = buildAbout()
         root.addView(about, FrameLayout.LayoutParams(-1, -1))
+        // right to left only where words are read (Settings, About, dialogs); the remote, its keys and the app tiles keep their
+        // sides whatever the language or the phone's own setting (◀ is the TV's left) (PR #20, 2026-11-05)
+        window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
+        if (dev.tvremote.core.Words.rtl) { settings.layoutDirection = View.LAYOUT_DIRECTION_RTL; about.layoutDirection = View.LAYOUT_DIRECTION_RTL }
         irHost = buildIr()
         root.addView(irHost, FrameLayout.LayoutParams(-1, -1))
         managing = Managing(this, root)
@@ -373,7 +378,22 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (b != null && b.getBoolean("about")) about.visibility = View.VISIBLE
         if (prefs.getBoolean("autoUpdate", true)) checkUpdate(false)
         SceneStore.changed(this)                                      // the widget and shortcuts after an update of the app
+        NotificationRemote.screen = notifyKey
     }
+
+    /** A key from the remote in the notification (NotificationRemote.kt): the remote screen's way while it is live on the TV
+     *  used last; false sends it there through its own connection. */
+    internal val notifyKey: (Int) -> Boolean = fun(code: Int): Boolean {
+        if (!live() || (entry ?: host) != pref("ips").split(",").firstOrNull { it.isNotEmpty() }) return false
+        val tv = tv
+        if (code == NotificationKeys.POWER && tv != null)             // no question as on the screen's power key: the widget's and tile's toggle
+            Thread { try { dev.tvremote.phone.scenes.Headless.power(dev.tvremote.core.scenes.Scenes.Shell({ tv.shell(it) }), true) } catch (ignored: Exception) { } }.start()
+        else ui.post { press(code, feel = false) }
+        return true
+    }
+
+    /** Settings' "remote in notifications" switch, redrawn when Android's question was answered (InfoScreens.kt). */
+    internal var notifyLabel: (() -> Unit)? = null
 
     override fun onSaveInstanceState(out: Bundle) {
         super.onSaveInstanceState(out)
@@ -397,6 +417,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val away = awaySince > 0 && android.os.SystemClock.elapsedRealtime() - awaySince >= 5000
         if (away) tv?.check(2500)                                     // before anything asks the TV: a dead link is cut and dialled again
         if (keysAway) { keysAway = false; host?.let { resumeBasic(it) } } else startSession()
+        NotificationRemote.sync(this)                                 // on in Settings: shown again (it goes after long unused)
         if (::playing.isInitialized) { playing.wake(); nowApp.wake() }   // asked at once, not at their next tick
     }
 
@@ -435,6 +456,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         // recreated (dark mode at sunset, a font size, the language): this instance's session, sound and keys end with it, or
         // they would go on beside the new one's, with nothing left on screen that can stop them
         ui.removeCallbacksAndMessages(null)
+        if (NotificationRemote.screen === notifyKey) NotificationRemote.screen = null
         if (listen) { listen = false; listenService(false); stopSound() }
         stopSession()
         basic?.close()
@@ -543,8 +565,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         entry = from ?: savedOwner(ip.trim())                         // a saved TV's other address: the same row, not a second one
         wasLive = false; retries = 0
         val h = ip.trim()
+        if (h.isEmpty()) return                                       // host stays null: Tv(this, "") would dial localhost (support logs: ::1 port 5555)
         host = h
-        if (h.isEmpty()) return
         hideKeyboard()
         if (kindOf(h) != Remote.Kind.ANDROID) { host = null; startBasic(h, false); return }   // LG / Samsung: their own remote link, no ADB
         status.text = title(h) + " · " + T("page.connecting")
@@ -557,7 +579,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** The keys' session (no picture: keys, text, the clipboard, what the TV plays), then the picture's when it is wanted. */
     internal fun startSession() {
         val h = host
-        if (h == null || basic != null || keysAway || kindOf(entry ?: h) != Remote.Kind.ANDROID) return
+        if (h.isNullOrBlank() || basic != null || keysAway || kindOf(entry ?: h) != Remote.Kind.ANDROID) return
         if (tv == null) { tv = Tv(this, h, null, 0, 0, wakeNext, this); wakeNext = false }
         startPicture()
     }
@@ -571,7 +593,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val dm = resources.displayMetrics
         pic = Tv(this, h, surface.holder.surface, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), false, picListener,
             fps = prefs.getInt("picFps", 0), bitRate = prefs.getInt("picRate", 0) * 1_000_000, encoder = prefs.getString("picEnc", "auto")!!,
-            hand = prefs.contains("quality"))             // a level picked by hand is kept, even on a TV with little memory
+            hand = prefs.contains("quality"),             // a level picked by hand is kept, even on a TV with little memory
+            relay = pref("tvs:${entry ?: h}").takeIf { it.isNotEmpty() && dev.tvremote.core.ontv.Tailscale.isAddress(h) })   // away: TV Setup's picture (Tv.relay)
         picShown = false
         val mine = pic; val enc = prefs.getString("picEnc", "auto")!!
         if (enc != "auto") ui.postDelayed({                          // an encoder picked by hand that this TV does not have sends nothing: Auto would have moved on
@@ -655,6 +678,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         override fun onVideoSize(w: Int, h: Int) = this@MainActivity.onVideoSize(w, h)
         override fun onNetwork(mac: String, lan: String, tailscale: String) {}
         override fun wantsNetwork(): Boolean = false
+        override fun onPassRefused() { (entry ?: host)?.let { prefs.edit().remove("tvs:$it").apply() } }   // the next link fetches a new one (wantsPass)
     }
 
     internal var allowBox: android.app.Dialog? = null
@@ -979,6 +1003,14 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     override fun onRequestPermissionsResult(request: Int, permissions: Array<out String>, results: IntArray) {
         super.onRequestPermissionsResult(request, permissions, results)
         if (request == 31) talk.permission(results.isNotEmpty() && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED)
+        if (request == NotificationRemote.ASK) {
+            if (results.isNotEmpty() && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) NotificationRemote.sync(this)
+            else {                                                    // nothing could show: the switch goes back off
+                prefs.edit().putBoolean(NotificationRemote.PREF, false).apply()
+                notifyLabel?.invoke()
+                Toast.makeText(this, T("notification_remote.allow"), Toast.LENGTH_LONG).show()
+            }
+        }
         if (request == Managing.CAMERA_ASK && ::managing.isInitialized) managing.cameraAnswer(results.isNotEmpty() && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED)
     }
 

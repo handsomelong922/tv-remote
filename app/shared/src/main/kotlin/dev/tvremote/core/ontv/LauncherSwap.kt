@@ -1,6 +1,7 @@
 package dev.tvremote.core.ontv
 import org.json.JSONArray
 import org.json.JSONObject
+import dev.tvremote.core.adb.Pkg
 import java.io.IOException
 
 /**
@@ -24,7 +25,6 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     companion object {
         const val REC = "/data/local/tmp/tvr-launcher.json"
         const val CONFIRM_SEC = 30
-        private const val HOMES = "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME 2>/dev/null"
         /**
          * The home screen in use, its component on the last line. Android 10+ keeps it as the HOME role: resolve-activity answered
          * Android's picker on an FPT box (Android 14) right after another launcher was installed, while Home still opened TV Home, and
@@ -141,18 +141,23 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     private fun save(r: Rec) { sh("echo '" + r.json().toString().replace("'", "") + "' > $REC") }
 
     private fun enabled(): Set<String> =
-        sh("pm list packages -e").split("\n").map { it.removePrefix("package:").trim() }.filter { it.isNotEmpty() }.toSet()
+        Pkg.list(sh, "-e")
 
-    private fun homes(): List<String> = sh(HOMES).split("\n").map { it.trim() }.filter { it.contains('/') && !it.startsWith("priority") && !factory(it) }
+    private fun homes(): List<String> = (acts.query("android.intent.action.MAIN", "HOME") ?: emptyList()).filter { !factory(it) }
+    private val acts = dev.tvremote.core.adb.Activities(sh)
 
-    fun homeNow(): String = last(sh(RESOLVE_HOME))
+    /** The home screen in use; where the TV cannot say (Android 8 and older) the only launcher it has, else "". */
+    fun homeNow(): String {
+        val r = last(sh(RESOLVE_HOME))
+        return if (r.matches(Regex("[\\w.]+/[\\w.$]+"))) r else (homes().singleOrNull() ?: "")
+    }
 
     /** What the Home button opens for the person: the launcher of a kept key-way record, else the HOME role ([homeNow]). */
     fun homeOpens(): String = state()?.takeIf { it.why == KEY && it.state == "kept" && it.comp in homes() }?.comp ?: homeNow()
 
     /** Turned off one command per shell call (chained, some TVs' pm stopped after the first), and kept for Setup's Undo. */
     private fun turnOff(p: String) {
-        sh("pm disable-user --user 0 $p")
+        sh(TvUser.disable(p))
         sh("am force-stop $p")
         sh("grep -qx '$p' ${Setup.OFF_LIST} 2>/dev/null || echo '$p' >> ${Setup.OFF_LIST}")
     }
@@ -167,7 +172,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         refused = ""; opened = ""; via = ""
         val all = homes()
         val ours = all.firstOrNull { it.startsWith("$pkg/") } ?: run { log("no home activity"); return false }   // not a launcher
-        if (state()?.why == KEY) dropKey()                            // flow row 1: the launcher picked before lets go of Home
+        if (state()?.why == KEY) { dropKey(); forget() }              // flow row 1: the launcher picked before lets go of Home, and its record
         keyWhy(all, pkg)?.let { return byKey(pkg, it) }               // rows 2-5: the swap could break the TV
         // [before]: read before its APK went in. Android 9 forgets the home chosen when a new launcher is installed (a BRAVIA then
         // answered its picker), and only Android 10+ keeps it as a role
@@ -179,7 +184,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         val now = tvNow()
         save(Rec(pkg, ours, prev, gone, now, "swapping", 0, ""))      // before the first thing goes off
         for (c in wizard) {
-            sh("pm disable --user 0 $c 2>&1")
+            sh("pm disable ${TvUser.USER} $c 2>&1")
             if (!homes().contains(c)) sh("grep -qx '$c' ${Setup.OFF_LIST} 2>/dev/null || echo '$c' >> ${Setup.OFF_LIST}")   // for Optimize TV's Undo
         }
         val stuck = homes().filter { it in wizard }.map { it.substringBefore('/') }.distinct()
@@ -226,8 +231,8 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
      */
     private fun keyWhy(all: List<String>, pkg: String): String? = when {
         cast() -> "cast"
-        sh("pm path $ZTE_WATCHDOG 2>/dev/null").contains("package:") -> "zte"
-        sh("pm path $SKW_KEYS 2>/dev/null").contains("package:") && users(sh("pm list users")) > 1 -> "users"
+        Pkg.installed(sh, ZTE_WATCHDOG) -> "zte"
+        Pkg.installed(sh, SKW_KEYS) && users(sh("pm list users")) > 1 -> "users"
         sh("getprop ro.product.manufacturer; getprop ro.product.brand").lowercase().split("\n").any { it.trim() in NO_SWAP } -> "board"
         all.none { "FallbackHome" in it } && sh("dumpsys package $pkg 2>/dev/null | grep -c DIRECT_BOOT_AWARE").trim().toIntOrNull() == 0 -> "boot"
         else -> null
@@ -283,7 +288,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
      */
     fun dropKey() {
         try {
-            val key = state()?.why == KEY || cast() || sh("pm path $ZTE_WATCHDOG 2>/dev/null").contains("package:")
+            val key = state()?.why == KEY || cast() || Pkg.installed(sh, ZTE_WATCHDOG)
             if (key && SetupNeed.ok(SetupNeed.have(sh), "homekey")) RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", ""))
         } catch (e: Exception) { }
     }
@@ -300,8 +305,11 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     fun rollback(why: String, known: List<String>? = null) {         // known: what the swap under way turned off, if the TV kept no record
         val r = state()
         if (r?.why == KEY) dropKey()                                  // the key way: Home passes to the TV's own again
-        val off = r?.off ?: known ?: (Setup.LAUNCHER.toList() + Setup.WIZARD).filter { it in installedOff() }
-        for (p in off.reversed()) sh("pm enable --user 0 $p")        // home screens before the wizard
+        // no record: the TV says which of its own are off. A failed read must not decide (nothing is turned on from a guess): once more
+        // after 2 s, then the rollback stays undone (the record is kept, the watchdog or the person tries again) and says so
+        val off = r?.off ?: known ?: try { val offNow = Pkg.twice { installedOff() }; (Setup.LAUNCHER.toList() + Setup.WIZARD).filter { it in offNow } }
+            catch (e: IOException) { log("rollback not done: " + e.message); throw IOException("rollback not done: the TV did not answer (" + e.message + ")") }
+        for (p in off.reversed()) sh(TvUser.enable(p))                // home screens before the wizard
         val back = backTo(r, off)
         if (back != null) sh("cmd package set-home-activity $back 2>/dev/null")
         sh("am start -a android.intent.action.MAIN -c android.intent.category.HOME")
@@ -310,7 +318,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     }
 
     private fun installedOff(): Set<String> =
-        sh("pm list packages -d 2>/dev/null").split("\n").map { it.removePrefix("package:").trim() }.toSet()
+        Pkg.list(sh, "-d " + TvUser.USER, empty = true)
 
     /** The home screen to choose again: the one before, else the first of the TV's own that was turned off (Android TV's tvlauncher). */
     private fun backTo(r: Rec?, off: List<String>): String? {

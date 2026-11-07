@@ -1,5 +1,6 @@
 package dev.tvremote.core.ontv
 import dev.tvremote.update.Release
+import dev.tvremote.core.adb.Pkg
 import java.io.IOException
 import dev.tvremote.core.Words
 import dev.tvremote.core.adb.Adb
@@ -47,7 +48,11 @@ object SetupNeed {
         "family" to "0.38.5",                                          // 🛡️ Family mode's record kept on the TV (Rules "family"; the release after 0.38.4)
         "video" to "0.42.0",                                           // 🎬 a video or a camera in a box over the screen (VideoLayer; the release after 0.41.0)
         "speak" to "0.42.3",                                           // 🔊 a message read aloud (NotifyReceiver "speak"; the release after 0.42.2)
+        "voicekey" to "0.46.1",                                        // 🎙️ a remote key that opens the voice command (Target "do:voice", KeyFix.VOICE; the release after 0.46.0)
+        "idleoff" to "0.46.1",                                         // 📺 standby after hours with no key, "Still watching?" first (Rules "idle", IdleOff; the release after 0.46.0)
         "homebar" to "0.42.3",                                         // 🏠 the bar over an app on Home (HomeBar; the release after 0.42.2)
+        "scenetime" to "0.45.2",                                       // 🕗 a scene that starts at a time or date by itself (SceneTimer, RulesReceiver "scenes" answers timed; the release after 0.45.1)
+        "sceneon" to "0.46.1",                                         // 🎯 a scene that starts when an app opens or the TV turns on (SceneTimer.onOpen / onPower, RulesReceiver "scenes" answers events; the release after 0.46.0)
         "home_usage" to "0.14.1",                                      // 📊 TV Home's card of app use and limits (HomeInfo)
     )
 
@@ -69,6 +74,7 @@ object SetupNeed {
             "invite" -> t("core.need_invite")
             "ram" -> t("core.need_ram")
             "ramauto" -> t("core.need_ramauto")
+            "idleoff" -> t("core.need_idleoff")
             "awake" -> t("core.need_awake")
             "files" -> t("core.need_files")
             "welcome" -> t("core.need_welcome")
@@ -94,7 +100,10 @@ object SetupNeed {
             "family" -> t("core.need_family")
             "video" -> t("core.need_video")
             "speak" -> t("core.need_speak")
+            "voicekey" -> t("core.need_voicekey")
             "homebar" -> t("core.need_homebar")
+            "scenetime" -> t("core.need_scenetime")
+            "sceneon" -> t("core.need_sceneon")
             else -> feature
         }
     }
@@ -122,6 +131,14 @@ object SetupNeed {
     }
 
     /** The same from a shell's answer (dumpsys), for callers holding a shell rather than an [Adb]. */
-    fun have(sh: (String) -> String): String =
-        Regex("versionName=(\\S+)").find(sh("dumpsys package ${RulesClient.SETUP} 2>/dev/null | grep -m1 versionName="))?.groupValues?.get(1) ?: ""
+    @Throws(IOException::class)
+    fun have(sh: (String) -> String): String {
+        fun read() = Regex("versionName=(\\S+)").find(sh("dumpsys package ${RulesClient.SETUP} 2>/dev/null | grep -m1 versionName="))?.groupValues?.get(1) ?: ""
+        read().let { if (it.isNotEmpty()) return it }
+        // an empty dumpsys is "not installed" only when pm path says so; a stalled system_server also answers nothing, and that must
+        // never turn into "Install TV Setup": ask once more after 2 s, then say the TV did not answer
+        if (!Pkg.installed(sh, RulesClient.SETUP)) return ""
+        Pkg.pause(2000)
+        return read().ifEmpty { throw IOException("TV Setup: the TV did not answer (no version)") }
+    }
 }

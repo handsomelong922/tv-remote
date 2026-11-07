@@ -35,34 +35,34 @@
 
 Everything goes straight from your device to the TV: no cloud, no sign-up. Every feature with screenshots: [tvremote.pages.dev](https://tvremote.pages.dev/?lang=en).
 
+> **Also by the author:** [KidGuard](https://github.com/HoangTran0410/kidguard) manages your child's Android phone from any browser: time limits, app blocking, bedtime, location. One APK, no account, free. [kid-guard.pages.dev](https://kid-guard.pages.dev/en/)
+
 ## Get it
 
 | You have | Use | Download | Downloader code |
 |---|---|---|---|
 | An Android phone | **Phone app** (*TV Remote*) | [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk) | **`2973135`** |
 | An iPhone, or any browser | **TV web page**: install the **TV app** (*TV Setup*) on the TV, open `http://<TV IP>:8765` | [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk) | **`2397346`** |
-| A Mac | **Computer app** (*TV Remote*, about 20 MB) | [TV-Remote-mac.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip) | |
+| A Mac | **Computer app** (*TV Remote*, about 35 MB) | [TV-Remote-mac.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip) | |
 | Windows 10 / 11 | **Computer app** | [TV-Remote-windows-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip) | |
 | Linux | **Computer app** | [x64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz) · [arm64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz) | |
 | Optional, on the TV | TV Home · TV Channels · TV Games · TV Apps | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) · [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) · [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) · [tv-apps.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-apps.apk) | **`4356026`** · **`8135635`** · **`2294968`** · **`1082201`** |
 
 Automatic updates for the phone app: [Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22dev.tvremote.phone%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FHoangTran0410%2Ftv-remote%22%2C%22author%22%3A%22HoangTran0410%22%2C%22name%22%3A%22TV%20Remote%22%2C%22additionalSettings%22%3A%22%7B%5C%22apkFilterRegEx%5C%22%3A%20%5C%22%5Etv-remote%5C%5C%5C%5C.apk%24%5C%22%2C%20%5C%22releaseDateAsVersion%5C%22%3A%20true%2C%20%5C%22includePrereleases%5C%22%3A%20false%7D%22%7D) (tracks only `tv-remote.apk`). A TV or box that worked, or did not? A [device report](https://github.com/HoangTran0410/tv-remote/issues/new?template=device_report.yml) helps.
 
-Codes go in the **Downloader** app on the TV and always point at the latest release. *tv-voice.apk* (speech heard on the TV itself, Vietnamese, 39 MB) and *tv-voice-en.apk* (English, 47 MB, for TV Setup in any other language) have no code: TV Setup installs the one for its language when you turn on "Understand speech on the TV itself" (Setup tab, Remote buttons card) and removes it when you turn it off.
+Codes go in the **Downloader** app on the TV and always point at the latest release. No Downloader: type `tvremote.pages.dev/dl/tv-setup.apk` in the TV's browser (any file above: `/dl/<name>`). *tv-voice.apk* (speech heard on the TV itself, Vietnamese, 39 MB) and *tv-voice-en.apk* (English, 47 MB, for TV Setup in any other language) have no code: TV Setup installs the one for its language when you turn on "Understand speech on the TV itself" (Setup tab, Remote buttons card) and removes it when you turn it off.
 
 ## Quick start
 
-1. **Turn on ADB on the TV** (once): Settings → About → press OK on **Build** 7 times → Developer options → **ADB debugging**. [Step by step](https://tvremote.pages.dev/guide?lang=en#prep-tv) · provider boxes (FPT, Viettel…): [read this first](https://tvremote.pages.dev/guide?lang=en#prep-tv).
-2. **Open the app** and pick the TV ([phone](https://tvremote.pages.dev/guide?lang=en#install-phone) · [computer](https://tvremote.pages.dev/guide?lang=en#install-pc) · [iPhone / browser](https://tvremote.pages.dev/guide?lang=en#web-iphone): install [TV Setup](https://tvremote.pages.dev/guide?lang=en#install-tv), scan its QR).
-3. **On the TV choose "Always allow"** when it asks [Allow USB debugging?](https://tvremote.pages.dev/guide?lang=en#allow-usb)
-
-No ADB? The Phone and Computer apps still send keys after pairing with the code the TV shows.
+1. **Open the app** and pick the TV ([phone](https://tvremote.pages.dev/guide?lang=en#install-phone) · [computer](https://tvremote.pages.dev/guide?lang=en#install-pc) · [iPhone / browser](https://tvremote.pages.dev/guide?lang=en#web-iphone): install [TV Setup](https://tvremote.pages.dev/guide?lang=en#install-tv), scan its QR).
+2. **Type the code the TV shows**: the keys work at once, with ADB off ([keys before ADB](https://tvremote.pages.dev/guide?lang=en#nokeys)).
+3. **Later, for the screen, apps and files: turn on ADB** (optional). Easiest: [install TV Setup](https://tvremote.pages.dev/guide?lang=en#install-tv) and press "Turn ADB on for me". By hand: Settings → About → press OK on **Build** 7 times → Developer options → **ADB debugging** ([step by step](https://tvremote.pages.dev/guide?lang=en#prep-tv)); never on a provider box (FPT, Viettel…): it may ask for a password or lock up. Then choose "Always allow" on [Allow USB debugging?](https://tvremote.pages.dev/guide?lang=en#allow-usb)
 
 ## Features
 
 | Feature | What it does | Guide |
 |---|---|---|
-| 🎮 **Remote** | Arrows, volume, channels, apps, typing, voice; holds keys like the real remote | [→](https://tvremote.pages.dev/guide?lang=en#remote) |
+| 🎮 **Remote** | Arrows, volume, channels, apps, typing, voice; holds keys like the real remote; a Simple remote of big keys for grandparents | [→](https://tvremote.pages.dev/guide?lang=en#remote) |
 | 📺 **The TV's picture** | On your device, with touch and sound; listen with the phone's screen off | [→](https://tvremote.pages.dev/guide?lang=en#picture) |
 | ✏️ **On the TV's screen** | Draw, send a photo, a video or your camera, or a message; now playing; the TV's clipboard; dim or blue light filter | [→](https://tvremote.pages.dev/guide?lang=en#draw) |
 | 🔒 **For kids** | Sleep timer, bedtime, app limits, volume limits, PIN-locked apps: they run on the TV itself | [→](https://tvremote.pages.dev/guide?lang=en#limits) |
@@ -95,7 +95,7 @@ No ADB? The Phone and Computer apps still send keys after pairing with the code 
 | Turn on a TV that is fully off (Wake-on-LAN) | ✓ | | ✓ |
 | Keys before the TV has allowed ADB | ✓ | | ✓ |
 | Infrared remote (phone's IR blaster, no network) | ✓ | | |
-| Widget, Quick Settings tiles, the phone's volume keys | ✓ | | |
+| Widget, Quick Settings tiles, the phone's volume keys, a remote in notifications and on the lock screen | ✓ | | |
 | Game controller | ✓ | ✓ | ✓ |
 | Link for Home Assistant, Shortcuts (Siri) | | ✓ | ✓ |
 | Telegram bot | needs TV Setup | set up here | needs TV Setup |

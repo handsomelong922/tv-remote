@@ -29,7 +29,7 @@ const remoteCan = (e) => typeof can !== 'function' || [...e.needs || [], ...remo
 function remoteMenu(name, ctx = {}) {
   const out = [];
   for (const raw of REMOTE.menus[name]) {
-    if (!remoteHere(raw) || !remoteCan(raw) || (raw.when && !{ native: typeof NATIVE === 'function' && NATIVE(), ...ctx.when }[raw.when])) continue;   // native: LG, Samsung, Roku, VIDAA
+    if (!remoteHere(raw) || !remoteCan(raw) || (raw.when && !{ native: typeof NATIVE === 'function' && NATIVE(), roku: typeof TV_KIND === 'string' && TV_KIND === 'roku', ...ctx.when }[raw.when])) continue;   // native: LG, Samsung, Roku, VIDAA
     if (raw.expand) { const f = (ctx.expand || {})[raw.expand]; if (f) out.push(...f()); continue; }
     const e = remoteEntry(raw);
     if (e.do === 'menu') {                                            // a group: opened with the same ctx (its lengths, its "when")
@@ -56,6 +56,7 @@ const REMOTE_DO = {
   scenes: () => scenesMenu(),
   notify: () => notifyDialog(),
   privacy: () => trackingMenu(),
+  rokuScreens: () => rokuScreens(),
   draw: () => { if (drawing) drawStop(); else if (!needAdb()) drawStart(); },
   search: () => askStoreSearch(),
   package: () => askStorePage(),
@@ -74,6 +75,8 @@ const REMOTE_DO = {
   share: () => shareDialog(),
   inputs: () => inputsMenu(),
   homeCustom: () => homeOpen(),
+  simple: () => setSimple(true),                                      // remote.js: the big keys of remote.json "simple" only
+  voice: () => $('#voice').click(),                                   // the Simple remote's Speak: the top row's, its ways and its fallbacks
   rescue: async () => {               // a frozen TV: the app on screen is stopped (never a launcher / TV Setup), then Home
     if (await needAdbSoon()) return;
     const r = await api('/api/rescue', {});

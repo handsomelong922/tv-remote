@@ -104,14 +104,15 @@ const scopeChips = (now, fn) => UI.chips(Object.keys(SCOPE_WORDS).map((k) => ({ 
 async function shareDialog() {
   let scope = 'remote';                                               // what a guest on the sofa needs; the owner can pick more
   const r = await api('/api/share', { scope }) || {};
-  const qr = el('div', { className: 'qrs' }), pick = el('div');
+  const qr = el('div', { className: 'qrs' }), pick = el('div'), how = el('div');
+  let simple = false, last = r.url;                                   // simple: the link opens straight in the Simple remote (remote.js, ?simple=1)
   const warn = { tailscale: T('setup.warn_tailscale'), tailscale_only: T('setup.warn_tailscale_only') }[r.warn];
   const tv = el('div', { className: 'sharetab' },
     warn ? UI.warn(warn) : null,
     r.setup === 'missing' ? UI.note(T('setup.share_no_setup')) : null,
     r.setup === 'old' ? UI.note(T('setup.share_old_setup')) : null,
     r.setup === 'old' ? UI.actions(UI.btn(T('setup.update_setup'), () => { d.close(); return updateSetup(); }, 'small')) : null,
-    r.url ? UI.note(T('setup.scanner_may')) : null, r.url ? pick : null, qr);
+    r.url ? UI.note(T('setup.scanner_may')) : null, r.url ? pick : null, r.url ? how : null, qr);
   const app = el('div', { className: 'sharetab', hidden: true }, el('div', { className: 'qrs' }, qrBlock(T('setup.qr_app'), T('setup.qr_app_short'), APP_APK)));
   const tabs = el('div', { className: 'seg' });
   const show = (k) => {
@@ -123,8 +124,12 @@ async function shareDialog() {
     UI.head(T('setup.share_title'), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     tabs, tv, app));
   const wifi = r.warn !== 'tailscale_only';                           // the link is the TV's Wi-Fi address: say so, unless only Tailscale reaches it (warned above)
-  const draw = (url) => qr.replaceChildren(...[url ? qrBlock(scope === 'view' ? T('setup.qr_view') : T('setup.qr_open'),
-    [wifi ? T('setup.same_wifi') : null, T('setup.one_time')].filter(Boolean), url, true) : null].filter(Boolean));
+  const withSimple = (url) => { if (!simple || scope === 'view') return url; try { const u = new URL(url); u.searchParams.set('simple', '1'); return String(u); } catch { return url; } };
+  const draw = (url) => { last = url; how.hidden = scope === 'view'; qr.replaceChildren(...[url ? qrBlock(scope === 'view' ? T('setup.qr_view') : T('setup.qr_open'),
+    [wifi ? T('setup.same_wifi') : null, T('setup.one_time')].filter(Boolean), withSimple(url), true) : null].filter(Boolean)); };
+  const howChips = () => how.replaceChildren(UI.chips([{ label: T('setup.share_full'), on: !simple, fn: () => { simple = false; howChips(); draw(last); } },
+    { label: T('rkey.simple'), title: T('setup.share_simple_tip'), on: simple, fn: () => { simple = true; howChips(); draw(last); } }]));   // the same one-time invite: only the link's ending changes
+  howChips();
   const choose = async (k) => {
     if (k === scope) return; scope = k; pick.replaceChildren(scopeChips(scope, choose));
     qr.classList.add('stale');                                        // the old QR fades while the TV makes the new invite: never scanned under the wrong choice
@@ -195,7 +200,7 @@ async function hookLoad() {
   if (SCOPE !== 'full' || CORE === 'phone') return;                    // the phone has no hook (#hookgroup data-for="pc tv"): its 404 was asked on every About
   hookShow(await api('/api/hook/config', null, true));
 }
-const hookCopy = async (text, done) => { try { await navigator.clipboard.writeText(text); toast(done); } catch { $('#hookurl').select(); toast(T('setup.copy_failed')); } };
+const hookCopy = async (text, done) => { if (await clipCopy(text)) toast(done); else { $('#hookurl').select(); toast(T('setup.copy_failed')); } };   // clipCopy: the TV's page is plain http
 $('#aboutbtn').addEventListener('click', hookLoad);
 $('#hookpick').addEventListener('click', async (e) => {
   const b = e.target.closest('button'); if (!b || (b.dataset.v === 'on') === !!(hookNow && hookNow.on)) return;
@@ -243,12 +248,16 @@ async function supShow(what, s) {                                     // the cod
 }
 function supMark(what, s) {                                           // the button says the code while support looks
   const b = $(what === 'app' ? '#supapp' : '#suptv');
-  b.textContent = s && s.open ? T('support.stop_sub', { code: s.code, min: s.min }) : T(what === 'app' ? 'support.this_app' : 'support.this_tv');
+  const text = s && s.open ? T('support.stop_sub', { code: s.code, min: s.min }) : T(what === 'app' ? 'support.this_app' : 'support.short');
+  if (what === 'app') b.textContent = text;
+  else b.replaceChildren(el('span', { className: 'ico', textContent: '👁️' }), el('span', { className: 'lbl', textContent: ' ' + text }));   // the top bar's icon + label
   b.classList.toggle('on', !!(s && s.open));
 }
 for (const what of ['app', 'tv']) $(what === 'app' ? '#supapp' : '#suptv').addEventListener('click', async () => {
   const now = await api(supPath(what), null, true);
-  supShow(what, now && now.open ? now : await api(supPath(what), { act: 'start' }));
+  if (now && now.open) return supShow(what, now);
+  const said = await askSaid(); if (!said) return;
+  supShow(what, await api(supPath(what), { act: 'start', problem: said.problem, text: said.text }));
 });
 $('#aboutbtn').addEventListener('click', async () => {             // the phone's own row is native (InfoScreens), the TV's is in the TV card
   if (CORE === 'pc') supMark('app', await api('/api/support/app', null, true));
@@ -282,6 +291,7 @@ $('#concancel').addEventListener('click', () => { pickCancel(); $('#connecting')
 $('#connecting').addEventListener('cancel', (e) => { e.preventDefault(); $('#concancel').click(); });   // Esc: the same as Cancel
 async function selectTv(host, name, kind) {
   const r = await api('/api/tv/select', kind ? { host, kind } : { host }); if (!r) return;
+  if (r.host) host = r.host;                                         // "ip:5877" typed: the TV is the address, the port is kept for ADB
   connecting(name || host, host); pickGo(host); showTab('remote'); await sleep(1200); await refresh(); loadSteps();
 }
 $('#switchtv').addEventListener('click', () => { pickOpen(); refresh(); });
@@ -325,7 +335,7 @@ function scanRow(f) {
 // The scan runs on the computer; asked again every 400 ms, each TV shows up as soon as it answers instead of after the
 // whole network (and a second pass when the first finds nothing)
 $('#scan').addEventListener('click', async () => {
-  const list = $('#scanlist'), done = UI.busy($('#scan'), T('setup.scanning')); list.replaceChildren(); put('#scaninfo', 'textContent', '');
+  const list = $('#scanlist'), done = UI.busy($('#scan'), T('setup.scanning')); list.replaceChildren(); put('#scaninfo', 'textContent', ''); put('#scannone', 'hidden', true);
   let r = await api('/api/discover?new=1');
   while (r) {
     for (const f of r.found) {                                        // one row per TV: a saved one is known by both its addresses
@@ -339,7 +349,14 @@ $('#scan').addEventListener('click', async () => {
   }
   done(); if (!r) return;
   put('#scaninfo', 'textContent', r.found.length ? '' : T('setup.no_tv_found'));
+  put('#scannone', 'hidden', !!r.found.length);
 });
+// Nothing found (often: TV Setup not on the TV yet, or the TV off): install it by its Downloader code, type the address, or scan again
+$('#scaninstall').addEventListener('click', async () => {
+  if (await ask(await dlTip(), { ok: T('setup.none_guide') })) window.open('https://tvremote.pages.dev' + (LANG === 'vi' ? '' : '/en') + '/guide#install-tv', '_blank');
+});
+$('#scanip').addEventListener('click', () => $('#ipin').focus());
+$('#scanagain').addEventListener('click', () => $('#scan').click());
 $('#ipf').addEventListener('submit', (e) => { e.preventDefault(); const ip = $('#ipin').value.trim(); if (ip) selectTv(ip); });
 $('#setuprefresh').addEventListener('click', () => loadSteps());
 
@@ -386,7 +403,7 @@ function showAdbGuide(more = '') { assistShow(T('core.tvb_help_btn'), ...adbGuid
 const row = (...kids) => el('div', { className: 'assistrow' }, ...kids.filter(Boolean));
 const assist = (do_, extra) => api('/api/assist', { do: do_, ...extra });
 $('#assistclose').addEventListener('click', () => $('#assist').close());
-$('#assist').addEventListener('close', () => { assistGen++; api('/api/assist', { do: 'stop' }, true); });   // closed any way (button, Esc): nothing keeps running unseen
+$('#assist').addEventListener('close', () => { assistGen++; if (CORE === 'pc') api('/api/assist', { do: 'stop' }, true); });   // only the Computer app has the route: elsewhere a 404 each time   // closed any way (button, Esc): nothing keeps running unseen
 
 let dlCodes = null;                                                   // the Downloader codes (/api/downloader: signed on the site, else packed)
 async function dlTip() { dlCodes = dlCodes || await api('/api/downloader', null, true) || {}; return T('setup.dl_tip', { code: dlCodes.setup || '' }); }
@@ -571,24 +588,29 @@ $('#tsgo').addEventListener('click', tailscaleGo);
 $('#tsclose').addEventListener('click', () => $('#ts').close());
 $('#ts').addEventListener('close', () => { tsGen++; });
 
-let stepsBusy = false, pairing = false;
+let stepsBusy = false, pairing = false, stepsTv = 0;                 // stepsTv: which TV a load in flight was for
+// another TV: its steps start over (pairing begun on the old one is not this one's; an old answer in flight is dropped)
+onTvChange(() => { stepsTv++; stepsBusy = false; pairing = false; stepsSig = ''; });
 function step(n, state, title, text, ...actions) {
   return el('div', { className: 'step ' + state }, el('div', { className: 'mark', textContent: state === 'ok' ? '✓' : n }),
     el('div', { className: 'body' }, el('b', { textContent: title }), el('p', { textContent: text }), actions.filter(Boolean).length ? el('div', { className: 'actions' }, ...actions.filter(Boolean)) : null));
 }
 const act = (label, fn, cls = '', name = '') => el('button', { className: 'small ' + cls, textContent: label, title: name, onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { await fn(); } finally { b.disabled = false; } } });
 async function loadSteps() {
-  if (stepsBusy || CORE !== 'pc') return; stepsBusy = true;
-  const s = await api('/api/setup/status', null, true); stepsBusy = false;
+  if (stepsBusy || CORE !== 'pc') return; stepsBusy = true; const tv = stepsTv;
+  const s = await api('/api/setup/status', null, true);
+  if (tv !== stepsTv) return;                                         // the TV changed meanwhile: the new TV's own load draws (and owns stepsBusy)
+  stepsBusy = false;
   if (!s) return;
   put($('#setuphost'), 'textContent', s.host ? (s.model ? s.model + ' · ' : '') + s.host : T('setup.no_tv_chosen'));
   if (!s.host) { $('#steps').replaceChildren(el('p', { className: 'muted', textContent: T('setup.pick_a_tv') })); return; }
   if (s.kind && s.kind !== 'android') { showSteps(nativeSteps(s)); return; }
   const adb = s.adb.state, ready = adb === 'ready', out = [];
-  // 1. ADB
+  // ADB. Not connected: it is "more" (apps, picture, files), the keys come first (they need no ADB)
+  const keysFirst = !ready;
   out.push(ready ? step(1, 'ok', T('setup.adb_connected'), T('setup.allowed_by_tv'))
     : adb === 'unauthorized' ? step(1, 'wait', T('setup.tv_waiting_allow'), T('setup.tv_waiting_allow_note'), act(T('setup.pressed_retry'), async () => { await api('/api/adb/connect', {}); await loadSteps(); }, 'primary'))
-    : step(1, 'todo', T('setup.turn_on_adb_title'), T('setup.turn_on_adb_note'),
+    : step(1, 'todo', T('setup.turn_on_adb_title'), keysFirst ? T('setup.turn_on_adb_more') : T('setup.turn_on_adb_note'),
         act(T('setup.turn_on_adb_help'), async () => adbHelp(), 'primary'), act(T('setup.connect_now'), async () => { await api('/api/adb/connect', {}); await loadSteps(); })));
   // 2. Tailscale
   if (!ready) out.push(step(2, 'todo', T('setup.ts_step_title'), T('setup.ts_step_later')));
@@ -597,12 +619,12 @@ async function loadSteps() {
   out[out.length - 1].classList.add('optional');                     // only for away from home: the steps count as done without it
   // 3. remote pairing
   const r = s.remote;
-  if (r.connected) out.push(step(3, 'ok', T('setup.remote_paired'), T('setup.keys_work')));
+  if (r.connected) out.push(step(3, 'ok', T('setup.remote_paired'), keysFirst ? T('setup.keys_no_adb') : T('setup.keys_work')));
   else if (ready && !pairing) out.push(step(3, 'ok', T('setup.remote_via_adb'), T('setup.pair_spare'),   // keys already work: pairing is only a spare way in
     act(T('setup.pair'), async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } })));
   else if (r.paired === false || pairing) {
     const code = el('input', { placeholder: T('setup.ph_code6c'), maxLength: 6, autocomplete: 'off' });
-    out.push(step(3, 'wait', T('setup.pair_remote'), pairing ? T('setup.tv_showing_code6') : T('setup.press_pair_code6'),
+    out.push(step(3, 'wait', T('setup.pair_remote'), (keysFirst && !pairing ? T('setup.keys_first') + ' ' : '') + (pairing ? T('setup.tv_showing_code6') : T('setup.press_pair_code6')),
       pairing ? code : null,
       pairing ? act(T('setup.confirm'), async () => { const x = await api('/api/pair/finish', { code: code.value.trim() }); if (x) { pairing = false; toast(T('setup.paired')); await refresh(); await loadSteps(); } }, 'primary') : null,
       act(pairing ? T('setup.new_code') : T('setup.pair'), async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } }, pairing ? '' : 'primary')));
@@ -615,6 +637,8 @@ async function loadSteps() {
     out.push(step(4, 'todo', move ? T('setup.save_move') : T('setup.save_tv'), move ? T('setup.save_move_note', { ip: s.tailscale_ip }) : T('setup.save_note'),
       UI.line(name, act(T('scenedlg.save'), async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(x.moved ? T('setup.saved_moved', { host: x.tv.host }) : T('setup.saved')); await refresh(); await loadSteps(); } }, 'primary'))));
   }
+  if (keysFirst) out.unshift(out.splice(2, 1)[0]);                   // pairing is out[2] here: first
+  out.forEach((n, i) => { const m = n.querySelector('.mark'); if (m.textContent !== '✓') m.textContent = i + 1; });
   showSteps(out);
 }
 let stepsSig = '', stepsHost = '';

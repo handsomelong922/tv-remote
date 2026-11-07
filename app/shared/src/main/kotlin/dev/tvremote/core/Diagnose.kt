@@ -71,17 +71,17 @@ object Diagnose {
     const val SETUP_OFF = "setup_off"          // a Fire TV whose setup never finished: Home and Alexa keys do nothing (checked while ADB is up)
     val CODES = listOf(SETUP_OFF, CLOCK, NO_WIFI, OTHER_NET, TAILSCALE, ALLOW, WIRELESS, ADB_OFF, REMOTE_OFF, UP, CLOSED, MOVED, VPN, OFF)
 
-    const val ADB = 5555
+    const val ADB = dev.tvremote.core.adb.AdbPort.CLASSIC
     private const val SETUP = 8765
 
     /** The ports worth asking, by kind: the remote service(s), then what only an Android TV has (ADB and TV Setup). */
     fun ports(kind: String): List<Int> = when (kind) {
-        Remote.Kind.ANDROID -> listOf(ADB, 6466, 6467, SETUP)
+        Remote.Kind.ANDROID -> listOf(ADB) + dev.tvremote.core.adb.AdbPort.OTHERS + listOf(6466, 6467, SETUP)
         Remote.Kind.LG -> listOf(3000, 3001)
         Remote.Kind.SAMSUNG -> listOf(8001, 8002)
         Remote.Kind.ROKU -> listOf(8060)
         Remote.Kind.VIDAA -> listOf(36669)
-        else -> listOf(ADB, 6466, 6467, SETUP)
+        else -> listOf(ADB) + dev.tvremote.core.adb.AdbPort.OTHERS + listOf(6466, 6467, SETUP)
     }
 
     /** An error that comes from a TV whose date is wrong (Errors.say words it the same way). */
@@ -101,7 +101,7 @@ object Diagnose {
             return OFF
         }
         if (!android) return UP
-        val adb = ADB in open
+        val adb = ADB in open || dev.tvremote.core.adb.AdbPort.OTHERS.any { it in open }   // a box whose adbd skips 5555 (BeeCube: 5877)
         val remote = 6466 in open || 6467 in open
         if (adb && (f.adb == "unauthorized" || f.adb == "waiting")) return ALLOW
         if (!adb && f.wireless) return WIRELESS
