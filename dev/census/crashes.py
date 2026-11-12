@@ -135,6 +135,7 @@ def main():
     a.add_argument("--delete", metavar="SIG")
     a.add_argument("--json", action="store_true")
     a.add_argument("--since", default="", metavar="YYYY-MM-DD")
+    a.add_argument("--last", default="", metavar="YYYY-MM-DD", help="only crashes seen on or after that day, filtered by the worker (cheap: crashwatch)")
     a.add_argument("--new", action="store_true")
     a.add_argument("--adb", action="store_true", help="--new also lists 'TV Setup ADB ...' (a TV whose own ADB is off: a state, not a crash)")
     a.add_argument("--frames", action="store_true")
@@ -144,7 +145,8 @@ def main():
     marks = checked()
     if o.mark:
         rows = call(o.url, "/v1/crashes", {"sig": "" if o.mark == "all" else full(o, o.mark), "v": o.v, "app": o.app})["crashes"]
-        if o.mark == "all": rows = [r for r in rows if unseen(r, marks) > 0]   # only what --new lists: the others keep their own notes
+        if o.mark == "all": rows = [r for r in rows if unseen(r, marks) > 0]
+        if o.v: rows = [r for r in rows if r["v"] == o.v]              # the worker answers every version of a sig: --v keeps the other versions' notes   # only what --new lists: the others keep their own notes
         at = __import__("datetime").datetime.now().astimezone().isoformat(timespec="seconds")
         for r in rows:
             k = r["sig"] + "|" + r["v"]
@@ -155,7 +157,7 @@ def main():
         print(f"marked {len(rows)} (sig|version) as looked at -> {os.path.relpath(CHECKED, ROOT)}: commit it")
         return
     if o.json or o.since or o.new:
-        rows = call(o.url, "/v1/crashes", {"sig": full(o, o.sig) if o.sig else "", "v": o.v, "app": o.app})["crashes"]
+        rows = call(o.url, "/v1/crashes", {"sig": full(o, o.sig) if o.sig else "", "v": o.v, "app": o.app, "last": o.last})["crashes"]
         rows = [r for r in rows if r["first"] >= o.since and (not o.new or (unseen(r, marks) > 0 and (o.adb or not r["kind"].startswith(ADB_KIND))))]
         if o.json:
             out = [normal(r, marks) for r in rows]

@@ -43,7 +43,7 @@ const HOME_TSTYLE_WORDS = { banner: 'home.tstyle_banner', icon: 'home.tstyle_ico
 const HOME_ACCENT_WORDS = { '': 'home.accent_none', blue: 'home.accent_blue', teal: 'home.accent_teal', green: 'home.accent_green', amber: 'home.accent_amber',
   orange: 'home.accent_orange', red: 'home.accent_red', pink: 'home.accent_pink', violet: 'home.accent_violet' };
 function swatch(hex) { const s = el('span', { className: 'sw' }); s.style.background = hex; return s; }   // a colour from the palette, not words
-const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'air', 'recent', 'adblock', 'clock', 'market', 'news', 'prayer', 'frame'];   // HomeConfig.WIDGETS, in the order drawn
+const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'air', 'recent', 'playing', 'adblock', 'clock', 'market', 'news', 'prayer', 'frame'];   // HomeConfig.WIDGETS, in the order drawn
 // A TV Home with "wsizes" sizes each widget (big / small) and packs them (homePack); one older than that has only the preset layouts below
 const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather', 'air', 'market', 'news', 'prayer', 'frame', 'qr1', 'qr2', 'qr3', 'qr4'];     // HomeConfig.defaultSize: these are big until chosen otherwise
 const HOME_W = { big: 100, cal: 120, small: 90, budget: 415, floor: 190 };   // HomeConfig.W_BIG / W_CAL / W_SMALL / BUDGET / FLOOR
@@ -99,7 +99,7 @@ const HOME_COLS = { row: [[33, 1], [33, 1], [34, 2]], big: [[58, 1], [42, 2]], b
 const HOME_OLD_LAYOUTS = ['row', 'big'];                              // a TV Home without "wlayouts" has only these
 const HOME_ROW_CARDS = 3, HOME_LARGE = ['system', 'usage', 'calendar', 'weather'];   // HomeConfig.ROW_CARDS, Widgets.BIG: what "row" shows
 const homeSlots = (k) => k === 'row' || !HOME_COLS[k] ? 0 : HOME_COLS[k].reduce((n, c) => n + c[1], 0);   // HomeConfig.slots: what a fixed layout shows (a pinned note takes one)
-const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather', air: 'home.w_air', recent: 'home.w_recent', adblock: 'home.w_adblock', clock: 'home.w_clock', market: 'home.w_market', news: 'home.w_news', prayer: 'home.w_prayer', frame: 'home.w_frame' };
+const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather', air: 'home.w_air', recent: 'home.w_recent', playing: 'home.w_playing', adblock: 'home.w_adblock', clock: 'home.w_clock', market: 'home.w_market', news: 'home.w_news', prayer: 'home.w_prayer', frame: 'home.w_frame' };
 const HOME_STYLE_WORDS = { classic: 'home.style_classic', light: 'home.style_light', minimal: 'home.style_minimal', roman: 'home.style_roman', glass: 'home.style_glass', tonal: 'home.style_tonal' };   // HomeConfig.STYLES
 
 // The packed layout drawn small: a column per weight, its widgets stacked, big ones filled (sizes in css/remote.css)
@@ -477,6 +477,7 @@ async function homeOpen() {
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
   const showInputs = el('input', { type: 'checkbox', onchange: () => send({ showInputs: showInputs.checked }) });   // HomeConfig "showInputs", default off
   const infold = el('input', { type: 'checkbox', onchange: () => send({ infold: infold.checked }) });   // HomeConfig "infold", default off
+  const lockLayout = el('input', { type: 'checkbox', onchange: () => send({ lockLayout: lockLayout.checked }) });   // HomeConfig "lockLayout", default off: the TV asks TV Setup's PIN before its layout changes; this page does not
   const homebar = el('input', { type: 'checkbox', onchange: async () => { if (homebar.checked && !await setupFor('homebar')) { homebar.checked = false; return; } send({ homebar: homebar.checked }); } });   // HomeConfig "homebar", default off; an older TV Setup would ignore it: asked to update first
   const shift = el('input', { type: 'checkbox', onchange: () => send({ shift: shift.checked }) });   // HomeConfig "shift", default off
   const dream = el('input', { type: 'checkbox', onchange: () => send({ dream: dream.checked }) });
@@ -501,6 +502,7 @@ async function homeOpen() {
   // TV Setup too old for them is offered first. Chosen: a list to reorder; the others: a switch each, which adds one at the end
   const wTurnOn = async (w) => {
     if ((w === 'usage' || w === 'timer' || w === 'recent') && !await homeLink.setup('home_usage')) return false;
+    if (w === 'playing' && !await homeLink.setup('home_playing')) return false;   // TV Setup reads what plays (HomeInfo "playing")
     send({ widgets: [...r.config.widgets, w] });
     return true;
   };
@@ -717,6 +719,7 @@ async function homeOpen() {
     chips(vres, 'vres', ['', '1080', '720', '480'], (k) => k ? T('home.v_res_n', { n: k }) : T('home.v_res_screen'));
     everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
     homebar.checked = c.homebar === true; homebar.closest('label').hidden = c.homebar === undefined;
+    lockLayout.checked = c.lockLayout === true; lockLayout.closest('label').hidden = c.lockLayout === undefined;   // an older TV Home does not report it
     shift.checked = c.shift === true; shift.closest('label').hidden = c.shift === undefined;
     showInputs.checked = c.showInputs === true; showInputs.closest('label').hidden = c.showInputs === undefined;   // an older TV Home does not report it
     infold.checked = c.infold === true; infold.closest('label').hidden = c.infold === undefined;   // an older TV Home does not report it
@@ -768,7 +771,7 @@ async function homeOpen() {
     const w = c.widgets;                                              // absent: a TV Home older than the widgets
     const qrs = c.qrs || {};                                          // the QR widgets' fields, by key (absent: a TV Home older than them)
     const has = (k) => !!w && w.includes(k);
-    wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined) || ((HOME_WIDGETS[i] === 'market' || HOME_WIDGETS[i] === 'news') && !c.infoOk) || (HOME_WIDGETS[i] === 'air' && !((c.wschema && c.wschema.air) || (c.wstyles && c.wstyles.air))) || ((HOME_WIDGETS[i] === 'recent' || HOME_WIDGETS[i] === 'adblock' || HOME_WIDGETS[i] === 'prayer' || HOME_WIDGETS[i] === 'frame') && !(c.wschema && c.wschema[HOME_WIDGETS[i]])); });   // weather, air: a TV Home older than them has no card
+    wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined) || ((HOME_WIDGETS[i] === 'market' || HOME_WIDGETS[i] === 'news') && !c.infoOk) || (HOME_WIDGETS[i] === 'air' && !((c.wschema && c.wschema.air) || (c.wstyles && c.wstyles.air))) || ((HOME_WIDGETS[i] === 'recent' || HOME_WIDGETS[i] === 'playing' || HOME_WIDGETS[i] === 'adblock' || HOME_WIDGETS[i] === 'prayer' || HOME_WIDGETS[i] === 'frame') && !(c.wschema && c.wschema[HOME_WIDGETS[i]])); });   // weather, air: a TV Home older than them has no card
     wHead.hidden = !w;
     const sized = !!c.wsizes;                                         // this TV Home sizes the widgets; an older one has the preset layouts
     const bigs = sized && w ? w.filter((k) => homeSize(c, k) === 'big') : [];
@@ -1052,8 +1055,7 @@ async function homeOpen() {
           dataUrl: (b) => new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = () => no(new Error('read')); fr.readAsDataURL(b); }),
         });
       }
-      const url = URL.createObjectURL(new Blob(homeMediaFile(name, conf, media), { type: 'application/json' }));
-      saveAs(url, file); setTimeout(() => URL.revokeObjectURL(url), 60000);
+      await saveFile(file, new Blob(homeMediaFile(name, conf, media), { type: 'application/json' }));
     };
     // share to the community store: a form (the display name is kept on this page), then the job on the server side (api/home/theme/share) is asked
     // every second: its step in words, Cancel while it runs, the end in words a person can act on
@@ -1131,7 +1133,7 @@ async function homeOpen() {
         check(shows.showAdd, 'home.show_add'), check(shows.showSuggest, 'home.show_suggest'), check(shows.showWatch, 'home.show_watch'), check(infold, 'home.show_infold'), watchAtHead, watchAt),
       sect('home.sec_motion', check(anim, 'home.anim'), motionHead, motion, focusHead, focus, tstyleHead, tstyle, accentHead, accent),
       sect('home.sec_grid', colsHead, cols, check(center, 'home.center'), wplaceHead, wplace, rowsHead, rowsLine, rowsNote),
-      sect('home.sec_edit', orderHead, orderBox, foldHead, foldNote, foldBox),
+      sect('home.sec_edit', check(lockLayout, 'home.lock_layout'), orderHead, orderBox, foldHead, foldNote, foldBox),
       sect(null, tilesHead, tilesNote, addHome, tilesList),
       sect(null, el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden),
       sect(null, namesHead, names),

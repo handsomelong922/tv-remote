@@ -19,6 +19,16 @@
   "n": 1,
   "note": "ADB off on the box (5555 refused): TV Setup's report, the page already says how to turn it on"
  },
+ "016efc69d24da6757e6f472b|0.47.0": {
+  "at": "2026-11-10T20:00:56+07:00",
+  "n": 1,
+  "note": "keyfix_refused: firmware takes the key add-on's accessibility service out; the next TV Setup reports known/others/a11y (e957a72e, unreleased): wait for that data"
+ },
+ "016efc69d24da6757e6f472b|0.49.0": {
+  "at": "2026-11-10T20:00:56+07:00",
+  "n": 1,
+  "note": "keyfix_refused: firmware takes the key add-on's accessibility service out; the next TV Setup reports known/others/a11y (e957a72e, unreleased): wait for that data"
+ },
  "017d528e6843bf9047e126a7|0.35.0": {
   "at": "2026-11-02T22:17:48+07:00",
   "n": 1,
@@ -64,6 +74,11 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "054e1adb82724af476bb5118|0.47.0": {
+  "at": "2026-11-08T05:23:25+07:00",
+  "n": 1,
+  "note": "keyfix_refused on BA003, 8th box on 0.47.0; cause (force-stop / off) reported from the next TV Setup"
+ },
  "05a960b8701c5d39240e4c3e|0.27.0": {
   "at": "2026-10-27T09:37:01+07:00",
   "n": 1,
@@ -75,9 +90,24 @@
   "note": "TV Games 0.18.0 NM-TVBOX1: says ES3, EGL refuses the ES3 config; GlCheck asks first + GLThread guard, the game says so (fixed, next release)"
  },
  "079fd99f0b7cd0f6ad9bfa5b|0.34.0": {
-  "at": "2026-10-30T09:08:04+07:00",
+  "at": "2026-11-10T20:01:00+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
+ },
+ "079fd99f0b7cd0f6ad9bfa5b|0.47.0": {
+  "at": "2026-11-10T20:01:00+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
+ },
+ "079fd99f0b7cd0f6ad9bfa5b|0.48.0": {
+  "at": "2026-11-10T20:01:00+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
+ },
+ "079fd99f0b7cd0f6ad9bfa5b|0.49.0": {
+  "at": "2026-11-10T20:01:00+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "0831a9cc1968dedff68abcc5|0.26.3": {
   "at": "2026-10-26T21:47:39+07:00",
@@ -89,6 +119,31 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
+ "0a9749690d5a3b0e1613f21f|0.47.0": {
+  "at": "2026-11-08T02:46:13+07:00",
+  "n": 1,
+  "note": "keyfix_refused on VISION XS100MINI+, 6th box (WS, ADT-3, G-Two, SWTV, X96mini): cause logged from the next TV Setup (a20c4155), left"
+ },
+ "0bea8243f97640450535da70|0.47.0": {
+  "at": "2026-11-11T16:41:07+07:00",
+  "n": 1,
+  "note": "keyfix_refused (JmGO K920 projector, sdk 28): add-on 'stopped', installer not the shell, the other a11y entry kept, a11y on: a force-stop (the box's RAM cleaner) makes Android drop only our service; a vendor cleaner, not our fault; nothing to fix until a whitelist route is known"
+ },
+ "0bea8243f97640450535da70|0.48.0": {
+  "at": "2026-11-11T16:41:07+07:00",
+  "n": 1,
+  "note": "keyfix_refused (JmGO K920 projector, sdk 28): add-on 'stopped', installer not the shell, the other a11y entry kept, a11y on: a force-stop (the box's RAM cleaner) makes Android drop only our service; a vendor cleaner, not our fault; nothing to fix until a whitelist route is known"
+ },
+ "0bea8243f97640450535da70|0.49.0": {
+  "at": "2026-11-11T16:41:07+07:00",
+  "n": 1,
+  "note": "keyfix_refused (JmGO K920 projector, sdk 28): add-on 'stopped', installer not the shell, the other a11y entry kept, a11y on: a force-stop (the box's RAM cleaner) makes Android drop only our service; a vendor cleaner, not our fault; nothing to fix until a whitelist route is known"
+ },
+ "0bea8243f97640450535da70|0.50.0": {
+  "at": "2026-11-11T16:41:07+07:00",
+  "n": 1,
+  "note": "keyfix_refused (JmGO K920 projector, sdk 28): add-on 'stopped', installer not the shell, the other a11y entry kept, a11y on: a force-stop (the box's RAM cleaner) makes Android drop only our service; a vendor cleaner, not our fault; nothing to fix until a whitelist route is known"
+ },
  "0cc42fae2aa5fd9fed3c6839|0.31.0": {
   "at": "2026-11-05T17:16:53+07:00",
   "n": 1,
@@ -98,6 +153,11 @@
   "at": "2026-10-28T14:05:30+07:00",
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "0db0697b4ba1f43abd3b38b4|0.49.0": {
+  "at": "2026-11-11T06:02:15+07:00",
+  "n": 1,
+  "note": "keyfix_refused: firmware takes the key add-on's accessibility service out; the next TV Setup reports known/others/a11y (e957a72e, unreleased): wait for that data"
  },
  "0f04c812319be9eca1ee7d4f|0.35.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -135,14 +195,19 @@
   "note": "TV Setup ADB health report (refused = debugging off; EOF on Fire TV = Amazon blocks local ADB; scrcpy did-not-start), not a code fault"
  },
  "10008337d9a0f8f648c7fce1|0.32.1": {
-  "at": "2026-11-05T10:40:10+07:00",
+  "at": "2026-11-07T23:39:01+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "user state, handled: TCL Smart TV Pro. 0.47.0 Android 14: 5555 closed, only Wireless debugging on and not paired yet; TV Setup opens Wireless debugging for the code (MainActivity notPaired). 0.32/0.35 Android 11/12: timeout with 5555 open = Allow not answered (old versions; LinkFailure stops asking and says so)"
  },
  "10008337d9a0f8f648c7fce1|0.35.0": {
-  "at": "2026-11-05T10:40:10+07:00",
+  "at": "2026-11-07T23:39:01+07:00",
   "n": 2,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "user state, handled: TCL Smart TV Pro. 0.47.0 Android 14: 5555 closed, only Wireless debugging on and not paired yet; TV Setup opens Wireless debugging for the code (MainActivity notPaired). 0.32/0.35 Android 11/12: timeout with 5555 open = Allow not answered (old versions; LinkFailure stops asking and says so)"
+ },
+ "10008337d9a0f8f648c7fce1|0.47.0": {
+  "at": "2026-11-07T23:39:01+07:00",
+  "n": 1,
+  "note": "user state, handled: TCL Smart TV Pro. 0.47.0 Android 14: 5555 closed, only Wireless debugging on and not paired yet; TV Setup opens Wireless debugging for the code (MainActivity notPaired). 0.32/0.35 Android 11/12: timeout with 5555 open = Allow not answered (old versions; LinkFailure stops asking and says so)"
  },
  "10beb007bf91c5ebda6acc25|0.25.0": {
   "at": "2026-10-27T09:37:02+07:00",
@@ -244,6 +309,21 @@
   "n": 1,
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
  },
+ "1246e79da13b1f97f2bdb7fc|0.47.0": {
+  "at": "2026-11-11T23:59:20+07:00",
+  "n": 2,
+  "note": "G-Two Box again on 0.49.0/0.50.0 (2 installs), same firmware signature; waiting for 8f344ac1's data (not released yet)"
+ },
+ "1246e79da13b1f97f2bdb7fc|0.49.0": {
+  "at": "2026-11-11T23:59:20+07:00",
+  "n": 2,
+  "note": "G-Two Box again on 0.49.0/0.50.0 (2 installs), same firmware signature; waiting for 8f344ac1's data (not released yet)"
+ },
+ "1246e79da13b1f97f2bdb7fc|0.50.0": {
+  "at": "2026-11-11T23:59:20+07:00",
+  "n": 2,
+  "note": "G-Two Box again on 0.49.0/0.50.0 (2 installs), same firmware signature; waiting for 8f344ac1's data (not released yet)"
+ },
  "13b5562e22b1aff18d3e7207|0.15.0": {
   "at": "2026-10-30T09:07:55+07:00",
   "n": 1,
@@ -253,6 +333,11 @@
   "at": "2026-11-02T22:17:48+07:00",
   "n": 3,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+ },
+ "13e27d831d17fd88362a6de6|0.47.0": {
+  "at": "2026-11-08T10:55:39+07:00",
+  "n": 1,
+  "note": "keyfix_refused on a 4K Google TV Stick, 10th on 0.47.0; cause reported from the next TV Setup"
  },
  "13ebb1a66fdaf61270829f5a|0.26.3": {
   "at": "2026-11-05T10:40:10+07:00",
@@ -288,6 +373,11 @@
   "at": "2026-11-06T17:03:02+07:00",
   "n": 1,
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+ },
+ "1503103843d16ccc2d0cdb5b|0.47.0": {
+  "at": "2026-11-11T06:02:16+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "15987037e515d85bb3c833f1|0.34.0": {
   "at": "2026-11-05T10:40:11+07:00",
@@ -360,44 +450,44 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "1b64c0fdb7081f015b2765c2|0.22.1": {
-  "at": "2026-11-07T05:15:48+07:00",
+  "at": "2026-11-11T23:59:21+07:00",
   "n": 1,
-  "note": "fixed 5d4096ec typeof guard, old versions only"
+  "note": "old pc 0.25.0 again; fixed in 4c5bf584 (v0.26.0)"
  },
  "1b64c0fdb7081f015b2765c2|0.23.0": {
-  "at": "2026-11-07T05:15:48+07:00",
+  "at": "2026-11-11T23:59:21+07:00",
   "n": 2,
-  "note": "fixed 5d4096ec typeof guard, old versions only"
+  "note": "old pc 0.25.0 again; fixed in 4c5bf584 (v0.26.0)"
  },
  "1b64c0fdb7081f015b2765c2|0.24.0": {
-  "at": "2026-11-07T05:15:48+07:00",
-  "n": 5,
-  "note": "fixed 5d4096ec typeof guard, old versions only"
+  "at": "2026-11-11T23:59:21+07:00",
+  "n": 6,
+  "note": "old pc 0.25.0 again; fixed in 4c5bf584 (v0.26.0)"
  },
  "1b64c0fdb7081f015b2765c2|0.24.1": {
-  "at": "2026-11-07T05:15:48+07:00",
+  "at": "2026-11-11T23:59:21+07:00",
   "n": 2,
-  "note": "fixed 5d4096ec typeof guard, old versions only"
+  "note": "old pc 0.25.0 again; fixed in 4c5bf584 (v0.26.0)"
  },
  "1b64c0fdb7081f015b2765c2|0.25.0": {
-  "at": "2026-11-07T05:15:48+07:00",
-  "n": 5,
-  "note": "fixed 5d4096ec typeof guard, old versions only"
+  "at": "2026-11-11T23:59:21+07:00",
+  "n": 6,
+  "note": "old pc 0.25.0 again; fixed in 4c5bf584 (v0.26.0)"
  },
  "1b64c0fdb7081f015b2765c2|0.26.0": {
-  "at": "2026-11-07T05:15:48+07:00",
+  "at": "2026-11-11T23:59:21+07:00",
   "n": 1,
-  "note": "fixed 5d4096ec typeof guard, old versions only"
+  "note": "old pc 0.25.0 again; fixed in 4c5bf584 (v0.26.0)"
  },
  "1b64c0fdb7081f015b2765c2|0.26.1": {
-  "at": "2026-11-07T05:15:48+07:00",
+  "at": "2026-11-11T23:59:21+07:00",
   "n": 8,
-  "note": "fixed 5d4096ec typeof guard, old versions only"
+  "note": "old pc 0.25.0 again; fixed in 4c5bf584 (v0.26.0)"
  },
  "1b64c0fdb7081f015b2765c2|0.26.3": {
-  "at": "2026-11-07T05:15:48+07:00",
+  "at": "2026-11-11T23:59:21+07:00",
   "n": 8,
-  "note": "fixed 5d4096ec typeof guard, old versions only"
+  "note": "old pc 0.25.0 again; fixed in 4c5bf584 (v0.26.0)"
  },
  "1bb957ff3a488ee2d9b284a4|0.42.0": {
   "at": "2026-11-04T06:24:38+07:00",
@@ -428,6 +518,11 @@
   "at": "2026-11-05T21:24:08+07:00",
   "n": 2,
   "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+ },
+ "1c32eff7f7debef0f5668c1f|0.49.0": {
+  "at": "2026-11-11T06:02:16+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "1c570f260459c0b84513dc9d|0.34.0": {
   "at": "2026-11-05T10:40:12+07:00",
@@ -494,6 +589,11 @@
   "n": 1,
   "note": "fixed in 314c0f33 (Adb ArrayList(streams.values))"
  },
+ "1eb7f68a7d1e7939564c3332|0.47.0": {
+  "at": "2026-11-08T03:23:05+07:00",
+  "n": 1,
+  "note": "keyfix_refused on IP STATION, 7th box on 0.47.0; next TV Setup reports whether the add-on was force-stopped (a RAM cleaner) or turned off"
+ },
  "21d6ea2f3f739402aeb51852|0.32.1": {
   "at": "2026-11-02T22:17:48+07:00",
   "n": 2,
@@ -509,10 +609,20 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "24516ed4c9c94a793f74b26d|0.47.0": {
+  "at": "2026-11-08T15:25:13+07:00",
+  "n": 1,
+  "note": "BRAVIA VU3: ADB on, 5555 open, the link failed and the words said ADB off; now says 'can't connect, Reconnect' and the report carries the link error"
+ },
  "25473d8d21bbc354ae617435|0.45.0": {
   "at": "2026-11-06T17:03:02+07:00",
   "n": 1,
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+ },
+ "2549868201603299678c450e|0.49.0": {
+  "at": "2026-11-10T20:01:01+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "26d2655349a426cd1a66e207|0.34.1": {
   "at": "2026-11-04T03:07:24+07:00",
@@ -544,6 +654,11 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "298d1b7b8292710ef81b961e|0.49.0": {
+  "at": "2026-11-11T06:02:17+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
  "2a125baae45135ddf67b1231|0.26.2": {
   "at": "2026-11-03T23:36:35+07:00",
   "n": 2,
@@ -563,6 +678,11 @@
   "at": "2026-11-04T18:44:10+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (refused / allow unanswered / tls not paired), not a code fault"
+ },
+ "2b2871038734875350dd4a37|0.30.1": {
+  "at": "2026-11-08T08:35:39+07:00",
+  "n": 1,
+  "note": "Android-x86 VM (QEMU i440FX): Runtime.exec native calling itself = a hooking framework on that VM, no frame of ours, left"
  },
  "2c1ad75d9d4e80f1f1768d8c|0.25.0": {
   "at": "2026-10-27T09:37:04+07:00",
@@ -613,6 +733,11 @@
   "at": "2026-11-02T22:17:48+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+ },
+ "2f7b4a5845c32315a71d9ed8|0.48.0": {
+  "at": "2026-11-10T20:00:58+07:00",
+  "n": 1,
+  "note": "keyfix_refused: firmware takes the key add-on's accessibility service out; the next TV Setup reports known/others/a11y (e957a72e, unreleased): wait for that data"
  },
  "304d571eb8351582e87856f4|0.26.3": {
   "at": "2026-10-26T21:47:43+07:00",
@@ -709,6 +834,16 @@
   "n": 1,
   "note": "fixed: fold.js :is() selector on Chrome<88"
  },
+ "3300c7152426d45697dc8ea8|0.34.1": {
+  "at": "2026-11-10T20:01:04+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
+ },
+ "3300c7152426d45697dc8ea8|0.45.1": {
+  "at": "2026-11-10T20:01:04+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
+ },
  "330d8f5d7bec6332a86acee7|0.38.4": {
   "at": "2026-11-03T03:42:50+07:00",
   "n": 1,
@@ -718,6 +853,16 @@
   "at": "2026-10-29T17:19:41+07:00",
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "33667cb7920469ef4a9c5cff|0.47.0": {
+  "at": "2026-11-09T20:45:42+07:00",
+  "n": 1,
+  "note": "rules_no_adb: a health report (ADB off on that Skyworth, 0.47.0), not a fault; e64a6aea"
+ },
+ "34503a651177c8d0b5ba1c8e|0.47.0": {
+  "at": "2026-11-08T00:55:13+07:00",
+  "n": 1,
+  "note": "home_link.js did not load on a MediaTek TV (the script before home.js): errbox now reloads once on a failed /js/ script and sends no report for its ReferenceErrors"
  },
  "34a118fd3d429df53bebadbb|0.20.2": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -745,9 +890,14 @@
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
  },
  "3894b2245b830470df7f8316|0.34.2": {
-  "at": "2026-11-02T22:17:48+07:00",
+  "at": "2026-11-11T06:02:12+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "3894b2245b830470df7f8316|0.49.0": {
+  "at": "2026-11-11T06:02:12+07:00",
+  "n": 2,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "39112b90c5ee2dd78e4de160|0.25.0": {
   "at": "2026-10-27T09:37:06+07:00",
@@ -803,6 +953,11 @@
   "at": "2026-10-29T17:19:59+07:00",
   "n": 1,
   "note": "fixed in 314c0f33 (IR import capped 1 MB)"
+ },
+ "3cefc344bd184c43c4a35642|0.50.0": {
+  "at": "2026-11-09T10:46:21+07:00",
+  "n": 1,
+  "note": "playing.js 250 ms tick read $('#playing').hidden with no box on the page (swapped); null-safe now. Why the box was gone on a macOS 27 window: no stack, not pinned"
  },
  "3d3fb10724ef308cde567ed9|0.42.0": {
   "at": "2026-11-06T17:03:04+07:00",
@@ -979,6 +1134,16 @@
   "n": 1,
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
  },
+ "3fd52ef15449ebe1bb5ee526|0.49.0": {
+  "at": "2026-11-12T08:52:42+07:00",
+  "n": 1,
+  "note": "keyfix_refused (MBOX, sdk 29) on 0.50.0: known yes, others 0, a11y 0, add-on running: same firmware signature as KOBRA/Z1/G-Two; waiting for 8f344ac1's rs/bound/crashed data (not released yet)"
+ },
+ "3fd52ef15449ebe1bb5ee526|0.50.0": {
+  "at": "2026-11-12T08:52:42+07:00",
+  "n": 1,
+  "note": "keyfix_refused (MBOX, sdk 29) on 0.50.0: known yes, others 0, a11y 0, add-on running: same firmware signature as KOBRA/Z1/G-Two; waiting for 8f344ac1's rs/bound/crashed data (not released yet)"
+ },
  "41dd31f77cb49ce98c2242e0|0.28.0": {
   "at": "2026-10-27T09:37:26+07:00",
   "n": 1,
@@ -993,6 +1158,11 @@
   "at": "2026-11-02T22:17:48+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+ },
+ "456d47c9fb50b8a31f2d3c71|0.48.0": {
+  "at": "2026-11-09T20:45:41+07:00",
+  "n": 2,
+  "note": "0.48.0 again: add-on turned off on that MiTV; fixed in 6222de49, shipped in TV Setup 0.49.0"
  },
  "457abcc7833427ac40dcc540|0.45.0": {
   "at": "2026-11-06T17:03:02+07:00",
@@ -1015,29 +1185,49 @@
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "4664ee61b8bdc5497e1638b0|0.32.1": {
-  "at": "2026-11-05T10:40:16+07:00",
+  "at": "2026-11-12T08:52:42+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "user state, handled: TCL Smart TV Pro, Allow question not answered (crashwatch: 6 installs on this model, was 3); TV Setup points to Wireless debugging after it (828f06d1 path). If it keeps rising, look at one TCL live (support code) to see whether the prompt shows at all"
  },
  "4664ee61b8bdc5497e1638b0|0.35.0": {
-  "at": "2026-11-05T10:40:16+07:00",
+  "at": "2026-11-12T08:52:42+07:00",
   "n": 2,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "user state, handled: TCL Smart TV Pro, Allow question not answered (crashwatch: 6 installs on this model, was 3); TV Setup points to Wireless debugging after it (828f06d1 path). If it keeps rising, look at one TCL live (support code) to see whether the prompt shows at all"
  },
  "4664ee61b8bdc5497e1638b0|0.37.0": {
-  "at": "2026-11-05T10:40:16+07:00",
+  "at": "2026-11-12T08:52:42+07:00",
   "n": 2,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "user state, handled: TCL Smart TV Pro, Allow question not answered (crashwatch: 6 installs on this model, was 3); TV Setup points to Wireless debugging after it (828f06d1 path). If it keeps rising, look at one TCL live (support code) to see whether the prompt shows at all"
+ },
+ "4664ee61b8bdc5497e1638b0|0.38.4": {
+  "at": "2026-11-12T08:52:42+07:00",
+  "n": 1,
+  "note": "user state, handled: TCL Smart TV Pro, Allow question not answered (crashwatch: 6 installs on this model, was 3); TV Setup points to Wireless debugging after it (828f06d1 path). If it keeps rising, look at one TCL live (support code) to see whether the prompt shows at all"
  },
  "4664ee61b8bdc5497e1638b0|0.42.0": {
-  "at": "2026-11-05T10:40:16+07:00",
+  "at": "2026-11-12T08:52:42+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "user state, handled: TCL Smart TV Pro, Allow question not answered (crashwatch: 6 installs on this model, was 3); TV Setup points to Wireless debugging after it (828f06d1 path). If it keeps rising, look at one TCL live (support code) to see whether the prompt shows at all"
+ },
+ "4664ee61b8bdc5497e1638b0|0.49.0": {
+  "at": "2026-11-12T08:52:42+07:00",
+  "n": 1,
+  "note": "user state, handled: TCL Smart TV Pro, Allow question not answered (crashwatch: 6 installs on this model, was 3); TV Setup points to Wireless debugging after it (828f06d1 path). If it keeps rising, look at one TCL live (support code) to see whether the prompt shows at all"
+ },
+ "4664ee61b8bdc5497e1638b0|0.50.0": {
+  "at": "2026-11-12T08:52:42+07:00",
+  "n": 1,
+  "note": "user state, handled: TCL Smart TV Pro, Allow question not answered (crashwatch: 6 installs on this model, was 3); TV Setup points to Wireless debugging after it (828f06d1 path). If it keeps rising, look at one TCL live (support code) to see whether the prompt shows at all"
  },
  "46a201947cd09f30b640db42|0.32.7": {
   "at": "2026-10-30T09:08:10+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
+ },
+ "46ba6f20cbb30fffeb8af3c1|0.47.0": {
+  "at": "2026-11-08T18:48:43+07:00",
+  "n": 1,
+  "note": "rk3566_rgo, 12th on 0.47.0: the KeyFix.sync race fixed in 5dd45fb6 (next release)"
  },
  "478a387890933579fecf99b4|0.32.1": {
   "at": "2026-11-05T10:40:16+07:00",
@@ -1050,19 +1240,24 @@
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
  },
  "47a5c9da4073a9a70ad6b63e|0.38.2": {
-  "at": "2026-11-05T10:40:17+07:00",
+  "at": "2026-11-11T06:02:17+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "47a5c9da4073a9a70ad6b63e|0.42.2": {
-  "at": "2026-11-05T10:40:17+07:00",
+  "at": "2026-11-11T06:02:17+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "47a5c9da4073a9a70ad6b63e|0.43.0": {
-  "at": "2026-11-06T17:03:02+07:00",
+  "at": "2026-11-11T06:02:17+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "47a5c9da4073a9a70ad6b63e|0.45.1": {
+  "at": "2026-11-11T06:02:17+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "47baed67085a7343b6f1e186|0.30.0": {
   "at": "2026-10-28T14:05:36+07:00",
@@ -1119,6 +1314,11 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
+ "4bc084ff295051d304168552|0.47.0": {
+  "at": "2026-11-07T15:31:07+07:00",
+  "n": 1,
+  "note": "state, not a crash: Polytron/HKC 2K AI Smart TV (Android 11) firmware removes the key filter's accessibility service; KeyFix gives up after 3 tries by design (no fight loop). Device policy, left"
+ },
  "4c9f22508e678c8d48ee59f1|0.34.1": {
   "at": "2026-10-30T09:08:11+07:00",
   "n": 1,
@@ -1159,6 +1359,11 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "4d58cb3e4a27bd95cc514a26|0.49.0": {
+  "at": "2026-11-11T06:02:18+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
  "4dd85a42bd586b391688123b|0.32.1": {
   "at": "2026-10-29T17:20:02+07:00",
   "n": 1,
@@ -1189,6 +1394,11 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
  },
+ "511f3a265738aafe0658b20a|0.47.0": {
+  "at": "2026-11-07T23:21:48+07:00",
+  "n": 1,
+  "note": "state, not a crash: Skyworth SWTV-22AE (Android 11) firmware takes the key filter's accessibility service out; KeyFix gives up after 3 tries by design, same as 1246e79d (G-Two Box)"
+ },
  "516d4346df0ee681f688361c|0.33.1": {
   "at": "2026-10-30T09:08:13+07:00",
   "n": 1,
@@ -1215,14 +1425,19 @@
   "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
  },
  "5255e1fda001cda94f5657bc|0.30.0": {
-  "at": "2026-10-29T17:19:32+07:00",
+  "at": "2026-11-11T06:02:18+07:00",
   "n": 1,
-  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "5255e1fda001cda94f5657bc|0.32.1": {
-  "at": "2026-11-02T22:17:48+07:00",
+  "at": "2026-11-11T06:02:18+07:00",
   "n": 2,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "5255e1fda001cda94f5657bc|0.49.0": {
+  "at": "2026-11-11T06:02:18+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "5268ade07cdb119d2175ece4|0.34.1": {
   "at": "2026-10-30T09:08:13+07:00",
@@ -1238,6 +1453,11 @@
   "at": "2026-10-29T18:31:17+07:00",
   "n": 1,
   "note": "not our code: minified script the browser injected into the TV web page; errbox now drops stacks whose every frame is the page itself"
+ },
+ "52b902dfab9195f27703bb1b|0.49.0": {
+  "at": "2026-11-10T20:01:01+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "535993e358ec33bffb4a2ab7|0.27.0": {
   "at": "2026-11-04T03:07:28+07:00",
@@ -1309,6 +1529,11 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "562b538f9ff3ed25a7db5086|0.17.1": {
+  "at": "2026-11-07T13:41:56+07:00",
+  "n": 1,
+  "note": "Android-x86 8.1 PC (QEMU), 1 install: stack is only Runtime.exec(Native) calling itself, no app frame; TV Games never calls exec: a hook on that device, left"
+ },
  "57146d5274bfdd5332fb3e4d|0.36.0": {
   "at": "2026-11-02T22:17:48+07:00",
   "n": 1,
@@ -1320,19 +1545,34 @@
   "note": "home.js after/send/preview retry drew an answer without config: now take() (this commit)"
  },
  "58e80942ee619021d01ddea4|0.29.0": {
-  "at": "2026-11-05T10:40:19+07:00",
+  "at": "2026-11-11T06:02:12+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "58e80942ee619021d01ddea4|0.42.2": {
-  "at": "2026-11-05T10:40:19+07:00",
+  "at": "2026-11-11T06:02:12+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "58e80942ee619021d01ddea4|0.49.0": {
+  "at": "2026-11-11T06:02:12+07:00",
+  "n": 2,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "592b546d339601dd498113ae|0.47.0": {
+  "at": "2026-11-08T18:17:11+07:00",
+  "n": 1,
+  "note": "MiTV-MZTU0, ADB on + 5555 open: same as 24516ed4, fixed in 'Guard: ADB debugging is off only when it is' (next release; its report will carry the link error)"
  },
  "5a3f0f3294d8f48d02e14828|0.43.0": {
   "at": "2026-11-05T10:40:20+07:00",
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+ },
+ "5a43900035518aa8a6184a4d|0.49.0": {
+  "at": "2026-11-10T20:01:03+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "5b47665e5391015e7bcf0337|0.23.0": {
   "at": "2026-10-29T17:19:33+07:00",
@@ -1370,39 +1610,54 @@
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
  "5c1d53c0ff40eec779d13fb7|0.45.1": {
-  "at": "2026-11-06T17:03:02+07:00",
+  "at": "2026-11-11T06:02:19+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "5c1d53c0ff40eec779d13fb7|0.49.0": {
+  "at": "2026-11-11T06:02:19+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "5c3d20915ff953ae9d0d2071|0.30.0": {
-  "at": "2026-11-03T23:36:45+07:00",
+  "at": "2026-11-11T06:02:19+07:00",
   "n": 1,
-  "note": "TV Setup's own ADB link report: ADB off / allow unanswered / Fire TV local ADB blocked (known classes, the TV shows the fix)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "5c3d20915ff953ae9d0d2071|0.32.1": {
-  "at": "2026-11-03T23:36:45+07:00",
+  "at": "2026-11-11T06:02:19+07:00",
   "n": 1,
-  "note": "TV Setup's own ADB link report: ADB off / allow unanswered / Fire TV local ADB blocked (known classes, the TV shows the fix)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "5c3d20915ff953ae9d0d2071|0.33.1": {
-  "at": "2026-11-03T23:36:45+07:00",
+  "at": "2026-11-11T06:02:19+07:00",
   "n": 1,
-  "note": "TV Setup's own ADB link report: ADB off / allow unanswered / Fire TV local ADB blocked (known classes, the TV shows the fix)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "5c3d20915ff953ae9d0d2071|0.35.0": {
-  "at": "2026-11-03T23:36:45+07:00",
+  "at": "2026-11-11T06:02:19+07:00",
   "n": 1,
-  "note": "TV Setup's own ADB link report: ADB off / allow unanswered / Fire TV local ADB blocked (known classes, the TV shows the fix)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "5c3d20915ff953ae9d0d2071|0.39.0": {
-  "at": "2026-11-03T23:36:45+07:00",
+  "at": "2026-11-11T06:02:19+07:00",
   "n": 1,
-  "note": "TV Setup's own ADB link report: ADB off / allow unanswered / Fire TV local ADB blocked (known classes, the TV shows the fix)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "5c3d20915ff953ae9d0d2071|0.45.0": {
-  "at": "2026-11-06T17:03:02+07:00",
+  "at": "2026-11-11T06:02:19+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "5c3d20915ff953ae9d0d2071|0.47.0": {
+  "at": "2026-11-11T06:02:19+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "5c3d20915ff953ae9d0d2071|0.49.0": {
+  "at": "2026-11-11T06:02:19+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "5d45b4ecf8bcf041b9118638|0.32.1": {
   "at": "2026-10-29T17:20:03+07:00",
@@ -1565,19 +1820,19 @@
   "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.28.0": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.29.0": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.30.0": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 4,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.31.0": {
   "at": "2026-11-04T16:11:40+07:00",
@@ -1585,64 +1840,99 @@
   "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.32.1": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 2,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.34.1": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 4,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.34.2": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.35.0": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.37.0": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.38.0": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.38.2": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.38.4": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.40.0": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.42.0": {
-  "at": "2026-11-06T17:03:02+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.42.2": {
-  "at": "2026-11-04T16:11:40+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.44.0": {
-  "at": "2026-11-06T17:03:02+07:00",
+  "at": "2026-11-11T06:02:20+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.45.0": {
+  "at": "2026-11-11T06:02:20+07:00",
+  "n": 2,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.45.1": {
+  "at": "2026-11-11T06:02:20+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.46.0": {
+  "at": "2026-11-11T06:02:20+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.47.0": {
+  "at": "2026-11-11T06:02:20+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.49.0": {
+  "at": "2026-11-11T06:02:20+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "67f82331bc87f7fa012370a1|0.49.0": {
+  "at": "2026-11-11T23:59:20+07:00",
+  "n": 1,
+  "note": "keyfix_refused (KOBRA BOX, sdk 29) on 0.50.0: same signature as ADT-3 / G-Two (known yes, others 0, a11y 0, add-on running); sdk 29 has no restricted-settings appop, so firmware takes the service out; waiting for 8f344ac1's rs/bound/crashed data (not released yet)"
+ },
+ "67f82331bc87f7fa012370a1|0.50.0": {
+  "at": "2026-11-11T23:59:20+07:00",
+  "n": 1,
+  "note": "keyfix_refused (KOBRA BOX, sdk 29) on 0.50.0: same signature as ADT-3 / G-Two (known yes, others 0, a11y 0, add-on running); sdk 29 has no restricted-settings appop, so firmware takes the service out; waiting for 8f344ac1's rs/bound/crashed data (not released yet)"
  },
  "6829ee79c1f5ab7a1c5a60b1|0.39.0": {
   "at": "2026-11-03T06:59:47+07:00",
@@ -1704,6 +1994,11 @@
   "n": 1,
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / Fire TV EOF (known); scrcpy did-not-start now carries the server's reason (serverSaid)"
  },
+ "6bbd148d2a89a01028ee8150|0.50.0": {
+  "at": "2026-11-11T12:11:05+07:00",
+  "n": 1,
+  "note": "keyfix_refused (sdk 28): same as earlier, waiting for e957a72e data"
+ },
  "6c3b94df5aa42e57587aa4d8|0.45.0": {
   "at": "2026-11-06T17:03:02+07:00",
   "n": 1,
@@ -1750,24 +2045,34 @@
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "6dacec2975b1bb386c15d443|0.32.1": {
-  "at": "2026-10-29T17:20:06+07:00",
+  "at": "2026-11-11T06:02:13+07:00",
   "n": 1,
-  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "6dacec2975b1bb386c15d443|0.35.0": {
-  "at": "2026-11-02T22:17:48+07:00",
+  "at": "2026-11-11T06:02:13+07:00",
   "n": 2,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "6dacec2975b1bb386c15d443|0.37.0": {
-  "at": "2026-11-02T22:17:48+07:00",
+  "at": "2026-11-11T06:02:13+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "6dacec2975b1bb386c15d443|0.38.4": {
-  "at": "2026-11-02T22:17:48+07:00",
+  "at": "2026-11-11T06:02:13+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "6dacec2975b1bb386c15d443|0.48.0": {
+  "at": "2026-11-11T06:02:13+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "6dacec2975b1bb386c15d443|0.49.0": {
+  "at": "2026-11-11T06:02:13+07:00",
+  "n": 2,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "6e74bfe9ce7c98065828fe28|0.29.0": {
   "at": "2026-10-29T17:19:35+07:00",
@@ -1785,14 +2090,19 @@
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
  "6ee3614a8b9bcabc17846802|0.29.0": {
-  "at": "2026-10-28T14:05:42+07:00",
+  "at": "2026-11-11T06:02:21+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "6ee3614a8b9bcabc17846802|0.31.0": {
-  "at": "2026-10-28T14:05:42+07:00",
+  "at": "2026-11-11T06:02:21+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "6ee3614a8b9bcabc17846802|0.49.0": {
+  "at": "2026-11-11T06:02:21+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "6f884cad973deca6bbf86856|0.38.1": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -1803,6 +2113,16 @@
   "at": "2026-10-27T09:37:16+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "7128da054cd735f24176e919|0.22.0": {
+  "at": "2026-11-10T05:00:31+07:00",
+  "n": 1,
+  "note": "guide cache folder emptied under the write (Android low storage / a cleaner); Guide.keep makes it again and never throws; GuideTest"
+ },
+ "720ba44c1259a6219de5792d|0.49.0": {
+  "at": "2026-11-10T20:01:02+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "72197a51e589326b53120179|0.28.0": {
   "at": "2026-11-03T03:42:52+07:00",
@@ -1864,6 +2184,16 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "74a3e53f7289e296dc00b342|0.47.0": {
+  "at": "2026-11-09T20:45:42+07:00",
+  "n": 1,
+  "note": "keyfix_refused on 0.47.0 (before the @Synchronized sync fix, 0bea8243 family); no detail in that version"
+ },
+ "74a91a00f5c640b36868223c|0.47.0": {
+  "at": "2026-11-10T20:01:02+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
+ },
  "74e9dd24769f68fce154098f|0.26.3": {
   "at": "2026-10-27T09:37:17+07:00",
   "n": 1,
@@ -1904,6 +2234,11 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
  },
+ "7ce62d6ce53d30ec3ee956df|0.49.0": {
+  "at": "2026-11-08T22:48:37+07:00",
+  "n": 1,
+  "note": "Linux Computer app (WebKitGTK): famGet missing in renderFamily; family.js's card code moved out of its if block (the only file with block-scoped declarations); not reproduced"
+ },
  "7cf9011759eb60d1071330ae|0.32.1": {
   "at": "2026-10-29T17:20:07+07:00",
   "n": 1,
@@ -1928,6 +2263,11 @@
   "at": "2026-11-03T03:42:53+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+ },
+ "7e61494d42e097c75a70c023|0.49.0": {
+  "at": "2026-11-11T06:02:21+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "80076832323d6921ebcd2475|0.13.1": {
   "at": "2026-10-26T21:47:47+07:00",
@@ -1955,14 +2295,19 @@
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "828f06d14524e826ed528989|0.34.1": {
-  "at": "2026-10-30T09:08:17+07:00",
+  "at": "2026-11-08T06:06:15+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
+  "note": "AI PONT (Changhong, Android 11): allow question unanswered on 3 installs, likely never shown; TV Setup now points to Wireless debugging after it"
  },
  "828f06d14524e826ed528989|0.35.0": {
-  "at": "2026-11-02T22:17:48+07:00",
+  "at": "2026-11-08T06:06:15+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+  "note": "AI PONT (Changhong, Android 11): allow question unanswered on 3 installs, likely never shown; TV Setup now points to Wireless debugging after it"
+ },
+ "828f06d14524e826ed528989|0.47.0": {
+  "at": "2026-11-08T06:06:15+07:00",
+  "n": 3,
+  "note": "AI PONT (Changhong, Android 11): allow question unanswered on 3 installs, likely never shown; TV Setup now points to Wireless debugging after it"
  },
  "82bbd4343b46d5b4f2b8ec5e|0.30.0": {
   "at": "2026-10-28T14:05:17+07:00",
@@ -2224,6 +2569,11 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
  },
+ "91a5ee662f21120ec67e968e|0.30.0": {
+  "at": "2026-11-09T07:39:11+07:00",
+  "n": 19,
+  "note": "TV Home 0.30.0 only: onPause on a locked Home, fixed in 5de6ba6f (0.31.0, v0.50.0)"
+ },
  "91edf9043da787065b68c466|0.38.0": {
   "at": "2026-11-02T22:17:48+07:00",
   "n": 1,
@@ -2299,6 +2649,16 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "96b65c49f591338245132433|0.49.0": {
+  "at": "2026-11-12T01:04:07+07:00",
+  "n": 1,
+  "note": "SMOON_300 sdk 34 again on 0.50.0 (known/others/a11y not in this row's msg); sdk 34 like ADT-3: 8f344ac1 gives the add-on its restricted-settings appop back before each look, not released yet; recheck after the release"
+ },
+ "96b65c49f591338245132433|0.50.0": {
+  "at": "2026-11-12T01:04:07+07:00",
+  "n": 1,
+  "note": "SMOON_300 sdk 34 again on 0.50.0 (known/others/a11y not in this row's msg); sdk 34 like ADT-3: 8f344ac1 gives the add-on its restricted-settings appop back before each look, not released yet; recheck after the release"
+ },
  "97e17829dc7affa466571ee0|0.38.3": {
   "at": "2026-11-02T22:17:48+07:00",
   "n": 1,
@@ -2353,6 +2713,11 @@
   "at": "2026-11-06T17:03:02+07:00",
   "n": 1,
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+ },
+ "9f6a673eb2b9277595915bec|0.49.0": {
+  "at": "2026-11-10T20:01:03+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "9fae8eef259fdd7309a272c5|0.32.1": {
   "at": "2026-11-05T10:40:26+07:00",
@@ -2424,15 +2789,30 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
- "a3e21d228922e0f24f4b55f4|0.34.1": {
-  "at": "2026-11-03T23:36:48+07:00",
+ "a3c50fa342d23dac064f20a9|0.47.0": {
+  "at": "2026-11-08T00:33:01+07:00",
   "n": 1,
-  "note": "TV Setup's own ADB link report: ADB off / allow unanswered / Fire TV local ADB blocked (known classes, the TV shows the fix)"
+  "note": "keyfix_refused on X96mini (Android 10): firmware takes the key filter out, same as WS/ADT-3/G-Two/SWTV; 0.47.0 has no cause in the detail yet (a20c4155 adds it), left"
+ },
+ "a3e21d228922e0f24f4b55f4|0.34.1": {
+  "at": "2026-11-10T20:01:00+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "a3e21d228922e0f24f4b55f4|0.40.0": {
-  "at": "2026-11-03T23:36:48+07:00",
+  "at": "2026-11-10T20:01:00+07:00",
   "n": 1,
-  "note": "TV Setup's own ADB link report: ADB off / allow unanswered / Fire TV local ADB blocked (known classes, the TV shows the fix)"
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
+ },
+ "a3e21d228922e0f24f4b55f4|0.48.0": {
+  "at": "2026-11-10T20:01:00+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
+ },
+ "a3e21d228922e0f24f4b55f4|0.49.0": {
+  "at": "2026-11-10T20:01:00+07:00",
+  "n": 1,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "a3e2566824d6782617e3795d|0.37.0": {
   "at": "2026-11-05T10:40:27+07:00",
@@ -2455,54 +2835,74 @@
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
  },
  "a468264ed0a50f4f2ddd7dce|0.26.3": {
-  "at": "2026-11-05T10:40:27+07:00",
+  "at": "2026-11-10T20:00:59+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "a468264ed0a50f4f2ddd7dce|0.30.0": {
-  "at": "2026-11-05T10:40:27+07:00",
+  "at": "2026-11-10T20:00:59+07:00",
   "n": 2,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "a468264ed0a50f4f2ddd7dce|0.34.1": {
-  "at": "2026-11-05T10:40:27+07:00",
+  "at": "2026-11-10T20:00:59+07:00",
   "n": 4,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "a468264ed0a50f4f2ddd7dce|0.35.0": {
-  "at": "2026-11-05T10:40:27+07:00",
+  "at": "2026-11-10T20:00:59+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "a468264ed0a50f4f2ddd7dce|0.37.0": {
-  "at": "2026-11-05T10:40:27+07:00",
+  "at": "2026-11-10T20:00:59+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
+ },
+ "a468264ed0a50f4f2ddd7dce|0.45.1": {
+  "at": "2026-11-10T20:00:59+07:00",
+  "n": 2,
+  "note": "ADB allow: the TV's 'Allow USB debugging?' was not answered by the person (state, not a bug); TV Setup already shows how"
  },
  "a54cc4711ab55a41b38bd0ab|0.29.0": {
-  "at": "2026-11-04T03:07:29+07:00",
+  "at": "2026-11-11T06:02:22+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / Fire TV EOF (known); scrcpy did-not-start now carries the server's reason (serverSaid)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "a54cc4711ab55a41b38bd0ab|0.38.4": {
-  "at": "2026-11-04T03:07:29+07:00",
+  "at": "2026-11-11T06:02:22+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / Fire TV EOF (known); scrcpy did-not-start now carries the server's reason (serverSaid)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "a54cc4711ab55a41b38bd0ab|0.40.0": {
-  "at": "2026-11-04T03:07:29+07:00",
+  "at": "2026-11-11T06:02:22+07:00",
   "n": 2,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / Fire TV EOF (known); scrcpy did-not-start now carries the server's reason (serverSaid)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "a54cc4711ab55a41b38bd0ab|0.41.0": {
-  "at": "2026-11-04T03:07:29+07:00",
+  "at": "2026-11-11T06:02:22+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / Fire TV EOF (known); scrcpy did-not-start now carries the server's reason (serverSaid)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "a54cc4711ab55a41b38bd0ab|0.42.0": {
-  "at": "2026-11-04T03:07:29+07:00",
+  "at": "2026-11-11T06:02:22+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / Fire TV EOF (known); scrcpy did-not-start now carries the server's reason (serverSaid)"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "a54cc4711ab55a41b38bd0ab|0.46.0": {
+  "at": "2026-11-11T06:02:22+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "a54cc4711ab55a41b38bd0ab|0.47.0": {
+  "at": "2026-11-11T06:02:22+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "a54cc4711ab55a41b38bd0ab|0.49.0": {
+  "at": "2026-11-11T06:02:22+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "a61105e296172cd1c6bf213f|0.30.0": {
   "at": "2026-11-03T03:42:55+07:00",
@@ -2584,6 +2984,11 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "a86309ad2c4470a16a47aa5a|0.49.0": {
+  "at": "2026-11-11T06:02:14+07:00",
+  "n": 2,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
  "a92d71c8c0a61098b0a9872c|0.32.1": {
   "at": "2026-10-29T17:20:13+07:00",
   "n": 1,
@@ -2593,6 +2998,11 @@
   "at": "2026-11-06T00:58:39+07:00",
   "n": 1,
   "note": "ADB key file cut short: Adb.kt now makes a new key and writes keys whole (tmp + rename)"
+ },
+ "aaa561abf78db4410f816c4c|0.49.0": {
+  "at": "2026-11-09T20:45:43+07:00",
+  "n": 1,
+  "note": "keyfix_refused on 0.49.0, Rockchip stick sdk 34, add-on running, installed by shell: firmware takes the service out, as aee77a38; KeyFix gives up after 3 as meant"
  },
  "ac1f05f98ad5126b3167283a|0.37.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -2609,10 +3019,25 @@
   "n": 1,
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / Fire TV EOF (known); scrcpy did-not-start now carries the server's reason (serverSaid)"
  },
+ "aee77a3818915324ab95d974|0.47.0": {
+  "at": "2026-11-09T00:47:01+07:00",
+  "n": 1,
+  "note": "0.48.0, same WS box as on 0.47.0 (fake 'Android 13', sdk 29 eros-p1 userdebug): add-on running and on, the sync race fixed, still taken out: the firmware's own policy; KeyFix gives up after 3 as meant"
+ },
+ "aee77a3818915324ab95d974|0.48.0": {
+  "at": "2026-11-09T00:47:01+07:00",
+  "n": 1,
+  "note": "0.48.0, same WS box as on 0.47.0 (fake 'Android 13', sdk 29 eros-p1 userdebug): add-on running and on, the sync race fixed, still taken out: the firmware's own policy; KeyFix gives up after 3 as meant"
+ },
  "af07b280da306e71dfc625f7|0.34.1": {
   "at": "2026-10-30T09:08:24+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
+ },
+ "afe3ee402b1808b10ddee99d|0.49.0": {
+  "at": "2026-11-11T06:02:22+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "b03c587f2eac58275e3f93a9|0.34.1": {
   "at": "2026-10-30T09:08:02+07:00",
@@ -2650,39 +3075,64 @@
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
  },
  "b2bad9122a9b4f430c6f151b|0.25.0": {
-  "at": "2026-10-30T09:08:25+07:00",
+  "at": "2026-11-08T09:51:02+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
+  "note": "AI PONT refused: either ADB off (adb_enabled=0: the turn-on steps) or ADB on with no 5555 (Android 11: TV Setup already sends to Wireless debugging); both paths handled, left"
  },
  "b2bad9122a9b4f430c6f151b|0.32.1": {
-  "at": "2026-10-30T09:08:25+07:00",
+  "at": "2026-11-08T09:51:02+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
+  "note": "AI PONT refused: either ADB off (adb_enabled=0: the turn-on steps) or ADB on with no 5555 (Android 11: TV Setup already sends to Wireless debugging); both paths handled, left"
  },
  "b2bad9122a9b4f430c6f151b|0.34.1": {
-  "at": "2026-10-30T09:08:25+07:00",
+  "at": "2026-11-08T09:51:02+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
+  "note": "AI PONT refused: either ADB off (adb_enabled=0: the turn-on steps) or ADB on with no 5555 (Android 11: TV Setup already sends to Wireless debugging); both paths handled, left"
  },
  "b2bad9122a9b4f430c6f151b|0.38.0": {
-  "at": "2026-11-02T22:17:48+07:00",
+  "at": "2026-11-08T09:51:02+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+  "note": "AI PONT refused: either ADB off (adb_enabled=0: the turn-on steps) or ADB on with no 5555 (Android 11: TV Setup already sends to Wireless debugging); both paths handled, left"
+ },
+ "b2bad9122a9b4f430c6f151b|0.46.0": {
+  "at": "2026-11-08T09:51:02+07:00",
+  "n": 1,
+  "note": "AI PONT refused: either ADB off (adb_enabled=0: the turn-on steps) or ADB on with no 5555 (Android 11: TV Setup already sends to Wireless debugging); both paths handled, left"
+ },
+ "b2bad9122a9b4f430c6f151b|0.47.0": {
+  "at": "2026-11-08T09:51:02+07:00",
+  "n": 2,
+  "note": "AI PONT refused: either ADB off (adb_enabled=0: the turn-on steps) or ADB on with no 5555 (Android 11: TV Setup already sends to Wireless debugging); both paths handled, left"
+ },
+ "b3d8070136a6d4aa43ecd9bb|0.50.0": {
+  "at": "2026-11-11T22:04:05+07:00",
+  "n": 1,
+  "note": "rules_no_adb (Chromecast with Google TV, sdk 34): Wireless debugging on, no 5555 (closed since a reboot until a paired client opens it): the TV's state, TV Setup already shows the no-port howto"
  },
  "b3dbb5ec6f1c76a39a24c383|0.29.0": {
-  "at": "2026-11-05T10:40:28+07:00",
+  "at": "2026-11-11T20:05:42+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "ADB refused (AQUA MatrixTV, Android 14): adb_enabled 1, no TCP port: the TV needs Wireless debugging pairing; a state, not a fault"
  },
  "b3dbb5ec6f1c76a39a24c383|0.42.2": {
-  "at": "2026-11-05T10:40:28+07:00",
+  "at": "2026-11-11T20:05:42+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "ADB refused (AQUA MatrixTV, Android 14): adb_enabled 1, no TCP port: the TV needs Wireless debugging pairing; a state, not a fault"
  },
  "b3dbb5ec6f1c76a39a24c383|0.44.0": {
-  "at": "2026-11-06T17:03:02+07:00",
+  "at": "2026-11-11T20:05:42+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+  "note": "ADB refused (AQUA MatrixTV, Android 14): adb_enabled 1, no TCP port: the TV needs Wireless debugging pairing; a state, not a fault"
+ },
+ "b3dbb5ec6f1c76a39a24c383|0.49.0": {
+  "at": "2026-11-11T20:05:42+07:00",
+  "n": 2,
+  "note": "ADB refused (AQUA MatrixTV, Android 14): adb_enabled 1, no TCP port: the TV needs Wireless debugging pairing; a state, not a fault"
+ },
+ "b3dbb5ec6f1c76a39a24c383|0.50.0": {
+  "at": "2026-11-11T20:05:42+07:00",
+  "n": 1,
+  "note": "ADB refused (AQUA MatrixTV, Android 14): adb_enabled 1, no TCP port: the TV needs Wireless debugging pairing; a state, not a fault"
  },
  "b3f651e44e8ee5e6436726b0|0.35.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -2733,6 +3183,11 @@
   "at": "2026-10-26T21:47:35+07:00",
   "n": 1,
   "note": "fixed in 5d4096ec"
+ },
+ "b6c7fcef24aacecc9feb98e1|0.48.0": {
+  "at": "2026-11-10T20:00:57+07:00",
+  "n": 1,
+  "note": "keyfix_refused: firmware takes the key add-on's accessibility service out; the next TV Setup reports known/others/a11y (e957a72e, unreleased): wait for that data"
  },
  "b6f2dbac085dd251c785a738|0.26.2": {
   "at": "2026-10-29T17:20:14+07:00",
@@ -2804,6 +3259,16 @@
   "n": 1,
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
  },
+ "bb31c57aee184b485cef511f|0.49.0": {
+  "at": "2026-11-12T02:06:47+07:00",
+  "n": 1,
+  "note": "Z1 sdk 29 again on 0.50.0: known yes, others 0, a11y 0, add-on running: same firmware signature as KOBRA/G-Two; waiting for 8f344ac1's rs/bound/crashed data (not released yet)"
+ },
+ "bb31c57aee184b485cef511f|0.50.0": {
+  "at": "2026-11-12T02:06:47+07:00",
+  "n": 1,
+  "note": "Z1 sdk 29 again on 0.50.0: known yes, others 0, a11y 0, add-on running: same firmware signature as KOBRA/G-Two; waiting for 8f344ac1's rs/bound/crashed data (not released yet)"
+ },
  "bb6aa51a71dd220857d39503|0.24.1": {
   "at": "2026-10-27T09:37:20+07:00",
   "n": 1,
@@ -2818,6 +3283,11 @@
   "at": "2026-10-29T17:19:49+07:00",
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "bde60ff92ccf60d7ef86e7fd|0.47.0": {
+  "at": "2026-11-07T16:19:11+07:00",
+  "n": 1,
+  "note": "state: Skyworth SWTV-24AE-FHD (Android 14) takes the key filter out; report new in 0.47.0 (954a032c). FPT on 0.47.0: service stays on, no refused: not our regression"
  },
  "bea8129f3d33d72242395b1d|0.40.0": {
   "at": "2026-11-03T10:07:27+07:00",
@@ -2959,6 +3429,11 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "c8d464bbe23c0af114056b4b|0.49.0": {
+  "at": "2026-11-10T20:00:57+07:00",
+  "n": 1,
+  "note": "keyfix_refused: firmware takes the key add-on's accessibility service out; the next TV Setup reports known/others/a11y (e957a72e, unreleased): wait for that data"
+ },
  "c9277726f6417817933fbf3f|0.15.1": {
   "at": "2026-10-30T09:08:27+07:00",
   "n": 1,
@@ -2970,9 +3445,14 @@
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
  "c9948b1689f4fb7f58ce1925|0.42.0": {
-  "at": "2026-11-04T06:24:41+07:00",
+  "at": "2026-11-11T06:02:23+07:00",
   "n": 1,
-  "note": "ADB link reports (known classes); 83256fe0 fixed: remote.json read twice, mute guarded"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "c9948b1689f4fb7f58ce1925|0.49.0": {
+  "at": "2026-11-11T06:02:23+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "c9ed129e030fd9374b14cfd4|0.26.3": {
   "at": "2026-10-26T21:47:46+07:00",
@@ -2983,6 +3463,11 @@
   "at": "2026-10-28T14:05:19+07:00",
   "n": 1,
   "note": "fixed: Guard ignores a dialog shown/dismissed after its screen is gone (GuardLogic.goneWindow)"
+ },
+ "cb0aeef90ee04315ab3d89f7|0.49.0": {
+  "at": "2026-11-11T06:02:23+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "cb5b967edf8d24798bc4d683|0.42.0": {
   "at": "2026-11-04T03:07:31+07:00",
@@ -3119,6 +3604,16 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "d13c1017c291a813ee171b51|0.48.0": {
+  "at": "2026-11-09T11:03:24+07:00",
+  "n": 2,
+  "note": "Willfon Neo (3 installs): 127.0.0.1:5555 takes the TCP connection but adbd never answers CNXN within 15 s, 6 tries in 3 min: the box's adbd is silent (not an Allow prompt: that path answers AUTH). Nothing to fix without a support code from one"
+ },
+ "d13c1017c291a813ee171b51|0.49.0": {
+  "at": "2026-11-09T11:03:24+07:00",
+  "n": 1,
+  "note": "Willfon Neo (3 installs): 127.0.0.1:5555 takes the TCP connection but adbd never answers CNXN within 15 s, 6 tries in 3 min: the box's adbd is silent (not an Allow prompt: that path answers AUTH). Nothing to fix without a support code from one"
+ },
  "d31494e53999b8f4ce821451|0.20.1": {
   "at": "2026-10-30T09:08:27+07:00",
   "n": 1,
@@ -3128,6 +3623,11 @@
   "at": "2026-11-02T22:17:48+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+ },
+ "d47553631adf4f7636287ef0|0.37.0": {
+  "at": "2026-11-11T06:02:24+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "d4981b4c69906b1cfd2ae4c6|0.32.0": {
   "at": "2026-10-29T17:20:19+07:00",
@@ -3173,6 +3673,11 @@
   "at": "2026-11-06T17:03:03+07:00",
   "n": 1,
   "note": "watch: Fire TV AFTMA2857F (Fire OS 7, Android 9, adb_wifi_enabled=1), same model gave EOF on 0.42/0.43 (Amazon blocks local ADB); 0.45.0 'Error parsing public key' from platform conscrypt, likely AdbTls.context:146 after an STLS ask; no stack, 1 install"
+ },
+ "d4ef66f9f17b25fe912ab9c0|0.50.0": {
+  "at": "2026-11-11T17:48:29+07:00",
+  "n": 1,
+  "note": "rules_no_adb (MXQ Pro Amlogic box, sdk 28): adbd runs on USB only (tcp.port 0, 5555 refused), so the sleep timer could not reach ADB; a health report of the TV's state, not a code fault"
  },
  "d6434b998952d4ab9cc3cb26|0.37.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -3259,6 +3764,11 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "db1680a09090e1bebbd561b8|0.47.0": {
+  "at": "2026-11-08T07:30:43+07:00",
+  "n": 1,
+  "note": "keyfix_refused on HY300Pro, 9th box on 0.47.0; cause reported from the next TV Setup"
+ },
  "db2385a9ad7d17873c13d349|0.26.3": {
   "at": "2026-10-27T09:37:23+07:00",
   "n": 1,
@@ -3313,6 +3823,16 @@
   "at": "2026-11-03T06:59:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+ },
+ "e13f5371b0d111ad389260eb|0.28.0": {
+  "at": "2026-11-11T06:02:15+07:00",
+  "n": 1,
+  "note": "same as 0.28.0: Window key -> PiP on a device without it; fixed in caabec5c (unreleased)"
+ },
+ "e13f5371b0d111ad389260eb|0.48.0": {
+  "at": "2026-11-11T06:02:15+07:00",
+  "n": 2,
+  "note": "same as 0.28.0: Window key -> PiP on a device without it; fixed in caabec5c (unreleased)"
  },
  "e183da6cf42d4c2e775d5eee|0.23.0": {
   "at": "2026-10-30T09:08:03+07:00",
@@ -3398,6 +3918,11 @@
   "at": "2026-11-03T23:36:34+07:00",
   "n": 3,
   "note": "fixed in 9831be93, shipped in v0.44.0 (phone 0.41.0); these are 0.40.0 installs"
+ },
+ "e64a6aea48ad472759061a7e|0.45.0": {
+  "at": "2026-11-09T10:42:18+07:00",
+  "n": 1,
+  "note": "rules_no_adb: the TV's ADB debugging was off, so the sleep timer could not turn it off (a health report, TV Setup 0.45.0); KeepAdb turns it back on where WRITE_SECURE_SETTINGS was granted"
  },
  "e79672e1ff8459fb2088df18|0.32.1": {
   "at": "2026-10-29T17:20:22+07:00",
@@ -3519,10 +4044,20 @@
   "n": 1,
   "note": "TV Setup ADB health report (refused = debugging off; EOF on Fire TV = Amazon blocks local ADB; scrcpy did-not-start), not a code fault"
  },
+ "ef46e92b5921045e1e901a58|0.49.0": {
+  "at": "2026-11-11T06:02:24+07:00",
+  "n": 1,
+  "note": "keyfix_refused: firmware takes the key add-on's accessibility service out; the next TV Setup reports known/others/a11y (e957a72e, unreleased): wait for that data"
+ },
  "efa52b83207b258b74e55757|0.34.1": {
   "at": "2026-10-30T09:08:30+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
+ },
+ "efef0e8ffa070c801f8c6a60|0.47.0": {
+  "at": "2026-11-11T06:02:25+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "f03fa6b922541471343a37b2|0.30.0": {
   "at": "2026-11-04T14:26:15+07:00",
@@ -3575,39 +4110,49 @@
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
  "f450a91c33294b34be468f07|0.30.0": {
-  "at": "2026-11-04T14:26:16+07:00",
+  "at": "2026-11-11T06:02:25+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "f450a91c33294b34be468f07|0.31.0": {
-  "at": "2026-11-04T14:26:16+07:00",
+  "at": "2026-11-11T06:02:25+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "f450a91c33294b34be468f07|0.32.1": {
-  "at": "2026-11-04T14:26:16+07:00",
+  "at": "2026-11-11T06:02:25+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "f450a91c33294b34be468f07|0.33.1": {
-  "at": "2026-11-04T14:26:16+07:00",
+  "at": "2026-11-11T06:02:25+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "f450a91c33294b34be468f07|0.38.1": {
-  "at": "2026-11-04T14:26:16+07:00",
+  "at": "2026-11-11T06:02:25+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "f450a91c33294b34be468f07|0.38.2": {
-  "at": "2026-11-04T14:26:16+07:00",
+  "at": "2026-11-11T06:02:25+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "f450a91c33294b34be468f07|0.42.0": {
-  "at": "2026-11-04T14:26:16+07:00",
+  "at": "2026-11-11T06:02:25+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / not paired), not a code fault"
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "f450a91c33294b34be468f07|0.47.0": {
+  "at": "2026-11-11T06:02:25+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+ },
+ "f450a91c33294b34be468f07|0.49.0": {
+  "at": "2026-11-11T06:02:25+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
  },
  "f47e3e4ff3e9c81406ab9094|0.31.0": {
   "at": "2026-10-29T17:19:52+07:00",
@@ -3733,6 +4278,21 @@
   "at": "2026-10-27T09:37:25+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "fbed4da875a2ffa6e96f47b8|0.47.0": {
+  "at": "2026-11-11T14:06:04+07:00",
+  "n": 2,
+  "note": "keyfix_refused (ADT-3, sdk 34): same class, waiting for e957a72e data"
+ },
+ "fbed4da875a2ffa6e96f47b8|0.49.0": {
+  "at": "2026-11-11T14:06:04+07:00",
+  "n": 1,
+  "note": "keyfix_refused (ADT-3, sdk 34): same class, waiting for e957a72e data"
+ },
+ "fbed4da875a2ffa6e96f47b8|0.50.0": {
+  "at": "2026-11-11T20:05:42+07:00",
+  "n": 3,
+  "note": "keyfix_refused (ADT-3, sdk 34): known yes, others 0, a11y 0 = the API 34 emulator with the add-on's ACCESS_RESTRICTED_SETTINGS at ignore; fixed: prepare again before each rearm (next release), report now adds rs/bound/crashed"
  },
  "fc50f4abd4e3d69b9a57334c|0.34.1": {
   "at": "2026-10-30T09:08:32+07:00",

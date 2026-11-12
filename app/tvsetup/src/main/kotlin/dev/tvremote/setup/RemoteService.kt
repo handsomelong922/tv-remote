@@ -206,6 +206,20 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }
 
         /** TV Apps' install through our ADB link (HomeInfo "tvapps", Manage.tvApps); null: no service or no link ready, the app installs it with Android's installer. */
+        /**
+         * TV Home's "Now playing" widget (HomeInfo "playing"): [NowPlaying]'s state, plus `held` (an app paused behind Home) and
+         * `adb: false` when it cannot be read (no ADB, the service not running). [op] null only asks; `{do: play | pause | next | prev |
+         * resume, pkg}` acts first. Asking keeps the helper running 20 s, so the widget asks only while it is on the screen.
+         */
+        fun playingForHome(op: JSONObject?): JSONObject {
+            val s = running
+            val ready = s != null && (try { s.link?.state() } catch (e: Exception) { null }) == "ready"
+            val p = if (ready) s?.manage?.playing else null
+            if (p == null) return JSONObject().put("state", "none").put("adb", false)
+            if (op != null) try { p.command(op.optString("do"), 0, op.optString("pkg")) } catch (e: Exception) { }
+            return p.state().put("adb", true)
+        }
+
         fun tvApps(op: String, id: String): JSONObject? {
             val s = running ?: return null
             if (op == "install" && (try { s.link?.state() } catch (e: Exception) { null }) != "ready") return null
@@ -392,6 +406,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         ScenePin.publishFirst(this, scenes())
         running = this
         DimLayer.restore(this)
+        dev.tvremote.setup.health.SupportThread.start(this)           // only when a code is stored: support's replies
         Support.resume(this)                                          // support open when TV Setup stopped (an update, a kill) goes on
         MicVoice.takeAssist(this)                                     // the rule on: the mic button ours again, and watched (Google takes it back)
         dev.tvremote.core.WireLog.app = "TV Setup " + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "" }) +
@@ -430,7 +445,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         lastUse = System.currentTimeMillis()
         lastSeen = lastUse
         connect()
-        guard = Guard(this) { try { link?.getQuiet() } catch (e: Exception) { null } }.also { it.start() }
+        guard = Guard.launch(this) { link?.getQuiet() }                // its failure reaches Guard.sh: the census says why
         dev.tvremote.core.ontv.Launchers.useTestFile(getExternalFilesDir(null))
         dev.tvremote.core.ontv.Launchers.dir = java.io.File(cacheDir, "launchers")   // the gallery's list and pictures kept: it opens without waiting on the network
         launcherGuard = LauncherGuard(this) { try { link?.getQuiet() } catch (e: Exception) { null } }.also { it.start() }
@@ -478,6 +493,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         welcome?.stop()
         autoOpen?.stop()
         updates?.stop()
+        dev.tvremote.setup.health.SupportThread.stop()
         if (telegramStarted) telegram.stop()
         stats.stopNet()
         stats.stopPower()

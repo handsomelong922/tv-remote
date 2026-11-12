@@ -114,6 +114,8 @@ iPhone has no app. Instead the TV serves its own control page. Open it in Safari
 
 > 💡 A TV with no ADB cannot show the code by itself: open **TV Setup** on the TV, the code is on its main screen (valid for 2 minutes).
 
+> 💡 Too many wrong codes cancel the code: tap **📺 Show the code on the TV** again for a new one. A Safari older than 15.4 says the browser needs an update.
+
 ## Infrared remote (no network)
 
 A phone with an IR blaster (many Xiaomi, Huawei and older Samsung phones) works like a paper remote: no Wi-Fi, no TV to pick. Phone app only.
@@ -165,6 +167,8 @@ Optional, and usually not needed: TV Setup opens the switch itself. Without ADB 
 6. **Build asks for a password** (FPT Play boxes…)? Install TV Setup, it opens the switch. Still stuck: **🧭 Turn ADB on for me**, or skip it, [keys still work](#nokeys).
 
 > 📡 A TV with **Wireless debugging** only (Android 11+)? No ADB debugging switch needed: open the TV's web page, press **📡 Pair with Wireless debugging**, follow [the steps](#wireless).
+
+> 🛡 **NVIDIA SHIELD:** in Developer options also turn on **Network debugging**, then choose **Reconnect**.
 
 > 🔥 **Fire TV:** ADB is on but TV Setup still cannot connect? Amazon blocks an app on the TV from using its own ADB; use the phone or computer app.
 
@@ -299,9 +303,11 @@ Vietnamese 39 MB, English 47 MB (**Language** row). **Commands + free speech**: 
 
 To have TV Setup Voice always listen first (faster, your voice stays on the TV): pick **TV Setup** under “Listen with”, or press the Mic button tile in TV Home's Quick settings.
 
+Wrong language? Pick **Language the mic listens in**.
+
 ### Tips
 
-- The phone app has [Quick talk](#quick-talk) (hold to talk, a preview of what will happen). The phrases are a signed list on the site: many more everyday commands such as close app, home, settings.
+- The phone app has [Quick talk](#quick-talk) (hold to talk, with a preview). The phrases are a signed list on the site, with more commands such as close app, home.
 
 ## Quick talk (phone app)
 
@@ -424,7 +430,7 @@ A slow TV? Optimize makes apps open faster. Nothing is uninstalled, and **Undo**
 1. Go to the **📺 Setup** tab → the **⚡ Optimize TV** card.
 2. Choose what you want: **Turn off transition animations**, **Use [TV Home](#home) as the home screen**, **Suggested apps to turn off**, **Turn off other apps**.
 3. Tap **⚡ Run optimize** and confirm.
-4. Not happy? Tap **↩ Undo**.
+4. Not happy? Tap **↩ Undo** (an app that hangs is skipped and named: tap again later).
 
 > 💡 Works on Android TV and Google TV. Where the TV will not let it change, TV Setup still makes Home open the one you picked.
 
@@ -434,7 +440,7 @@ A slow TV? Optimize makes apps open faster. Nothing is uninstalled, and **Undo**
 
 > 💡 Lists from [cleanyourtv](https://github.com/Gathin23/cleanyourtv) (400+ TVs), UAD-NG, TV Slim, our users.
 
-> 🛡️ An app that holds a saved Wi-Fi network or the HDMI / TV inputs is never turned off, cleared or removed: the TV would forget the network or lose its inputs.
+> 🛡️ Apps holding saved Wi-Fi or the HDMI / TV inputs are never turned off, cleared or removed.
 
 > 🔁 After a firmware update TV Setup turns off again what the update turned back on (at boot and daily), and puts TV Home back as the home screen. Undo stops it.
 
@@ -532,6 +538,7 @@ TV Home has two more widgets that read their data straight from the source, with
 | News | Headlines and pictures from the RSS of VnExpress, Tuoi Tre, Thanh Nien, Dan Tri, VietnamNet (English TV: BBC, NPR, the Guardian, Al Jazeera). Add up to 5 RSS links of your own from the phone. OK opens a big-text reader |
 | Weather | OK opens Windy's map full screen at your city (rain, wind, temperature, satellite, PM2.5), a button per layer, **Play the forecast**; Back closes |
 | Recently opened | The last 4-6 apps; Left / Right pick, OK opens |
+| Now playing | Music or a video playing behind Home (SmartTube, Spotify…): the app, the title, OK pauses / plays. With nothing playing it shows the last one, OK opens that app again. Needs TV Setup with ADB on |
 | Ad blocking | OK turns an ad-blocking DNS on / off (AdGuard...). Not the ads inside YouTube videos. If the DNS fails, it goes back in ~10 s |
 | Prayer times | The next prayer large with a countdown, the three after it (sunrise too) at the weather's place, the Hijri date as the title. Worked out on the TV, no internet. Pick the method, Asr school, Hijri ±1 day |
 | Photo frame | Your own photos one after another, 30 s each (⚙: 10 s to 15 min). Add up to 10 from the phone: **Widgets** → **Photo frame** |
@@ -722,7 +729,7 @@ Quick keys open an app from the home screen with one number or color key on the 
 
 - The **At power-on** slot: pick an app = it opens at power-on, clear = off. **Auto-open … at power-on**: opens it (empty: TV Home) even if the TV woke into HDMI or another app, except during a cast.
 - The same slot offers **Last app used**: the app open when the TV turned off (off by default).
-- Live widgets can be assigned too and show their own icon.
+- Live widgets can be assigned too and show their own icon. There is also **Voice command**: opens TV Remote's microphone (needs TV Setup 0.46.1).
 
 Customize → Keys & startup → **Home key in an app: show the app bar** (off by default).
 
@@ -772,6 +779,8 @@ These need TV Setup on the TV and ADB switched on. They run by themselves once o
 > 💡 TCL TVs: the remote's Netflix, YouTube, Prime and Apple TV buttons open that app while [TV Home](#home) is on screen. Not inside other apps: catching keys everywhere makes a held volume key move one step on TCL TVs.
 
 > 💡 A TV with no ADB: this add-on also opens the system power menu for TV Home's Power off ([Quick settings](#home-control)).
+
+> 💡 Turned off by you in the TV's Settings (Accessibility), the add-on stays off: TV Setup does not turn it back on.
 
 ## TV Channels, free TV channels
 
@@ -944,8 +953,9 @@ Once the TV is off it can fall into deep sleep and stop answering. This option k
 
 1. More keys → **Tools** → **Notify** (🔔 Notify the TV).
 2. Type a **title** (optional) and the **message**.
-3. Pick a corner ↖ ↗ ↙ ↘ and the seconds: 3, 5, 10 or 30.
-4. Tap **Send**. A small card shows on the TV, then goes. To have the TV read it aloud, set **Read it aloud → Yes** before sending. It reads in the message's language.
+3. To be reminded later, set **When** → in 10 min, 20 min or 1 hour. The TV shows it on time, even with your phone off.
+4. Pick a corner ↖ ↗ ↙ ↘ and the seconds: 3, 5, 10 or 30.
+5. Tap **Send**. A small card shows on the TV, then goes. To have the TV read it aloud, set **Read it aloud → Yes** before sending. It reads in the message's language.
 
 > 💡 Needs a recent TV Setup. If it is missing the app asks with one Update button.
 
@@ -986,7 +996,8 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 1. Open **More keys → Tools → Video on the TV**.
 2. Tap **🎞️ Pick a video** to play a file, or **📷 Camera** to show your phone's or computer's camera (**🔄 Switch camera** for front / back).
 3. Drag the box to move it, drag its blue corner to resize it, even while it plays. Arrow keys and + / − work too.
-4. Pause, turn the sound on, or **⏹ Remove from TV**.
+4. An upright video? Tap **↷ Rotate** to turn the picture 90°: it lies across the TV and the box grows to fill it. Needs TV Setup 0.47.1.
+5. Pause, turn the sound on, or **⏹ Remove from TV**.
 
 > 💡 The box sits over every app. Close the window and a video keeps playing; the camera stops. The camera works in the phone and computer apps only. Needs TV Setup 0.42.0.
 
@@ -1013,7 +1024,7 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 
 > 💡 Turn off when nobody uses it counts key presses, not the picture: a film playing with no key pressed is asked about too. Needs TV Setup 0.46.1.
 
-> 💡 The TV could not be turned off (ADB is off)? The timer does not clear itself: it says so once and keeps trying.
+> 💡 The TV could not be turned off (ADB is off, or TV Setup can’t connect)? The timer does not clear itself: it says so once and keeps trying.
 
 ## Bedtime
 
@@ -1023,7 +1034,7 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 
 > 💡 Needs TV Setup on the TV. The TV does the turning off itself.
 
-> 💡 The TV could not be turned off (ADB is off)? It says so once and tries again; Telegram does not report “off” by mistake.
+> 💡 The TV could not be turned off (ADB is off, or TV Setup can’t connect)? It says so once and tries again; Telegram does not report “off” by mistake.
 
 ## Welcome screen
 
@@ -1047,7 +1058,7 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 
 > 💡 All of it lives on the TV and needs TV Setup. It holds even with your device off.
 
-> 💡 The app could not be closed (ADB is off)? It says so once and tries again; the “app closed” alert is not sent by mistake.
+> 💡 The app could not be closed (ADB is off, or TV Setup can’t connect)? It says so once and tries again; the “app closed” alert is not sent by mistake.
 
 ## Kids mode: quick setup
 
@@ -1056,6 +1067,10 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 3. **Undo quick setup** removes only what it set. Rules you made stay, and so does the PIN. Every phone and computer sees the same (it is kept on the TV).
 
 > 💡 It uses the Kids mode, Total TV time and Bedtime rules, so edit each on its own card. Needs the latest TV Setup.
+
+> 💡 Lock TV Home's layout: turn on **Ask for the PIN to change TV Home** in TV Home settings. A right PIN opens it for 10 minutes.
+
+> 💡 Turn kids mode off: **Turn off kids mode** on the Kids mode card, or the same tile on TV Setup's screen (asks the PIN).
 
 ## Lock apps with a PIN
 
@@ -1072,7 +1087,7 @@ Once unlocked it stays open until another app comes up or the TV turns off; open
 3. Save the 8 **backup codes** when adding Authenticator (each works once). If a child may know the PIN: change it, or turn it off once Authenticator is on.
 4. **Open 30 min / 1 hour / 2 hours / Rest of today**, **Lock now**, and the **📺 Total TV time** card per day (+30 min when needed).
 
-> 💡 TV Home → **Quick settings** has a **Kids mode** tile; turning it off asks the PIN.
+> 💡 Turn Kids mode off: the red **Turn off kids mode** button here, on TV Setup's main screen, or TV Home → **Quick settings**.
 
 ## App schedule: days and hours
 
@@ -1337,6 +1352,7 @@ Menu paths from [cleanyour.tv](https://cleanyour.tv/not-android).
 
 ### Tips
 
+- **🔍 Find** (end of the tab bar): type a word like “sleep” or “lock” to go straight to it, whatever tab it is in.
 - **Send anonymous stats** (on by default): see [Anonymous stats](#census). In the phone app it is under Privacy.
 
 ## The self-check when it will not connect
@@ -1358,7 +1374,9 @@ Cannot connect? The app checks by itself in under 4 seconds and gives **one conc
 | The TV is on the network but not listening | The TV is dozing. Press power on its own remote and wait a few seconds. |
 | This Fire TV never finished its first setup | The Home and Alexa buttons stay dead. Tap **Fix** to mark setup as done. |
 
-Buttons in the box: **🔄 Try again**, **🔍 Scan**, **🧭 Turn ADB on for me**, **Fix** (only for a Fire TV whose setup never finished). Open the **What was checked** list to see what the app tried.
+Buttons in the box: **🔄 Try again**, **🔍 Scan**, **🧭 Turn ADB on for me**, **Fix** (only for a Fire TV whose setup never finished), **📋 Send the log** (when the app cannot fix it).
+
+Open the **What was checked** list to see what the app tried.
 
 > 💡 The box shows in the computer app, the phone app's Manage screen and the phone app's TV list.
 
@@ -1384,7 +1402,7 @@ The phone app's Manage screen uses Android's own browser (WebView). If it is too
 
 > 💡 An error in the “Something went wrong” box is also sent anonymously (IPs, paths, keys removed) while **Send anonymous stats** is on.
 
-> 💡 A TV nobody can reach (an ISP box, no ADB): on the TV open **TV Setup → Connection → Send to support** and read the 8-digit code to the author.
+> 💡 A TV nobody can reach (ISP box, no ADB): **TV Setup → Connection → Send to support**. Support answers on the TV; scan its QR code to reply from your phone.
 
 > 💡 **Let support look for 30 min** only reads the state, never presses or changes anything; stop it any time.
 

@@ -483,6 +483,7 @@ object Customize {
                     if (write != null) write(choices[pick].first) else Store.change(a, JSONObject().put(key, choices[pick].first))
                     then(); return@setOnClickListener
                 }
+                if (key == "lockLayout" && !on) { lockOn(a) { on = true; paint() }; return@setOnClickListener }   // only with a PIN to ask for
                 on = !on
                 try { Store.change(a, JSONObject().put(key, on)) } catch (e: SecurityException) { on = !on; systemDream(a) }
                 paint()
@@ -918,6 +919,7 @@ object Customize {
             section(a.getString(R.string.g_sec_edit))
             val doors = launchPage(a, col, ::glass, ::label, gap, quick = false)
             doors.getOrNull(doorAt)?.let { v -> groups[2].start = { v } }; doorAt = -1   // come back from a door: on it
+            tile(R.drawable.ic_lock, a.getString(R.string.show_lock_layout), null, "lockLayout")   // the PIN before the layout changes, default off (HomeConfig "lockLayout")
         }
         groups[3].fill = {
             val preview = PackGlyph(a)
@@ -1216,7 +1218,8 @@ object Customize {
         val panel = object : FrameLayout(a) {
             // Left from a control with nothing to its left, on a page: back to the first level (a held key does it once)
             override fun dispatchKeyEvent(e: android.view.KeyEvent): Boolean {
-                if (cur != null && e.keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT) {
+                if (cur != null && e.keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT && !dev.tvremote.tvui.TvField.soft(e)) {   // the keyboard's ◀: the field's caret
+
                     val f = findFocus()
                     if (f == null) { if (e.action == android.view.KeyEvent.ACTION_DOWN) cur?.let { g -> (firstFocusable(g.col) ?: g.page)?.requestFocus() }; return true }
                     val west = f.focusSearch(View.FOCUS_LEFT)
@@ -1318,6 +1321,23 @@ object Customize {
         a.finish()
     }
 
+    /**
+     * The layout lock goes ON only when TV Setup is new enough and has a PIN ([done] then); else a question says what is missing
+     * (no PIN: OK opens TV Setup's lock card). Off needs nothing: this screen is behind the same lock.
+     */
+    private fun lockOn(a: Activity, done: () -> Unit) {
+        Thread({
+            val out = dev.tvremote.home.apps.SetupHand.control(a, "")
+            a.runOnUiThread {
+                if (a.isDestroyed) return@runOnUiThread
+                if (out != null && out.has("home_open") && out.optBoolean("pin")) { Store.change(a, JSONObject().put("lockLayout", true)); done(); return@runOnUiThread }
+                val noPin = out != null && out.has("home_open")
+                android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(if (noPin) R.string.lock_need_pin else R.string.lock_need_setup)
+                    .setPositiveButton(R.string.ok) { _, _ -> if (noPin) Thread({ dev.tvremote.home.apps.SetupHand.control(a, "kids:setup") }, "home-lock-setup").apply { isDaemon = true }.start() }.showOnOk()
+            }
+        }, "home-lock").apply { isDaemon = true }.start()
+    }
+
     /** The screensaver switch cannot write the setting (no WRITE_SECURE_SETTINGS yet; a phone or computer grants it): the system's own screen for it instead. */
     private fun systemDream(a: Activity) {
         val go = {
@@ -1340,6 +1360,7 @@ object Customize {
         arrayOf<Any>("weather", R.drawable.ic_weather, R.string.w_weather, R.string.c_weather_sub),
         arrayOf<Any>("air", R.drawable.ic_wind, R.string.w_air, R.string.c_air_sub),
         arrayOf<Any>("recent", R.drawable.ic_apps, R.string.w_recent, R.string.c_recent_sub),
+        arrayOf<Any>("playing", R.drawable.ic_music, R.string.w_playing, R.string.c_playing_sub),
         arrayOf<Any>("adblock", R.drawable.ic_shield_ok, R.string.w_adblock, R.string.c_adblock_sub),
         arrayOf<Any>("market", R.drawable.ic_chart, R.string.w_market, R.string.c_market_sub),
         arrayOf<Any>("news", R.drawable.ic_message, R.string.w_news, R.string.c_news_sub),

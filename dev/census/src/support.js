@@ -2,6 +2,9 @@
 // code read over TeamViewer, an evening for four answers). TV Setup sends its facts on a button press and shows the code it
 // gets back; with a second button it lets the owner read its own /api for a while: it asks here every 2 s for what to GET
 // and posts the answers. Only the owner (CRASH_TOKEN) reads reports and asks; the TV holds a key for its code.
+// Replies (the user, 2026-11-11: three logs came with no way to answer them): a thread per install (h, the hashed id), so a
+// reply to an older code still reaches the TV, which asks with its newest code every few hours; the person answers on a
+// page (docs/support.html#code.key, a QR on the TV). Nobody gives an email: whoever holds the TV's code and key is the person.
 import { hashId, text, str, sameSecret } from "./logic.js";
 
 export const MAX_REPORT = 64 * 1024;
@@ -10,6 +13,10 @@ export const SENDS_PER_DAY = 20;
 export const ALL_PER_DAY = 2000;
 export const LIVE_MAX_MIN = 60;
 export const KEEP_DAYS = 14;
+export const MAX_SAY = 2000;                                          // the person's message, typed on a phone
+export const MAX_REPLY = 4000;
+export const SAYS_PER_DAY = 20;
+export const MAX_THREAD = 200;
 const ASK_TTL_MS = 60_000;                                            // a question the TV did not take within a minute is dropped
 
 const hex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((x) => x.toString(16).padStart(2, "0")).join("");
@@ -19,6 +26,13 @@ const UUID4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{
 // What the owner may ask for: the TV's own read-only routes (TV Setup checks again on its side, Support.kt).
 export function askable(path) {
   return typeof path === "string" && path.length <= 300 && /^\/api\/[a-z0-9/_-]*(\?[\w=&%.,:-]*)?$/i.test(path);
+}
+
+// ?app=kidguard: only that app; ?app=!kidguard: all but it (KidGuard shares this worker since 2026-11-11: tv-remote's tools and
+// crashwatch leave it out, KidGuard's owner reads with --app kidguard). [app, not (0|1)]; "" = every app.
+export function appFilter(url) {
+  const v = String(url.searchParams.get("app") || "").slice(0, 17);
+  return v.startsWith("!") ? [v.slice(1), 1] : [v, 0];
 }
 
 async function body(req, max) {
@@ -89,6 +103,26 @@ export async function support(req, env, url, json) {
     return new Response(null, { status: 204 });
   }
 
+  if (p === "/v1/support/thread" && req.method === "POST") {         // the TV (every few hours) or the person's page: what was said
+    const b = await body(req, 1024), row = b && (await own(env, b));
+    if (!row) return json({ error: "forbidden" }, 403);               // gone after KEEP_DAYS: the TV forgets the code and stops asking
+    const after = Number.isInteger(b.after) && b.after > 0 ? b.after : 0;
+    const { results } = await env.DB.prepare("SELECT id, who, text, at FROM support_msg WHERE h = ?1 AND id > ?2 ORDER BY id LIMIT ?3")
+      .bind(row.h, after, MAX_THREAD).all();
+    return json({ now, app: row.app, model: row.model, made: row.made, msgs: results });
+  }
+
+  if (p === "/v1/support/say" && req.method === "POST") {            // the person writes back (the page)
+    const b = await body(req, MAX_SAY * 4 + 1024), row = b && (await own(env, b));
+    if (!row) return json({ error: "forbidden" }, 403);
+    const t = text(b.text, MAX_SAY);
+    if (!t) return json({ error: "empty" }, 400);
+    const n = await env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN who = 'tv' AND at > ?2 THEN 1 ELSE 0 END) AS today FROM support_msg WHERE h = ?1")
+      .bind(row.h, now - 86_400_000).first();
+    if (n && (n.n >= MAX_THREAD || (n.today || 0) >= SAYS_PER_DAY)) return json({ error: "enough for today" }, 429);
+    return json(await say(env, row.h, "tv", t, now));
+  }
+
   // ---- the owner's side, behind CRASH_TOKEN like the crashes ----
   const auth = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   if (!(await sameSecret(auth, env.CRASH_TOKEN))) return json({ error: "forbidden" }, 403);
@@ -96,11 +130,31 @@ export async function support(req, env, url, json) {
 
   if (p === "/v1/support" && req.method === "GET") {
     if (!code) {
-      const { results } = await env.DB.prepare("SELECT code, app, v, model, made, live, seen FROM support ORDER BY made DESC LIMIT 50").all();
+      const [app, not] = appFilter(url);
+      const { results } = await env.DB.prepare("SELECT code, app, v, model, made, live, seen FROM support WHERE ?1 = '' OR (?2 = 0 AND app = ?1) OR (?2 = 1 AND app IS NOT ?1) ORDER BY made DESC LIMIT 50")
+        .bind(app, not).all();
       return json({ now, support: results });
     }
-    const row = await env.DB.prepare("SELECT code, app, v, model, report, made, live, seen FROM support WHERE code = ?1").bind(code).first();
-    return row ? json({ now, ...row }) : json({ error: "no such code" }, 404);
+    const row = await env.DB.prepare("SELECT code, h, app, v, model, report, made, live, seen FROM support WHERE code = ?1").bind(code).first();
+    if (!row) return json({ error: "no such code" }, 404);
+    const { results } = await env.DB.prepare("SELECT id, who, text, at FROM support_msg WHERE h = ?1 ORDER BY id").bind(row.h).all();
+    const { results: codes } = await env.DB.prepare("SELECT code, made FROM support WHERE h = ?1 ORDER BY made").bind(row.h).all();
+    delete row.h;
+    return json({ now, ...row, msgs: results, codes });               // codes: the same TV's other sends, one thread
+  }
+  if (p === "/v1/support/reply" && req.method === "POST") {
+    const b = await body(req, MAX_REPLY * 4 + 1024), t = b && text(b.text, MAX_REPLY);
+    if (!t) return json({ error: "empty" }, 400);
+    const row = await env.DB.prepare("SELECT h FROM support WHERE code = ?1").bind(String(b.code || "")).first();
+    if (!row) return json({ error: "no such code" }, 404);
+    return json(await say(env, row.h, "us", t, now));
+  }
+  if (p === "/v1/support/said" && req.method === "GET") {             // what people wrote since (crashwatch's news)
+    const since = Number(url.searchParams.get("since")) || 0;
+    const [app, not] = appFilter(url);
+    const { results } = await env.DB.prepare("SELECT * FROM (SELECT m.id, m.text, m.at, (SELECT code FROM support s WHERE s.h = m.h ORDER BY made DESC LIMIT 1) AS code, (SELECT app FROM support s WHERE s.h = m.h ORDER BY made DESC LIMIT 1) AS app FROM support_msg m WHERE m.who = 'tv' AND m.at > ?1) WHERE ?2 = '' OR (?3 = 0 AND app = ?2) OR (?3 = 1 AND app IS NOT ?2) ORDER BY at LIMIT 50")
+      .bind(since, app, not).all();
+    return json({ now, said: results });
   }
   if (p === "/v1/support/ask" && req.method === "POST") {
     const b = await body(req, 2048);
@@ -120,15 +174,28 @@ export async function support(req, env, url, json) {
   if (p === "/v1/support" && req.method === "DELETE" && code) {
     await env.DB.prepare("DELETE FROM support WHERE code = ?1").bind(code).run();
     await env.DB.prepare("DELETE FROM support_q WHERE code = ?1").bind(code).run();
+    await env.DB.prepare("DELETE FROM support_msg WHERE h NOT IN (SELECT h FROM support)").run();
     return json({ ok: true });
   }
   return json({ error: "not found" }, 404);
 }
 
-// The cron: reports kept KEEP_DAYS, questions a day.
+// One message of a thread; ids count up per install, so a client asks only for what is after the last it saw.
+async function say(env, h, who, t, now) {
+  for (let i = 0; i < 3; i++) {                                       // two writes at once take the same id: the second tries again
+    const r = await env.DB.prepare("INSERT INTO support_msg (h, id, who, text, at) VALUES (?1, (SELECT COALESCE(MAX(id), 0) + 1 FROM support_msg WHERE h = ?1), ?2, ?3, ?4) ON CONFLICT DO NOTHING RETURNING id")
+      .bind(h, who, t, now).first();
+    if (r) return { id: r.id, at: now };
+  }
+  throw new Error("support_msg: no id");
+}
+
+// The cron: reports kept KEEP_DAYS after the last word of their thread, questions a day; a thread goes with its last report.
 export function prune(env, now = Date.now()) {
-  return Promise.all([
-    env.DB.prepare("DELETE FROM support WHERE made < ?1").bind(now - KEEP_DAYS * 86_400_000).run(),
-    env.DB.prepare("DELETE FROM support_q WHERE asked < ?1").bind(now - 86_400_000).run(),
+  const old = now - KEEP_DAYS * 86_400_000;
+  return env.DB.batch([
+    env.DB.prepare("DELETE FROM support WHERE made < ?1 AND h NOT IN (SELECT h FROM support_msg WHERE at >= ?1)").bind(old),
+    env.DB.prepare("DELETE FROM support_q WHERE asked < ?1").bind(now - 86_400_000),
+    env.DB.prepare("DELETE FROM support_msg WHERE h NOT IN (SELECT h FROM support)"),
   ]);
 }

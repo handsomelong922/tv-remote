@@ -50,6 +50,10 @@ import org.json.JSONObject
  *           showWatch (the Play Next / channels row, on top of hiding one app's from its menu); showInputs (an Inputs button in the top
  *           bar, default OFF, unlike the rest; it opens the Inputs list). A TV Home older than these
  *           does not report them, so a page offers them only to one that does
+ *   lockLayout  changing TV Home's layout on the TV (Customize, every long-OK / Menu menu, + Add, folders, move) asks TV Setup's PIN
+ *           first, and a right code opens it for 10 minutes; default false, nothing runs while off. With no PIN set, or no TV Setup
+ *           (or an old one), nothing is asked: a parent is never locked out. A phone, the Computer app and the TV web page are the
+ *           parent's own and change everything without the PIN. A TV Home that has this reports it in the config
  *   watchAt where the Play Next items go ([WATCH_AT], default "bottom"): "top" a row of their own above the apps, "under1" under
  *           the first row of apps, "bottom" after the last row of apps, "tiles" no row: they follow the grid's last tile in its columns.
  *           A TV Home older than this does not report it, so a page offers the choice only to one that does
@@ -87,7 +91,9 @@ import org.json.JSONObject
  *           shown only while one is set), "weather" (the sky now and the next days, Open-Meteo: [place] or, by itself, the device's
  *           location or the internet address's), "air" (the air quality index and PM2.5 at that place, Open-Meteo's air-quality API;
  *           a TV Home older than it drops the key), "recent" (the last apps opened, as icons that open them on OK: TV Setup's HomeInfo
- *           "recent", in the order Android's usage events came, never by the clock), "adblock" (whether Private DNS names an ad-blocking
+ *           "recent", in the order Android's usage events came, never by the clock), "playing" (what plays now, SmartTube's music behind
+ *           Home: the app, the title, OK pauses / plays; nothing playing, the last one, OK plays it again or opens it; TV Setup's HomeInfo
+ *           "playing", asked only while the widget is on the screen), "adblock" (whether Private DNS names an ad-blocking
  *           resolver, [ADBLOCK_DNS]; OK turns it on / off, which needs [WRITE_SECURE] granted over ADB; Android 9+: before it TV Home
  *           leaves it out of "wschema"), "prayer" (the five prayers and the sunrise of today at the weather's place, worked out on the TV
  *           with no network: the next one with a countdown, and the Hijri date; options: method, Asr school, Hijri adjust), "frame"
@@ -285,7 +291,7 @@ object HomeConfig {
         }
         return null
     }
-    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "air", "recent", "adblock", "clock", "market", "news", "prayer", "frame") + HomeQr.KEYS
+    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "air", "recent", "playing", "adblock", "clock", "market", "news", "prayer", "frame") + HomeQr.KEYS
     /**
      * One option of a widget, the single source of what the settings dialog offers (TV Home's Customize and the page render it, nobody
      * hardcodes a widget's options): [type] "choice" (one of [values]) or "toggle" ("off" / "on", drawn as a switch). [default] is what a
@@ -295,7 +301,7 @@ object HomeConfig {
      */
     class Opt(val id: String, val type: String, val values: List<String>, val default: String, val store: String = "wopt")
     private val SIZES = listOf("big", "small")
-    val TONAL = setOf("system", "weather", "lunar", "air", "calendar", "usage", "timer", "market", "news", "recent", "adblock", "prayer") + HomeQr.KEYS   // every widget but the clock has the "tonal" look (opaque warm card, app/DESIGN-TV.md "Tonal cards")
+    val TONAL = setOf("system", "weather", "lunar", "air", "calendar", "usage", "timer", "market", "news", "recent", "playing", "adblock", "prayer") + HomeQr.KEYS   // every widget but the clock has the "tonal" look (opaque warm card, app/DESIGN-TV.md "Tonal cards")
     // "solid": an opaque dark widget, the photo hidden under it; "none": no widget at all, the words on the wallpaper with a shadow
     // (a person whose own photo is the point). The clock has no tonal form (its face and theme are its look)
     val LOOKS = listOf("glass", "tonal", "solid", "none")
@@ -788,6 +794,7 @@ object HomeConfig {
             .also { n -> for (k in SHOWS) n.put(k, o.optBoolean(k, true)) }
             .put("showInputs", o.optBoolean("showInputs", false))   // the one switch that starts off: an extra button nobody asked for
             .put("infold", o.optBoolean("infold", false))
+            .put("lockLayout", o.optBoolean("lockLayout", false))      // the PIN before the layout changes (HomeActivity.layoutGate)
             .put("watchAt", o.optString("watchAt").takeIf { it in WATCH_AT } ?: WATCH_AT[0])
             .put("anim", o.optBoolean("anim", true))
             .put("homebar", o.optBoolean("homebar", false))           // Home over an app shows the bar (DockBarActivity), through TV Setup's key filter

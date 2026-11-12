@@ -23,6 +23,7 @@ import dev.tvremote.core.ontv.SetupUpdate
 import dev.tvremote.core.ontv.Tailscale
 import dev.tvremote.setup.health.AutoUpdate
 import dev.tvremote.setup.health.Support
+import dev.tvremote.setup.health.SupportThread
 import dev.tvremote.setup.keys.HoldKeys
 import dev.tvremote.setup.keys.KeyFix
 import dev.tvremote.setup.keys.KeysAddon
@@ -95,6 +96,7 @@ class MainActivity : Activity() {
     private val MUTED = Color.rgb(140, 150, 163)
     private val SCRIM = Color.argb(215, 5, 7, 10)                     // behind a popup: the screen dimmed, still there
     private val ACCENT = Color.rgb(59, 115, 246)
+    private val ACCENT_SOFT = Color.argb(64, 59, 115, 246)              // the person's bubble in Support replies, as on the phone page
     private val OK = Color.rgb(70, 210, 131)
     private val WARN = Color.rgb(240, 179, 74)
     private val BAD = Color.rgb(255, 112, 112)
@@ -149,6 +151,7 @@ class MainActivity : Activity() {
     private val VOICE = dev.tvremote.core.ontv.Bundle.App("TV Setup Voice", dev.tvremote.core.ontv.VoiceAddon.PKG, "tv", dev.tvremote.core.ontv.VoiceAddon.APK) { a, d, l, p -> dev.tvremote.core.ontv.VoiceAddon.install(a, d, l, progress = p, voice = MicVoice.lang(this)) }
     /** TV Setup itself, first in the row (the user, 2026-11-03: it is one of the apps too); OK opens its Update menu, as the tile at the top. */
     private val SELF = dev.tvremote.core.ontv.Bundle.App("TV Setup", "dev.tvremote.setup", "tv", "tv-setup.apk") { _, _, _, _ -> org.json.JSONObject() }
+    private lateinit var kidsOffTile: Tile
     private var ecoNote: TextView? = null
     private var ecoWaiting: Eco? = null                               // Android's "install unknown apps" switch was opened for this one
 
@@ -299,6 +302,12 @@ class MainActivity : Activity() {
         }
         // a TV has no Update tile: TV Setup's own banner, first in the More TV apps row, is it (the user, 2026-11-03: twice was too many);
         // updateTile stays, unseen, as the state it paints from
+        // kids mode on: its way off right here, the PIN asked first (PinActivity), as in TV Home's Quick settings; gone once off (onResume)
+        kidsOffTile = Tile(R.drawable.ic_lock, T("pin.kids_off_title"), T("tv_main.kids_off_sub")) {
+            startActivity(android.content.Intent(this, PinActivity::class.java).putExtra("kids_off", true))
+        }
+        kidsOffTile.view.visibility = View.GONE
+        left.addView(kidsOffTile.view, LinearLayout.LayoutParams(-1, dp(if (phone) 76 else 60)).apply { topMargin = dp(if (phone) 8 else 12) })
         val grid = listOf(manage) + if (phone) tiles else tiles.filter { it !== updateTile }   // Manage first, in the grid: no ragged last row
         val cols = if (phone) 2 else 3                                 // TV: one row of three; phone: 2 x 2
         for (row in grid.chunked(cols)) {
@@ -587,6 +596,7 @@ class MainActivity : Activity() {
             startActivity(android.content.Intent(this, PinActivity::class.java).putExtra("pkg", packageName))
         }
         shown = true
+        kidsOffTile.view.visibility = if (Rules.kidsMode(Rules.load(this))) View.VISIBLE else View.GONE
         voiceWatch()
         if (MicVoice.on(this)) Thread({ micBlockLog() }, "mic-block").apply { isDaemon = true }.start()   // off: nothing is read
         self.check({ }, { r -> install(r) })                          // back from "install unknown apps" for an update: on with it
@@ -745,6 +755,7 @@ class MainActivity : Activity() {
         }
     }.apply { isDaemon = true }.start()
     @Volatile private var backed = false                              // stepped aside for the TV's question (uncover)
+    @Volatile private var steppedAside = false                                 // once until ADB answers: see uncover
 
     /** The TV's question comes up over this screen. Still in front 4 s into asking: the TV dropped it, as another question
      *  (a dead connection's, from before this screen opened) is up behind this one. Stepping aside shows it; once it is
@@ -758,7 +769,9 @@ class MainActivity : Activity() {
             override fun run() {
                 if (!connecting) { watching = false; return }
                 askingFor = if (dev.tvremote.core.adb.Adb.askState() != "ask") 0 else if (shown) askingFor + 1 else askingFor   // in front, no question over it
-                if (askingFor == 2) { backed = true; moveTaskToBack(true) }
+                // once: when nothing was behind (Android keeps a question it never shows, measured on the API 34 emulator), each
+                // ADB retry sent this screen back to Home again and TV Setup could not be used; the hint below says what to do
+                if (askingFor == 2 && !steppedAside) { steppedAside = true; backed = true; moveTaskToBack(true) }
                 // still no answer: the TV's ADB can stay sure a question is up when none is on screen; off and on clears that
                 if (askingFor >= 20 && !hinted) {
                     hinted = true
@@ -786,6 +799,7 @@ class MainActivity : Activity() {
                         uncover() }
                 })
                 adb = a
+                steppedAside = false                                      // answered: a later question may be stepped aside for again
                 // back in front: Android lets an app in the background start no screen, the shell it just got may; but
                 // never over a question still up (another key's, queued): that one would then block every later one
                 if (backed) { backed = false; try { if (!questionUp(a)) a.shell("am start -n $packageName/.MainActivity", 10000) } catch (ignored: Exception) { } }
@@ -805,6 +819,8 @@ class MainActivity : Activity() {
                     if ((e.message ?: "").contains(Adb.UNANSWERED)) {   // ADB is on; the question ran out of time: "turn on ADB" would send the person in circles
                         setStatus(WARN, T("allow.the_tv_is_asking"), T("tv_main.tick_always_allow_then"))
                         log("✗ " + reason(e))
+                        val wifiOn = try { android.provider.Settings.Global.getInt(contentResolver, "adb_wifi_enabled", 0) == 1 } catch (x: Exception) { false }
+                        LinkFailure.unansweredHowto(android.os.Build.VERSION.SDK_INT, wifiOn).forEach { howto(T(it)) }
                         tiles[1].enable(true)
                         tiles[1].view.requestFocus()
                         return@ui
@@ -826,16 +842,19 @@ class MainActivity : Activity() {
                         log("✗ " + T("tv_main.adb_no_port"))
                         // Android 11+ with no 5555 (a Chromecast with Google TV): only Wireless debugging; a paired phone or computer opens 5555 for TV Setup
                         val wifiOn = try { android.provider.Settings.Global.getInt(contentResolver, "adb_wifi_enabled", 0) == 1 } catch (x: Exception) { false }
-                        val opens = !openedWireless && LinkFailure.opensWireless(wifiOn, android.os.Build.VERSION.SDK_INT)   // once: straight to the switch
-                        LinkFailure.noPortHowto(wifiOn, android.os.Build.VERSION.SDK_INT, opens).forEach { howto(T(it)) }
+                        val shield = LinkFailure.shield(android.os.Build.MANUFACTURER, android.os.Build.MODEL)
+                        val opens = !openedWireless && LinkFailure.opensWireless(wifiOn, android.os.Build.VERSION.SDK_INT, shield)   // once: straight to the switch
+                        LinkFailure.noPortHowto(wifiOn, android.os.Build.VERSION.SDK_INT, opens, shield).forEach { howto(T(it)) }
                         if (opens) { openedWireless = true; wirelessDebugging() }
+                        else if (shield && !openedDev) { openedDev = true; devOptions() }   // the switch is in Developer options
                         tiles[1].enable(true)
                         tiles[1].view.requestFocus()
                         return@ui
                     }
                     log("✗ " + if (refused) T("tv_main.adb_refused") else reason(e))
                     if (android.os.Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true)) howto(T("tv_main.xiaomi_adb"))
-                    else if (android.os.Build.MANUFACTURER.equals("TCL", ignoreCase = true)) howto(T("setup.tcl_hidden_adb"))   // TCL China: a key sequence, no Developer options   // China's PatchWall has no Developer options: ADB is under Account & Security
+                    else if (android.os.Build.MANUFACTURER.equals("TCL", ignoreCase = true)) howto(T("setup.tcl_hidden_adb"))
+                    else if (LinkFailure.shield(android.os.Build.MANUFACTURER, android.os.Build.MODEL)) howto(T("tv_main.shield_adb"))   // TCL China: a key sequence, no Developer options   // China's PatchWall has no Developer options: ADB is under Account & Security
                     howto(T(if (ispBox()) "tv_main.isp_no_taps" else "tv_main.enable_adb_howto"))
                     howto(T("tv_main.then_come_back_here"))
                     tiles[1].enable(true)
@@ -901,7 +920,8 @@ class MainActivity : Activity() {
             TvUi.Item(R.drawable.ic_send, T("support.send"), T("support.send_sub")) { askSaid { supportSend(it) } },
             if (Support.open()) TvUi.Item(R.drawable.ic_stop, T("support.stop"), T("support.stop_sub", "code" to spaced(Support.code), "min" to supportLeft())) {
                 Support.stop(this); log(T("support.stopped")) }
-            else TvUi.Item(R.drawable.ic_eye, T("support.open", "min" to Support.MINUTES), T("support.open_sub")) { askSaid { supportOpen(it) } }))
+            else TvUi.Item(R.drawable.ic_eye, T("support.open", "min" to Support.MINUTES), T("support.open_sub")) { askSaid { supportOpen(it) } },
+            *(if (SupportThread.on(this)) arrayOf(TvUi.Item(R.drawable.ic_info, T("support.replies"), if (SupportThread.unread(this)) T("support.replies_new") else T("support.replies_sub")) { supportReplies() }) else emptyArray())))
     }
 
     // Support (Support.kt): a code to read out to whoever helps, and for a while their reading of this app's own state
@@ -1060,6 +1080,52 @@ class MainActivity : Activity() {
         val send = TvUi.button(this, T("said.send"), 0, ACCENT) { dlg.dismiss(); go(dev.tvremote.core.SupportRelay.Said(picked, field.text.toString())) }
         box.addView(send, android.widget.LinearLayout.LayoutParams(-1, -2).apply { topMargin = TvUi.dp(this@MainActivity, 10).toInt() })
         dlg.setOnShowListener { send.requestFocus() }
+        dlg.show()
+    }
+
+    /**
+     * Support's replies: the thread (both sides, newest last, plain text) and the QR of the page where a phone answers. The code
+     * and the QR sit first so a long reply never pushes them off; each message takes the focus so the D-pad scrolls a long one.
+     */
+    private fun supportReplies() {
+        // Laid out like the "Control from a phone" panel: the talk on the left as bubbles (support on the left, the person on the
+        // right in the accent, as on the phone page), the QR, its words and Close in a column on the right.
+        val (dlg, box) = TvUi.sheet(this, R.style.TvSheet, 780)
+        TvUi.sheetTitle(box, T("support.replies"))
+        val body = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(12), 0, dp(4), dp(6)) }
+        val talk = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val m = SupportThread.msgs(this)
+        if (m.length() == 0) talk.addView(TvUi.text(this, T("support.replies_none"), TvUi.SP_ROW, TvUi.DIM))
+        val stamp = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
+        for (i in 0 until m.length()) {
+            val o = m.getJSONObject(i); val us = o.optString("who") == "us"
+            val fill = if (us) TvUi.PILL_REST else ACCENT_SOFT
+            val bubble = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL; isFocusable = true      // focusable: the D-pad walks (and scrolls) a long talk
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                background = TvUi.round(fill, dp(14).toFloat())
+                setOnFocusChangeListener { v, f -> v.background = TvUi.round(fill, dp(14).toFloat(), if (f) dp(2) else 0, Color.WHITE) }
+                addView(TvUi.text(context, o.optString("text"), TvUi.SP_ROW), LinearLayout.LayoutParams(-2, -2))   // setText: plain text, never HTML;
+                // -2: a vertical row's default is match_parent, which took the stamp's width and cut the words
+                val at = o.optLong("at")
+                addView(TvUi.text(context, (if (us) T("support.who_us") else T("support.who_you")) + (if (at > 0) " · " + stamp.format(java.util.Date(at)) else ""),
+                    TvUi.SP_COUNT, TvUi.DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(4) })
+            }
+            val row = android.widget.FrameLayout(this)
+            row.addView(bubble, android.widget.FrameLayout.LayoutParams(-2, -2, if (us) Gravity.START else Gravity.END).apply { if (us) rightMargin = dp(56) else leftMargin = dp(56) })
+            talk.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(10) })
+        }
+        body.addView(talk, LinearLayout.LayoutParams(0, -2, 1f))
+        val side = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
+        SupportThread.pageUrl(this)?.let { url -> qr(url)?.let { side.addView(it, LinearLayout.LayoutParams(dp(176), dp(176))) } }
+        side.addView(TvUi.text(this, T("support.scan_to_answer"), TvUi.SP_ROW, TvUi.DIM).apply { gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10); bottomMargin = dp(16) })
+        val close = TvUi.button(this, T("common.close"), 0, TvUi.PILL_REST) { dlg.dismiss() }
+        side.addView(close, LinearLayout.LayoutParams(-1, -2))
+        body.addView(side, LinearLayout.LayoutParams(dp(200), -2).apply { leftMargin = dp(24) })
+        box.addView(body, LinearLayout.LayoutParams(-1, -2))
+        SupportThread.markRead(this)
+        dlg.setOnShowListener { close.requestFocus() }
         dlg.show()
     }
 

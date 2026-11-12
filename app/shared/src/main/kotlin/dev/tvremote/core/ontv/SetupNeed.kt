@@ -47,13 +47,17 @@ object SetupNeed {
         "mic_engine" to "0.39.1",                                      // 🎙️ TV Setup Voice listening first, over Google's (Rules "mic_engine"; the release after 0.39.0)
         "family" to "0.38.5",                                          // 🛡️ Family mode's record kept on the TV (Rules "family"; the release after 0.38.4)
         "video" to "0.42.0",                                           // 🎬 a video or a camera in a box over the screen (VideoLayer; the release after 0.41.0)
+        "videocopy" to "0.47.1",                                       // 🎬 a video file handed to TV Setup where the shell may not write its folder (HomeInfo.openFile, a TCL on Android 11)
+        "videorot" to "0.47.1",                                        // 🎬 the video box's picture turned on its side ("rot", VideoLayer; the release after 0.47.0)
         "speak" to "0.42.3",                                           // 🔊 a message read aloud (NotifyReceiver "speak"; the release after 0.42.2)
         "voicekey" to "0.46.1",                                        // 🎙️ a remote key that opens the voice command (Target "do:voice", KeyFix.VOICE; the release after 0.46.0)
         "idleoff" to "0.46.1",                                         // 📺 standby after hours with no key, "Still watching?" first (Rules "idle", IdleOff; the release after 0.46.0)
         "homebar" to "0.42.3",                                         // 🏠 the bar over an app on Home (HomeBar; the release after 0.42.2)
         "scenetime" to "0.45.2",                                       // 🕗 a scene that starts at a time or date by itself (SceneTimer, RulesReceiver "scenes" answers timed; the release after 0.45.1)
         "sceneon" to "0.46.1",                                         // 🎯 a scene that starts when an app opens or the TV turns on (SceneTimer.onOpen / onPower, RulesReceiver "scenes" answers events; the release after 0.46.0)
+        "notifylater" to "0.48.1",                                     // 🔔 a message shown later: "remind me in 10 min" (NotifyLater, NotifyReceiver "delay"; the release after 0.48.0)
         "home_usage" to "0.14.1",                                      // 📊 TV Home's card of app use and limits (HomeInfo)
+        "home_playing" to "0.50.1",                                    // 🎵 TV Home's "Now playing" widget (HomeInfo "playing"; the release after 0.50.0)
     )
 
     /** "setup:old:pic:2.21.0:2.20.0" or "setup:missing:draw:2.18.0:": the words every client looks for in an error. */
@@ -85,6 +89,7 @@ object SetupNeed {
             "dim" -> t("core.need_dim")
             "unextra" -> t("core.need_unextra")
             "home_usage" -> t("core.need_home_usage")
+            "home_playing" -> t("core.need_home_playing")
             "holdkeys" -> t("core.need_holdkeys")
             "mic" -> t("core.need_mic")
             "checkout" -> t("core.need_checkout")
@@ -99,11 +104,14 @@ object SetupNeed {
             "mic_engine" -> t("core.need_mic_engine")
             "family" -> t("core.need_family")
             "video" -> t("core.need_video")
+            "videocopy" -> t("core.need_videocopy")
+            "videorot" -> t("core.need_videorot")
             "speak" -> t("core.need_speak")
             "voicekey" -> t("core.need_voicekey")
             "homebar" -> t("core.need_homebar")
             "scenetime" -> t("core.need_scenetime")
             "sceneon" -> t("core.need_sceneon")
+            "notifylater" -> t("core.need_notifylater")
             else -> feature
         }
     }

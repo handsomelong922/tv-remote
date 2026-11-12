@@ -260,6 +260,50 @@ object KeyFix {
         KeysAddon.prepare(adb)                                        // the service is the add-on's: the same for its package, once it is installed
     }
 
+    /**
+     * What tells the two causes apart in the report (Android logs both as "disallowed by device admin policy"): with ADB up the add-on's
+     * ACCESS_RESTRICTED_SETTINGS was lifted ([KeysAddon.prepare]), so a refusal then is a real admin / firmware policy; without ADB on
+     * Android 13+ it may be only the restriction, which the next ADB link lifts. Measured on the API 34 emulator (appop ignore: refused).
+     */
+    private fun refusedWhy(c: Context): String {
+        val installer = try {
+            if (Build.VERSION.SDK_INT >= 30) c.packageManager.getInstallSourceInfo(KeysProtocol.ADDON).initiatingPackageName ?: "-" else "-"
+        } catch (e: Exception) { "?" }
+        val addon = try {                                             // stopped: a force-stop (a box's RAM cleaner) takes a service out of the list; off: the add-on itself was turned off
+            val ai = c.packageManager.getApplicationInfo(KeysProtocol.ADDON, 0)
+            (if (ai.flags and android.content.pm.ApplicationInfo.FLAG_STOPPED != 0) "stopped" else "running") + (if (!ai.enabled) ", off" else "")
+        } catch (e: Exception) { "missing" }
+        // known: Android drops an enabled entry whose service it does not list as installed (a firmware filter, a missing permission);
+        // others / a11y: only ours taken out, or the whole list wiped (a cleaner, a firmware reset). Two SDK 34 boxes (aaa561ab, 96b65c49)
+        // had the add-on running and installed by the shell, which these tell apart
+        val known = try {
+            val am = c.getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
+            if (am.installedAccessibilityServiceList.any { isOurs(it.id) || it.resolveInfo?.serviceInfo?.packageName == KeysProtocol.ADDON }) "yes" else "no"
+        } catch (e: Exception) { "?" }
+        val r = c.contentResolver
+        val others = (Settings.Secure.getString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: "").split(":").count { it.isNotEmpty() && !isOurs(it) }
+        val on = try { Settings.Secure.getInt(r, Settings.Secure.ACCESSIBILITY_ENABLED) } catch (e: Exception) { -1 }
+        val adb = dev.tvremote.setup.RemoteService.adb()
+        return "sdk ${Build.VERSION.SDK_INT}, adb ${if (adb != null) "up" else "down"}, add-on by $installer, $addon, known $known, others $others, a11y $on" +
+            (adb?.let { a -> try { ", " + seen(a.shell(SEEN_CMD, 5000)) } catch (e: Exception) { "" } } ?: "")
+    }
+
+    // ADT-3 (sdk 34, census fbed4da8): known yes, add-on running and allowed, yet taken out with nothing else in the list. Whether Android
+    // bound it, marked it crashed, and the appop as the TV holds it tell a crash loop from a policy. 0.13 s, ~3 KB filtered on the TV (API 34 emulator)
+    private val SEEN_CMD = "appops get ${KeysProtocol.ADDON} ACCESS_RESTRICTED_SETTINGS 2>&1 | head -1; " +
+        "dumpsys accessibility 2>/dev/null | grep -oE '(Bound|Binding|Crashed) services:\\{.{0,60}' | head -3"
+
+    /** Pure: "rs allow, bound 1, binding 0, crashed 0" from [SEEN_CMD]'s lines (a service's entry in a dump starts "Service[" or "{"). */
+    internal fun seen(out: String): String {
+        val rs = Regex("ACCESS_RESTRICTED_SETTINGS:\\s*(\\w+)").find(out)?.groupValues?.get(1) ?: "-"
+        fun n(what: String) = Regex("$what services:\\{(.*)").find(out)?.groupValues?.get(1)?.let { if (it.isEmpty() || it.startsWith("}")) "0" else "1" } ?: "?"
+        return "rs $rs, bound ${n("Bound")}, binding ${n("Binding")}, crashed ${n("Crashed")}"
+    }
+
+    /** The add-on is installed but turned off (pm disable-user, or Settings → Apps → Disable); our own code never does that (Setup.PROTECTED). */
+    private fun addonOff(c: Context): Boolean = try { !c.packageManager.getApplicationInfo(KeysProtocol.ADDON, 0).enabled } catch (e: Exception) { false }
+
+    private var wasOff = false
     private var wrote = 0L
     private var refused = 0                                           // times in a row the system took the service out within the guard
     const val REARM = 3
@@ -273,7 +317,13 @@ object KeyFix {
      */
     internal fun rearm(t: Long, wrote: Long, tries: Int): Long? = if (tries >= REARM) null else (wrote + 61_000L - t).coerceAtLeast(1_000L)
 
-    /** Turn the service on while a dead key needs it and it is wanted, off when not; nothing when this app may not write the settings. */
+    /**
+     * Turn the service on while a dead key needs it and it is wanted, off when not; nothing when this app may not write the settings.
+     * One at a time: it is called from several threads at once (the watcher, Rules, HomeInfo, KeyList at start); two that both read
+     * the list before the first wrote it counted the second as "taken out again", and three of those reported keyfix_refused with the
+     * service on all along (11 boxes on 0.47.0, census 0bea8243 and the ten before).
+     */
+    @Synchronized
     fun sync(c: Context) {
         if (!can(c)) return
         try {
@@ -289,12 +339,24 @@ object KeyFix {
                 || HomeKeys.bar(c)                                    // Home over an app shows TV Home's bar ([HomeBar])
                 || HomeKey.pkg(c) != null                             // Home to the launcher picked: asked for on the page, not by the dead-key switch
             if (need && !KeysAddon.current(c)) { KeysAddon.installThen(c) { sync(c) }; return }   // the service is in the add-on: put it on the TV first (it comes back here)
-            if (need == has && !old) { if (has && System.currentTimeMillis() - wrote >= 60000) refused = 0; return }   // it stayed past the guard: the policy let go
+            if (need && addonOff(c)) { wasOff = true; android.util.Log.i("KeyFix", "the add-on is turned off: left so"); return }   // someone turned it off in Settings: Android drops its service at once, so writing it was a fight lost 3 times and a keyfix_refused (a MiTV, census 456d47c9)
+            val back = need && wasOff; wasOff = false                 // turned on again: Android keeps the entry but marks the service crashed and never binds it (API 34 emulator)
+            if (back && has) {                                        // out now, in on the next look: written back at once it stayed crashed (measured)
+                Settings.Secure.putString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, list(was, false).ifEmpty { null })
+                wrote = 0L
+                later?.invoke(3000) ?: run { Thread.sleep(3000); sync(c) }
+                return
+            }
+            if (need == has && !old && !back) { if (has && System.currentTimeMillis() - wrote >= 60000) refused = 0; return }   // it stayed past the guard: the policy let go
             val t = System.currentTimeMillis()
-            if (need && !old && t - wrote < 60000) {                  // the system took it out again just now (a policy): not every few seconds
+            if (need && !old && !back && t - wrote < 60000) {                // the system took it out again just now (a policy): not every few seconds
                 val wait = rearm(t, wrote, refused)
-                if (wait == null) dev.tvremote.setup.health.AdbReport.once(c, "keyfix_refused", "service taken out ${REARM}x")
-                else { refused++; later?.invoke(wait) }
+                if (wait == null) "service taken out ${REARM}x; ${refusedWhy(c)}".let { android.util.Log.w("KeyFix", "refused: $it"); dev.tvremote.setup.health.AdbReport.once(c, "keyfix_refused", it) }
+                else {                                                // the add-on's ACCESS_RESTRICTED_SETTINGS may be back to ignore since the link's prepare
+                    refused++                                         // (ADT-3, census fbed4da8: the same signature as the API 34 emulator with it set to ignore)
+                    dev.tvremote.setup.RemoteService.adb()?.let { KeysAddon.prepare(it) }
+                    later?.invoke(wait)
+                }
                 return
             }
             if (need) wrote = t

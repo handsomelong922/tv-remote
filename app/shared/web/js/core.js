@@ -114,6 +114,20 @@ const STALE = T('core.stale');
 // only past 150 ms so quick calls do not flicker). Counted from the end of the click handler, or from the yes to an ask() in it.
 let clicked = null, clickedAt = Infinity;
 document.addEventListener('click', (e) => { clicked = e.target.closest && e.target.closest('button'); clickedAt = Infinity; setTimeout(() => { clickedAt = performance.now(); }, 0); }, true);
+// A file made in the page (a backup, a theme), saved as a download. A blob: link is saved only by a browser: the Phone app's
+// WebView and the Computer app's window fetch a download again from the server, so it goes there first (Manage "hold", issue
+// #25); a server without it (404) gets the blob link, as before.
+async function saveFile(name, data, type = 'application/json') {
+  const blob = data instanceof Blob ? data : new Blob(Array.isArray(data) ? data : [data], { type });
+  let href = null;
+  try {
+    const r = await fetch('api/hold?name=' + encodeURIComponent(name) + '&type=' + encodeURIComponent(blob.type || type), { method: 'POST', body: blob, headers: { 'content-type': 'application/octet-stream' } });
+    if (r.ok) href = (await r.json()).url;
+  } catch {}
+  const url = href || URL.createObjectURL(blob), a = el('a', { href: url, download: name });
+  document.body.append(a); a.click(); a.remove();
+  if (!href) setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
 async function api(path, data, quiet, ms) {
   if (path === '/api/key' && typeof snapKey === 'function') snapKey();   // every key of every button comes through here: screenshot mode looks again soon after
   const b = clicked && !clicked.dataset.busy && !clicked.ownRing && performance.now() - clickedAt < 1000 ? clicked : null;
@@ -186,7 +200,7 @@ addEventListener('resize', closePop);
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
 // ids of i18n/*.json: the words of each feature, said in the question below
-const SETUP_NEEDS = { scenetime: 'core.need_scenetime', sceneon: 'core.need_sceneon', mic_freespeech: 'core.need_mic_freespeech', mic_engine: 'core.need_mic_engine', schedule: 'core.need_schedule', schedule_windows: 'core.need_schedule_windows', rules: 'core.need_rules', draw: 'core.need_draw', video: 'core.need_video', invite: 'core.need_invite', ram: 'core.need_ram', ramauto: 'core.need_ramauto', idleoff: 'core.need_idleoff', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', speak: 'core.need_speak', homebar: 'core.need_homebar', voicekey: 'core.need_voicekey', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', home_usage: 'core.need_home_usage', holdkeys: 'core.need_holdkeys', mic: 'core.need_mic', checkout: 'core.need_checkout', telegram: 'core.need_telegram', kids: 'core.need_kids', homekey: 'core.need_homekey', keytest: 'core.need_keytest', support: 'core.need_support', scenepin: 'core.need_scenepin', mic_offline: 'core.need_mic_offline', family: 'core.need_family' };
+const SETUP_NEEDS = { home_playing: 'core.need_home_playing', notifylater: 'core.need_notifylater', videocopy: 'core.need_videocopy', videorot: 'core.need_videorot', scenetime: 'core.need_scenetime', sceneon: 'core.need_sceneon', mic_freespeech: 'core.need_mic_freespeech', mic_engine: 'core.need_mic_engine', schedule: 'core.need_schedule', schedule_windows: 'core.need_schedule_windows', rules: 'core.need_rules', draw: 'core.need_draw', video: 'core.need_video', invite: 'core.need_invite', ram: 'core.need_ram', ramauto: 'core.need_ramauto', idleoff: 'core.need_idleoff', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', speak: 'core.need_speak', homebar: 'core.need_homebar', voicekey: 'core.need_voicekey', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', home_usage: 'core.need_home_usage', holdkeys: 'core.need_holdkeys', mic: 'core.need_mic', checkout: 'core.need_checkout', telegram: 'core.need_telegram', kids: 'core.need_kids', homekey: 'core.need_homekey', keytest: 'core.need_keytest', support: 'core.need_support', scenepin: 'core.need_scenepin', mic_offline: 'core.need_mic_offline', family: 'core.need_family' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => { const what = SETUP_NEEDS[m[2]] ? T(SETUP_NEEDS[m[2]]) : m[2];
   return m[1] === 'missing' ? T('core.setup_missing', { what }) : T('core.setup_old', { what, min: m[3], have: m[4] }); };

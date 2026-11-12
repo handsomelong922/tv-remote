@@ -32,8 +32,11 @@ internal data class Marks(val bedWarnedAt: Long, val totalWarnedAt: Long, val ra
  * times a second, since its PIN must come up before anyone watches it: [PinActivity] goes over it until the PIN is given, and the
  * app stays open until another one comes to the front or the TV goes to standby.
  */
-internal class Guard(private val c: Context, private val adb: () -> Adb?) {
+internal class Guard private constructor(private val c: Context, private val adb: () -> Adb?) {
     companion object {
+        /** The only way to make one: made and started together (TV Setup 0.48.0 made one and never started it, a `.also { it.start() }`
+         *  lost into a comment: no timer, bedtime, limit or lock ran). */
+        fun launch(c: Context, adb: () -> Adb?): Guard = Guard(c, adb).also { it.start() }
         @Volatile private var running: Guard? = null
         /** The rules changed: check now rather than at the next tick. */
         fun poke() { running?.let { g -> g.ui.removeCallbacks(g.tick); g.ui.post(g.tick) } }
@@ -135,7 +138,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         try { AdbReport.once(c, "guard_$where", e.toString()) } catch (t: Throwable) { }
     }
 
-    fun start() {
+    private fun start() {
         running = this
         ui.postDelayed(tick, 5_000)
         Thread({ while (!stopped) Thread.sleep(safe(5_000L, { died("lockCheck", it) }) { lockCheck() }) }, "guard-lock").apply { isDaemon = true }.start()
@@ -208,6 +211,8 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
 
         // ---- scenes that start at a time or when an app opens (nothing happens with none)
         SceneTimer.tick(c, now, on)?.let { next = minOf(next, it.coerceAtLeast(1_000L)) }
+        // ---- a message the page asked to show later (nothing happens with none)
+        NotifyLater.tick(c, now)?.let { next = minOf(next, it.coerceAtLeast(1_000L)) }
         // ---- turn off when nobody uses it (off: nothing is read; on: one read when the deadline could have come, see IdleOff)
         val idleH = IdleOff.hours(o)
         if (idleH > 0 && on) next = minOf(next, idleLook(idleH))
@@ -361,10 +366,12 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
 
     /** Null when there is no ADB right now (down, or the command failed): the caller must not act as if it worked. */
     private fun sh(cmd: String): String? {
-        val out = try { adb()?.shell(cmd) } catch (e: Exception) { null }
-        if (out != null) noAdbSaid = false
+        val out = try { adb()?.shell(cmd) } catch (e: Exception) { why = e.message ?: e.javaClass.simpleName; null }
+        if (out != null) { noAdbSaid = false; why = "" }
         return out
     }
+
+    private var why = ""                                              // the last ADB failure, for the census: what "no ADB" really was
 
     /** The TV goes to standby; false when ADB could not be reached (the rule then keeps trying and says nothing of success). */
     private fun standby(): Boolean {
@@ -378,9 +385,14 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     /** A rule could not act for want of ADB: one word on screen per failure episode (until ADB answers again), and the census hears it once per version. */
     private fun noAdb(said: String) {
         // Fire TV: "ADB debugging is off" was false (census AFTMA2857F, 2026-11-07); Amazon blocks an app's own ADB, nothing on the TV turns it on
-        val text = if (!android.os.Build.MANUFACTURER.equals("Amazon", true)) said
-            else said.substringBefore(':').trimEnd() + ": " + T("tv_main.fire_adb_blocked")
-        AdbReport.once(c, "rules_no_adb", text)
+        // ADB on but no link (a BRAVIA VU3 with 5555 open, census 24516ed4): "ADB debugging is off" was false there too
+        val adbOn = try { android.provider.Settings.Global.getInt(c.contentResolver, android.provider.Settings.Global.ADB_ENABLED, 0) == 1 } catch (e: Exception) { false }
+        val text = when {
+            android.os.Build.MANUFACTURER.equals("Amazon", true) -> said.substringBefore(':').trimEnd() + ": " + T("tv_main.fire_adb_blocked")
+            adbOn -> said.substringBefore(':').trimEnd() + ": " + T("guard.no_adb_link")
+            else -> said
+        }
+        AdbReport.once(c, "rules_no_adb", text + (if (why.isNotEmpty()) " [" + why.take(160) + "]" else ""))
         if (noAdbSaid) return
         noAdbSaid = true
         say(text)

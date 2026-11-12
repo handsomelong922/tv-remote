@@ -6,9 +6,68 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 ## Unreleased
 
+- TV Setup: on Android 14 boxes (ADT-3) where the key add-on lost its "restricted settings" permission, dead keys, the mic button and the Home bar stopped working after three tries; TV Setup now gives that permission back over ADB before trying again.
+- TV Home: a "Now playing" widget. Music or a video playing behind Home (SmartTube, Spotify...) shows its app and title; OK pauses or plays it, and an app paused behind Home plays again. With nothing playing it shows the last one played (OK opens that app), never a blank box. Read by TV Setup over ADB (needs TV Setup 0.50.1).
+
+## 0.52.0 - 2026-11-11
+
+Web 0.52.0 · Phone app 0.49.0 · TV app 0.50.0 · TV Home 0.32.0 · TV Channels 0.23.0 · TV Games 0.24.0 · TV Apps 0.8.0
+
+- Find a feature: 🔍 Find at the end of the tab bar (computer app, the phone app's Manage screen, the TV web page and Manage on the TV) searches every card and Settings section by name and by the user guide's words, in any language the page speaks; a pick opens its tab and lights the card (#29).
+- TV Setup: no longer jumps back to the home screen every few seconds when the TV says it is asking "Allow USB debugging?" but shows no box; it steps aside once, then stays and says to turn USB debugging off and on.
+- TV Setup: after "Send to support", support's replies show on the TV (a notice, then Connection → Support replies: the talk and a QR code to answer from a phone, tvremote.pages.dev/support). It checks every 6 hours, only while a code is kept.
+- Wi-Fi scan: an Android box whose media player answers like a Hisense (ports 38400 / 18400) is no longer listed as a Hisense VIDAA TV unless its remote port 36669 answers; it is reached over ADB instead.
+- Hisense VIDAA and Roku: "the TV did not answer on port …" is said in the app's language, with what to do (turn the TV on, same Wi-Fi).
+- Computer app: no error when the page was swapped while the Now playing bar ticks (census 3cefc344).
+- TV Channels: the programme guide no longer crashes when the TV empties the app's cache while it loads (census 7128da05).
+- TV Home: the on-screen keyboard's ◀ ▶ keys in a text field (Customize > greeting words) move the cursor again; they used to leave the page and close the keyboard mid-press, and Gboard then kept sending the arrow until the TV was unplugged.
+- Phone app: no crash when a box with no picture-in-picture gets the remote's Window key (census e13f5371).
+- Optimize TV: Undo gives each app 20 s to come back on; one that hangs is skipped and named, and stays on the list for the next Undo.
+
+## 0.51.0 - 2026-11-09
+
+Web 0.51.0 · Phone app 0.48.0 · TV app 0.49.0 · TV Home 0.31.0 · TV Channels 0.22.0 · TV Games 0.23.0 · TV Apps 0.7.0
+
+- TV Setup: the sleep timer, bedtime, app limits, app schedule, timed scenes and the PIN lock ran again: 0.48.0 (v0.50.0) never started its rule watcher, a start call lost into a comment; it is now made and started in one call.
+- Send a notification: "Remind me later": in 10 min, 20 min or 1 hour; TV Setup keeps it and shows it on time, with every phone and computer off (#27).
+- Kids mode has a plain way off: a "Turn off kids mode" button in the Kids mode card, and a tile on TV Setup's own screen that asks the PIN (#28).
+- Mic key: pick the language the TV's own speech recognizer listens in (TV settings → mic key), when it is not the TV's language; TV Setup passes it to the recognizer on each request.
+- Saving a file the page makes (Move to a new TV backup, TV copy, a TV Home theme, a screenshot) works in the Phone app and the Computer app's window: the page hands it to its own server (`/api/hold`) and downloads a normal link, as `blob:` links saved nothing there (#25).
+- Phone app: Install an APK lets you pick `.apk` files again (the picker greyed them out, #26).
+- TV Setup: the key add-on turned off in the TV's Settings is left off (it was written back 3 times and reported keyfix_refused, census 456d47c9); turned on again, its key filter comes back at once instead of after a restart
+
+## 0.50.0 - 2026-11-08
+
+Web 0.50.0 · Phone app 0.47.0 · TV app 0.48.0 · TV Home 0.31.0 · TV Channels 0.22.0 · TV Games 0.23.0 · TV Apps 0.7.0
+
+- TV Home and TV Setup: a new switch, “Ask for the PIN to change TV Home” (off by default; TV Home settings and the Manage page): the TV asks the PIN before Customize, the long-OK menus, + Add, folders and move; a right code opens it for 10 minutes. No PIN or an old TV Setup: nothing is asked. Phones and computers are not asked (issue #24).
+- TV Setup: when a rule cannot close an app or turn the TV off while ADB debugging is on, it no longer says "ADB debugging is off"; it says TV Setup can't connect to ADB and to choose Reconnect.
+- TV Setup: no false “key filter taken out” report (keyfix_refused): two checks running at once counted the second as the system taking the filter out, while it stayed on.
+- TV Setup: when “Allow USB debugging?” runs out of time on Android 11+, it also says that some TVs never show it and points to Wireless debugging, which needs no question.
+- TV Setup and the page: an NVIDIA SHIELD whose ADB is refused is told to turn on its own “Network debugging” switch (TV Setup opens Developer options), not sent to Wireless debugging.
+- All pages: when one of the page's scripts does not load (a weak TV dropped it), the page loads again once by itself instead of showing a "not defined" error; a second failure says to open the page again.
+- TV web page and Phone app: "Turn ADB on for this TV" shows the steps by hand, not buttons that only the Computer app can carry out (they answered "not found").
+
+- Phone app: the drawing bar has the Video on the TV button, as the web page's has.
+- Video on the TV: a new video sent while one plays no longer reads as stopped on the page (TV Setup let the old player go on its main thread, 5 s and more on a TCL), the small copy keeps the new video's shape, and the buttons stay on one line on a narrow phone (Rotate shows its icon only).
+- TV Home: Back in "Choose apps" after ticking asks Save or Discard, instead of dropping the changes.
+- Video on the TV: "Rotate" turns the picture 90°, so an upright phone video fills the TV (TV Setup 0.47.1).
+- Video on the TV: a video file now plays on TVs whose storage shuts the shell out of app folders (a TCL on Android 11 said "Permission denied"); TV Setup 0.47.1 takes the file in itself.
+
+## 0.49.1 - 2026-11-07
+
+Web 0.49.1 · Phone app 0.46.0 · TV app 0.47.0 · TV Home 0.30.1 · TV Channels 0.21.0 · TV Games 0.23.0 · TV Apps 0.7.0
+
+- Fix: TV Home 0.30.0 closed once when a TV with a screen lock was unlocked after starting.
+
+## 0.49.0 - 2026-11-07
+
+Web 0.49.0 · Phone app 0.46.0 · TV app 0.47.0 · TV Home 0.30.0 · TV Channels 0.21.0 · TV Games 0.23.0 · TV Apps 0.7.0
+
+- Fix: the warnings of the sleep timer, bedtime, app limits and "turn off when idle" opened inside TV Setup's own screen when TV Setup had been left open, so TV Setup (or its PIN screen) came up and hid the warning; they now open over the app being watched (seen on the FPT box).
 - A scene can start by itself on an event, next to "Start at": **Start when** an app opens (e.g. YouTube opens, volume 15) or the TV turns on from standby. TV Setup 0.46.1 and later runs it on the TV; one run per opening, a scene that opens its own app does not start itself again, and with no such scene nothing extra runs.
 - Move to a new TV (phone app, TV web page, Computer app; TV tab): one backup file with scenes, the home screen and quick keys, bedtime, limits, schedules, app locks (the list only), favourite channels, the apps Optimize TV turned off and the list of installed apps. On the new TV the page shows what the file holds, you tick what to restore, each part goes back through its own route and a part that fails says so while the rest go on; apps are only listed, with a button to the store or TV Apps. PINs and Telegram keys are never in the file. New `/api/backup` and `/api/backup/restore` carry the TV-side parts.
-- Turn off when nobody uses it (Automation tab, next to Sleep timer): after 1, 2, 3 or 4 hours with no key pressed the TV asks "Still watching?" for a minute, then goes to standby; any key keeps it on. Off by default (nothing runs, nothing is read). TV Setup reads the TV's own last-key time once, when the deadline could first have come; Android's attentive timeout is not used (measured on the Google TV emulator: no warning, and it depends on the stay-awake flag). Playing video is not skipped. Needs TV Setup 0.46.1.
+- Turn off when nobody uses it (Automation tab, next to Sleep timer): after 1, 2, 3 or 4 hours with no key pressed the TV asks "Still watching?" for a minute, then goes to standby; any key keeps it on. Off by default (nothing runs, nothing is read). TV Setup reads the TV's own last-key time once, when the deadline could first have come; Android's attentive timeout is not used (measured on the Google TV emulator: no warning, and it depends on the stay-awake flag). Playing video is not skipped. Needs TV Setup 0.46.1. It travels with Copy settings and the backup file (to a TV Setup 0.46.1 or newer).
 - TV Home customize page (phone app, TV web page, Computer app): a TV Home that answers a read or a change without its settings no longer throws "Cannot read properties of undefined (themesBuiltin)"; the page keeps what it shows.
 - A TV that drops the ADB link (`adb connection lost: EOFException`; TCL, Skyworth, Xiaomi) no longer fails the page's request: Manage redials once and runs the command again when it never reached the TV, or when it only reads (dumpsys, pm list, getprop, settings get ...); installs, keys and launches are never repeated.
 

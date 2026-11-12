@@ -114,6 +114,8 @@ iPhone không có app. Thay vào đó, TV tự phát một trang web điều khi
 
 > 💡 TV không có ADB thì không tự hiện được mã: mở app **TV Setup** trên TV, mã nằm ở màn hình chính (có hiệu lực 2 phút).
 
+> 💡 Gõ sai mã nhiều lần thì mã bị hủy: bấm lại **📺 Hiện mã trên TV** để lấy mã mới. Safari cũ hơn 15.4 sẽ báo cần cập nhật trình duyệt.
+
 ## Remote hồng ngoại (không cần mạng)
 
 Điện thoại có đèn hồng ngoại (nhiều máy Xiaomi, Huawei, Samsung đời cũ) thì dùng được như remote giấy: không cần Wi-Fi, không cần chọn TV. Chỉ có ở app điện thoại.
@@ -165,6 +167,8 @@ Không bắt buộc, và thường không cần làm: TV Setup tự mở chỗ b
 6. **Bản dựng đòi mật khẩu** (box FPT Play…)? Cài TV Setup, nó mở thẳng chỗ bật. Vẫn kẹt: **🧭 Bật ADB giúp tôi**, hoặc bỏ qua, [phím vẫn dùng được](#nokeys).
 
 > 📡 TV chỉ có **Gỡ lỗi không dây** (Android 11 trở lên)? Không cần Gỡ lỗi ADB: mở trang web của TV, bấm **📡 Ghép bằng Gỡ lỗi không dây**, làm theo [hướng dẫn](#wireless).
+
+> 🛡 **NVIDIA SHIELD:** trong Tùy chọn nhà phát triển bật thêm **Gỡ lỗi mạng** (Network debugging), rồi chọn **Reconnect**.
 
 > 🔥 **Fire TV:** ADB đã bật mà TV Setup vẫn báo không nối được? Amazon chặn app trên TV dùng ADB của chính nó; dùng app điện thoại hoặc máy tính.
 
@@ -299,9 +303,11 @@ Tiếng Việt 39 MB, tiếng Anh 47 MB (dòng **Ngôn ngữ**). **Lệnh + nói
 
 Muốn TV Setup Voice luôn nghe trước (nhanh hơn, giọng nói không rời TV): chọn **TV Setup** ở dòng “Nghe giọng nói bằng”, hoặc bấm ô Nút mic trong Cài đặt nhanh của TV Home.
 
+Mic nghe sai ngôn ngữ? Chọn **Ngôn ngữ mic nghe trên TV**.
+
 ### Mẹo
 
-- Trên app điện thoại có [Nói nhanh](#quick-talk) (giữ để nói, xem trước việc sẽ làm). Câu lệnh là danh sách ký trên trang web: có thêm nhiều lệnh thường ngày như đóng app, về Home, mở Cài đặt.
+- Trên app điện thoại có [Nói nhanh](#quick-talk) (giữ để nói, xem trước việc sẽ làm). Câu lệnh là danh sách ký trên trang web, có thêm lệnh như đóng app, về Home.
 
 ## Nói nhanh (app điện thoại)
 
@@ -424,7 +430,7 @@ TV chậm? Tối ưu giúp mở app nhanh hơn. Không gỡ gì cả, và **Hoà
 1. Vào tab **📺 Thiết lập** → thẻ **⚡ Tối ưu TV**.
 2. Chọn những gì muốn: **Tắt hiệu ứng chuyển cảnh**, **Dùng [TV Home](#home) làm màn hình chính**, **Tắt app đề xuất**, **Tắt thêm app khác**.
 3. Bấm **⚡ Chạy tối ưu** và xác nhận.
-4. Không ưng? Bấm **↩ Hoàn tác**.
+4. Không ưng? Bấm **↩ Hoàn tác** (app nào bị treo thì được bỏ qua và báo tên, bấm lại sau).
 
 > 💡 Android TV và Google TV đều đổi được màn hình chính. TV không cho đổi hẳn thì TV Setup vẫn cho nút Home mở màn hình chính đã chọn.
 
@@ -434,7 +440,7 @@ TV chậm? Tối ưu giúp mở app nhanh hơn. Không gỡ gì cả, và **Hoà
 
 > 💡 Danh sách lấy từ [cleanyourtv](https://github.com/Gathin23/cleanyourtv) (400+ TV), UAD-NG, TV Slim và người dùng TV Remote.
 
-> 🛡️ App giữ mạng Wi-Fi đã lưu hoặc cổng HDMI / kênh TV không bao giờ bị tắt, xóa dữ liệu hay gỡ: TV sẽ quên mạng hoặc mất nguồn vào.
+> 🛡️ App giữ Wi-Fi đã lưu hoặc cổng HDMI / kênh TV không bao giờ bị tắt, xóa dữ liệu hay gỡ.
 
 > 🔁 Sau khi TV cập nhật firmware, TV Setup tắt lại app đã tắt mà bản cập nhật bật lại, và đặt lại TV Home. Hoàn tác thì dừng.
 
@@ -532,6 +538,7 @@ TV Home có thêm hai widget lấy số liệu thẳng từ nguồn, không qua 
 | Tin tức | Tiêu đề và hình từ RSS của VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, VietnamNet (TV tiếng Anh: BBC, NPR, Guardian, Al Jazeera). Thêm tối đa 5 link RSS riêng từ điện thoại. Bấm OK mở bản đọc chữ to |
 | Thời tiết | Bấm OK: bản đồ Windy toàn màn hình tại thành phố của bạn (mưa, gió, nhiệt độ, vệ tinh, PM2.5), mỗi lớp một nút, **Xem diễn biến** chạy dự báo; Back để đóng |
 | Mở gần đây | 4-6 app vừa mở; Trái / Phải chọn, OK mở |
+| Đang phát | Nhạc, video đang phát sau Home (SmartTube, Spotify…): app, tên bài, OK dừng / phát tiếp. Không có gì phát thì hiện bài phát lần trước, OK mở lại app. Cần TV Setup đã bật ADB |
 | Chặn quảng cáo | OK bật / tắt DNS chặn quảng cáo (AdGuard…). Không chặn quảng cáo trong video YouTube. DNS không chạy thì ~10 giây sau tự trả về |
 | Giờ cầu nguyện | Buổi sắp tới kèm đếm ngược, 3 buổi kế tiếp, ngày Hijri. Theo nơi của widget Thời tiết. Tính ngay trên TV, không cần mạng. Chọn cách tính, giờ Asr, chỉnh ngày Hijri ±1 |
 | Khung ảnh | Ảnh của bạn lần lượt hiện, mỗi tấm 30 giây (⚙ đổi từ 10 giây tới 15 phút). Thêm tối đa 10 ảnh từ điện thoại: **Widget** → **Khung ảnh** |
@@ -722,7 +729,7 @@ Phím nhanh mở app ngay từ màn hình chính bằng một phím số hoặc 
 
 - Ô **Khi bật TV**: chọn app = tự mở, xóa = tắt. Nút **Tự mở … khi bật TV**: mở app đó (trống: TV Home) dù TV tự vào HDMI hay app khác, trừ lúc cast.
 - Cùng ô đó có **Ứng dụng vừa dùng**: mở app đang chạy lúc tắt TV (mặc định tắt).
-- Live widget cũng gán được và hiện icon riêng.
+- Live widget cũng gán được và hiện icon riêng. Có cả **Lệnh giọng nói**: mở micro của TV Remote (cần TV Setup 0.46.1).
 
 Tùy chỉnh → Phím & khởi động → **Phím Home trong app: hiện thanh app** (mặc định tắt).
 
@@ -772,6 +779,8 @@ Cần TV Setup trên TV và ADB đang bật. Các việc dưới đây tự ch�
 > 💡 TV TCL: nút Netflix, YouTube, Prime, Apple TV mở app đó khi đang ở [TV Home](#home). Trong app khác thì không: bắt phím mọi nơi làm giữ nút âm lượng chỉ tăng 1 nấc.
 
 > 💡 TV không có ADB: add-on này cũng mở menu nguồn của hệ thống cho nút Tắt TV trên TV Home ([Cài đặt nhanh](#home-control)).
+
+> 💡 Bạn tự tắt add-on trong Cài đặt của TV (Hỗ trợ tiếp cận) thì nó được để tắt, TV Setup không bật lại.
 
 ## TV Channels, kênh truyền hình miễn phí
 
@@ -944,8 +953,9 @@ Tắt TV xong, TV có thể ngủ sâu và không trả lời nữa. Tùy chọn
 
 1. Thêm phím → **Tiện ích** → **Thông báo** (🔔 Gửi thông báo lên TV).
 2. Gõ **tiêu đề** (không bắt buộc) và **lời nhắn**.
-3. Chọn góc ↖ ↗ ↙ ↘ và số giây: 3, 5, 10 hoặc 30.
-4. Bấm **Gửi**. Một thẻ nhỏ hiện lên TV rồi tự mất. Muốn TV đọc to lời nhắn, chọn **Đọc to → Có** trước khi gửi. TV đọc đúng ngôn ngữ của lời nhắn.
+3. Muốn nhắc sau: chọn **Gửi lúc nào** → sau 10 phút, 20 phút hoặc 1 giờ. TV tự hiện lời nhắn đúng giờ, kể cả khi điện thoại đã tắt.
+4. Chọn góc ↖ ↗ ↙ ↘ và số giây: 3, 5, 10 hoặc 30.
+5. Bấm **Gửi**. Một thẻ nhỏ hiện lên TV rồi tự mất. Muốn TV đọc to lời nhắn, chọn **Đọc to → Có** trước khi gửi. TV đọc đúng ngôn ngữ của lời nhắn.
 
 > 💡 Cần TV Setup bản mới. Nếu thiếu, app sẽ hỏi cập nhật bằng một nút.
 
@@ -986,7 +996,8 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 1. Mở **Thêm phím → Tiện ích → Video trên TV**.
 2. Bấm **🎞️ Chọn video** để phát một file, hoặc **📷 Camera** để chiếu camera của điện thoại / máy tính (**🔄 Đổi camera** để đổi trước / sau).
 3. Kéo khung để di chuyển, kéo góc xanh để đổi cỡ, ngay cả khi đang phát. Phím mũi tên và + / − cũng được.
-4. Tạm dừng, bật tiếng, hoặc **⏹ Gỡ khỏi TV**.
+4. Video quay dọc? Bấm **↷ Xoay** để xoay hình 90°: video nằm ngang, khung to ra lấp đầy TV. Cần TV Setup 0.47.1.
+5. Tạm dừng, bật tiếng, hoặc **⏹ Gỡ khỏi TV**.
 
 > 💡 Khung nằm trên mọi app. Đóng cửa sổ thì video vẫn phát, camera thì tắt. Camera chỉ có trong app điện thoại và app máy tính. Cần TV Setup 0.42.0.
 
@@ -1013,7 +1024,7 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 
 > 💡 Tự tắt khi không ai dùng đếm phím bấm, không đếm hình: phim chiếu mà không bấm phím cũng bị hỏi. Cần TV Setup 0.46.1.
 
-> 💡 TV chưa tắt được (ADB đang tắt)? Hẹn giờ không tự xóa: nó báo một lần và thử lại.
+> 💡 TV chưa tắt được (ADB tắt hoặc TV Setup chưa nối được)? Hẹn giờ không tự xóa: nó báo một lần và thử lại.
 
 ## Giờ đi ngủ
 
@@ -1023,7 +1034,7 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 
 > 💡 Cần TV Setup trên TV. Việc tắt do chính TV làm.
 
-> 💡 TV chưa tắt được (ADB đang tắt)? App báo một lần và thử lại, Telegram không báo “đã tắt” sai.
+> 💡 TV chưa tắt được (ADB tắt hoặc TV Setup chưa nối được)? App báo một lần và thử lại, Telegram không báo “đã tắt” sai.
 
 ## Màn hình chào
 
@@ -1047,7 +1058,7 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 
 > 💡 Tất cả nằm trên TV và cần TV Setup. TV ngủ hay máy bạn tắt vẫn có hiệu lực.
 
-> 💡 Chưa đóng được app (ADB đang tắt)? App báo một lần và thử lại, thông báo “đã đóng app” không gửi sai.
+> 💡 Chưa đóng được app (ADB tắt hoặc TV Setup chưa nối được)? App báo một lần và thử lại, thông báo “đã đóng app” không gửi sai.
 
 ## Chế độ trẻ em: thiết lập nhanh
 
@@ -1056,6 +1067,10 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 3. **Gỡ thiết lập nhanh** chỉ gỡ phần nó đã đặt. Luật bạn tự đặt vẫn giữ, PIN cũng giữ. Điện thoại, máy tính nào mở cũng thấy như nhau (lưu trên TV).
 
 > 💡 Dùng chính các luật Chế độ trẻ em, Tổng giờ xem TV và Giờ ngủ, nên sửa riêng từng cái ở thẻ của nó. Cần TV Setup mới nhất.
+
+> 💡 Khóa bố cục TV Home: bật **Hỏi mã PIN khi sửa TV Home** trong Cài đặt TV Home. Đúng PIN thì mở 10 phút.
+
+> 💡 Tắt chế độ trẻ em: nút **Tắt chế độ trẻ em** trên thẻ Chế độ trẻ em, hoặc ô cùng tên trên màn hình TV Setup (hỏi PIN).
 
 ## Khóa app bằng mã PIN
 
@@ -1072,7 +1087,7 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 3. Lưu 8 **mã dự phòng** khi thêm Authenticator (mỗi mã dùng 1 lần). Nghi trẻ biết PIN: đổi PIN, hoặc tắt PIN khi đã có Authenticator.
 4. **Mở khóa 30 phút / 1 giờ / 2 giờ / Hết hôm nay**, **Khóa lại ngay**, và thẻ **📺 Tổng giờ xem TV** mỗi ngày (+30p khi cần).
 
-> 💡 TV Home → **Cài đặt nhanh** có ô **Khoá trẻ em**; tắt nó thì TV hỏi mã PIN.
+> 💡 Tắt chế độ trẻ em: nút đỏ **Tắt chế độ trẻ em** ở thẻ này hoặc màn hình chính TV Setup, hay TV Home → **Cài đặt nhanh**.
 
 ## Lịch mở app theo ngày và giờ
 
@@ -1337,6 +1352,7 @@ Trong app điện thoại hay máy tính: **Thêm** › **Tiện ích** › **T�
 
 ### Mẹo
 
+- **🔍 Tìm** (cuối thanh tab): gõ một từ như “hẹn giờ” hay “khóa” để tới thẳng chỗ của nó, không cần biết nó ở tab nào.
 - **Gửi thống kê ẩn danh** (bật sẵn): xem [Thống kê ẩn danh](#census). Trên app điện thoại nằm ở Quyền riêng tư.
 
 ## Tự kiểm tra khi không kết nối được
@@ -1358,7 +1374,9 @@ Không kết nối được? App tự kiểm tra trong chưa đầy 4 giây rồ
 | TV đang bật mạng nhưng chưa nhận lệnh | TV ngủ nhẹ. Bấm nút nguồn trên điều khiển thật, chờ vài giây. |
 | Fire TV chưa hoàn tất cài đặt ban đầu | Nút Home và Alexa không bấm được. Bấm **Sửa** để đánh dấu đã cài đặt xong. |
 
-Các nút trong hộp: **🔄 Thử lại**, **🔍 Quét mạng**, **🧭 Bật ADB giúp tôi**, **Sửa** (chỉ Fire TV chưa cài đặt xong). Mở danh sách **Đã kiểm tra** để xem app đã thử những gì.
+Các nút trong hộp: **🔄 Thử lại**, **🔍 Quét mạng**, **🧭 Bật ADB giúp tôi**, **Sửa** (chỉ Fire TV chưa cài đặt xong), **📋 Gửi nhật ký** (khi app chưa tự sửa được).
+
+Mở danh sách **Đã kiểm tra** để xem app đã thử những gì.
 
 > 💡 Hộp này hiện ở app máy tính, màn hình Quản lý của app điện thoại và danh sách TV của app điện thoại.
 
@@ -1384,7 +1402,7 @@ Màn hình Quản lý trong app điện thoại dùng trình duyệt của Andro
 
 > 💡 Lỗi trong hộp “Có lỗi xảy ra” cũng được gửi ẩn danh (đã xóa IP, đường dẫn, khóa), nếu công tắc **Gửi thống kê ẩn danh** bật.
 
-> 💡 TV không ai với tới được (box nhà mạng, không có ADB): trên TV mở **TV Setup → Kết nối → Gửi cho hỗ trợ**, đọc mã 8 số cho tác giả.
+> 💡 TV không ai vào được (box nhà mạng, không ADB): **TV Setup → Kết nối → Gửi cho hỗ trợ**. Hỗ trợ trả lời ngay trên TV; quét mã QR để trả lời bằng điện thoại.
 
 > 💡 **Cho hỗ trợ xem 30 phút** chỉ cho đọc trạng thái, không bấm hay đổi gì; dừng được bất cứ lúc nào.
 
