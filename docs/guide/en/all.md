@@ -509,9 +509,9 @@ Pick several; **Change background** rotates them.
 | On TV Home | What it is |
 | --- | --- |
 | Top bar | Two buttons: **Network** (status) and **Settings** = the [Quick settings](#home-control), which holds Inputs and Power off / Restart / Screen off / Standby. |
-| Customize | A list of groups, OK opens each: **Themes**, Background, **Look** (layout too), Widgets, **Screensaver**, **Keys & startup**, **System** (**Home screen**, Language). |
+| Customize | A list of groups, OK opens each: **Themes**, Background, **Look** (layout too), Widgets, **Screensaver**, **Quick keys & power-onup**, **System** (**Home screen**, Language). |
 | Home screen | In **System**: opens TV Setup's launcher picker to switch to another launcher (needs TV Setup) |
-| Keys & startup | Remote keys that open apps, an app at power-on |
+| Quick keys & power-onup | Remote keys that open apps, an app at power-on |
 
 ### Tips
 
@@ -672,6 +672,8 @@ Two options for TV Home's look, worked out on the TV with no network.
 3. OLED screen: pick the **Black** background, then turn on **Move the screen a little every minute** (Customize → Screensaver). Off by default.
 4. The whole home screen moves 1 dp a minute inside a 6 dp square, with no visible jump; the wallpaper stays.
 5. Black screensaver at night (Customize → Screensaver): turn it on, then set **From** and **To** in 30-minute steps (OK or Right on the TV). Inside them, a plain black screen. Off by default.
+6. **Screensaver photos** (Customize → Screensaver, or the web page): a slow slideshow, one picture every 20 seconds. Sources: the wallpaper photos you sent, the Pictures or DCIM folder, or a USB stick. Off by default.
+7. A folder needs the photo permission (granted over ADB, or the TV asks once). The clock can be hidden.
 
 ## Quick settings (TV Home)
 
@@ -690,6 +692,8 @@ Power off with no ADB: turn on TV Setup Keys (Accessibility) and the TV opens th
 The **Tint color** button beside it: Dark, Blue light filter, Yellow, Sepia, Night red, Blue. Needs a newer TV Setup.
 
 An **Inputs button** of its own in the top bar (off by default): Customize → Look → **On the home screen**.
+
+Customize → Look → **Keep clock and date in place** (off by default): they stay while the apps scroll.
 
 Customize → Look → **Show only plugged-in HDMI/AV inputs** (off by default): empty ports go in More inputs.
 
@@ -731,7 +735,7 @@ Quick keys open an app from the home screen with one number or color key on the 
 - The same slot offers **Last app used**: the app open when the TV turned off (off by default).
 - Live widgets can be assigned too and show their own icon. There is also **Voice command**: opens TV Remote's microphone (needs TV Setup 0.46.1).
 
-Customize → Keys & startup → **Home key in an app: show the app bar** (off by default).
+Customize → Quick keys & power-onup → **Home key in an app: show the app bar** (off by default).
 
 Home in an app opens a bar: Home, Dock, recent apps. OK opens, Back closes, Home again goes to TV Home. Needs TV Setup Keys.
 
@@ -739,9 +743,10 @@ Home in an app opens a bar: Home, Dock, recent apps. OK opens, Back closes, Home
 
 Color keys, number keys and buttons that no longer do anything can open the app you choose. It needs [TV Home](#home); to work in every app it also needs TV Setup.
 
-1. On the TV: the **⚙** icon at the top → **Quick settings** → **Customize** → **Keys & startup** → **Quick keys**. Phone or computer: the same name, in the **Keys & startup** card.
-2. Pick a key's tile, then an app, a shortcut or a live widget. The first pick switches the keys on. Outside TV Home the TV says "TV Setup opened…", so it is not a fault.
-3. In the **At power-on** tile pick an app, or **Last app used** (the one open when the TV turned off). It opens once per power-on, not if the TV woke into another app. One choice turns the other off.
+1. On the TV: the **⚙** icon at the top → **Quick settings** → **Customize** → **Quick keys & power-onup** → **Quick keys**. Phone or computer: the same name, in the **Quick keys & power-onup** card.
+2. Pick a key's tile, then an app, a shortcut or a live widget. The first pick switches the keys on.
+3. In the **At power-on** tile pick an app, or **Last app used** (the one open when the TV turned off). It opens once per power-on, not if the TV woke into another app.
+4. **Double press and hold**: color keys, YouTube / Netflix / Prime, Menu, Info and Guide open an app or scene on a double press or a 0.6 s hold. Only a key with a double press waits 0.3 s.
 
 | Key | When it can be given an app |
 | --- | --- |
@@ -757,7 +762,7 @@ Color keys, number keys and buttons that no longer do anything can open the app 
 
 ### Tips
 
-- An app's tile shows its key in the top corner (a colour dot, a number or an icon); hidden when quick keys are off.
+- An app's tile shows its key in the top corner.
 - Quick keys use the same keypad: see [Quick keys](#home-quickkeys).
 
 ## Fix dead keys, hold to switch
@@ -780,6 +785,8 @@ These need TV Setup on the TV and ADB switched on. They run by themselves once o
 
 > 💡 A TV with no ADB: this add-on also opens the system power menu for TV Home's Power off ([Quick settings](#home-control)).
 
+> 💡 Some cheap boxes keep switching the add-on off. TV Setup tries 3 times, then stops; TV Home's Quick keys and the web page then say the keys work only on TV Home.
+
 > 💡 Turned off by you in the TV's Settings (Accessibility), the add-on stays off: TV Setup does not turn it back on.
 
 ## TV Channels, free TV channels
@@ -795,6 +802,7 @@ An app on the TV that plays channels from iptv-org's public lists and VieON's fr
 
 | On the TV | How |
 | --- | --- |
+| 📌 **Pin to home screen** | Home screen not TV Home yet: press “Use TV Home”, TV Setup switches it, and the channel is pinned when you come back. |
 | 🔍 **Search channels** | First row on the left, OK, type a name. The chosen country comes first, then “Other countries”. The first search downloads about 3 MB. |
 | 🔔 **Reminders** | In the guide, OK on a programme to come (OK again removes it). Two minutes before, a card shows in the corner: OK watches, Back dismisses. |
 | 🔔 **Over other apps** | Needs “display over other apps”: the phone / computer app turns it on when you use the TV channels card. Screen off: no reminder. |
@@ -1050,6 +1058,7 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 2. Tap **Add an app limit**, pick the app and minutes per day (30 min to 4 h).
 3. When time is up the TV warns, then closes that app.
 4. **+30 min** gives the app 30 more minutes today; **Reset** takes them back.
+5. Child out of time? The Telegram “app closed” alert has **30 min · 1 hour · Today** buttons: one tap reopens the app, which closes again by itself. See [Telegram](#telegram-more).
 
 | Card | What it does |
 | --- | --- |
@@ -1099,7 +1108,7 @@ For example: YouTube opens only Monday to Friday, 16:00 to 18:00, at most 30 min
 
 A window that runs past midnight (22:00 to 02:00) belongs to the day it starts on.
 
-No PIN is asked inside the window, unless the app also has a [PIN lock](#lock). For more minutes today use **+30 min** on the app's row.
+No PIN is asked inside the window, unless the app also has a [PIN lock](#lock). For more minutes today use **+30 min** on the app's row. Outside the window **+30 min** opens it for 30 minutes.
 
 > 💡 Needs a recent TV Setup (several windows need a newer one). The schedule runs on the TV itself, no phone needs to stay on. It cannot block YouTube Shorts alone, only the whole app.
 
@@ -1154,6 +1163,8 @@ Commands:
 /say Ăn cơm nhé  /speak Ăn cơm nhé  /shot  /remote  /help
 ```
 
+**/help** has buttons for everyday things. Slow commands show “typing…”; a TV silent for 20 s or a failure is told.
+
 A new chat gets **Remote only** rights; the owner can raise it to **Full access** in the chat list. **/speak** is /say, and the TV also reads the message aloud (it needs a voice engine on the TV).
 
 YouTube, Netflix and other apps with protected video block screenshots: **/shot** sends a black picture, with a line saying why.
@@ -1165,15 +1176,15 @@ Screenshots pass through Telegram's servers. Stop any time: **Off**, **Remove to
 More bot commands, and the TV messages you when something happens. A paired chat is needed (see the previous topic).
 
 ```
-/apps  /usage  /now  /scenes
+/apps  /usage  /week  /now  /scenes
 /channel VTV3  /type xin chào
 /bedtime  /limits  /schedule  /alerts
 ```
 
-1. **/apps** shows today's most used apps; **/usage** gives the top 5 and the total screen time.
+1. **/apps** shows today's most used apps; **/usage** gives the top 5 and the total screen time. **/week** gives the last 7 days: hours per day (bars), the daily average and the top 5 apps.
 2. **/now** tells what is playing, with a screenshot button. **/channel** opens a channel in TV Channels.
 3. **/bedtime**, **/limits**, **/schedule** show the rules. A **Full access** chat can switch bedtime, block or unblock an app; every change has an **Undo** button.
-4. **/alerts** picks what the TV sends by itself: TV on or off, app closed, bedtime, sleep timer, a new device. At most one per kind per minute.
+4. **/alerts** picks what the TV sends by itself: TV on or off, app closed, bedtime, sleep timer, a new device. At most one per kind per minute. The “app closed” alert has more-time buttons (see [limits](#limits)).
 
 In **🛠️ Settings** you see the bot's status, a QR to pair with one scan, each chat with its rights and alerts, and a 7-day history. The words of /type and /say are never kept.
 
@@ -1220,7 +1231,7 @@ Change the end of the link to do something else (a space is `%20`):
 | `notify=Someone%20at%20the%20door&title=Doorbell` | Shows a message card on the TV screen (title= and seconds= 1 to 60 are optional; add `speak=1` to have the TV read it aloud, `lang=` is its language). Needs TV Setup. |
 | `volume=20` / `up` / `down` / `mute` | Sets volume (0 to 100), or up, down, mute. |
 | `power=on` / `off` / `toggle` | On, off or toggle. |
-| `minutes=15&for=com.google.android.youtube.tv` | More minutes today (1 to 240) for an app with a limit; without `for=` they add to the daily TV time. For a learning site: call the link when the quiz is passed. Needs TV Setup. |
+| `minutes=15&for=com.google.android.youtube.tv` | More minutes today (1 to 240) for an app with a limit or schedule; without `for=` they add to the daily TV time. For a learning site: call the link when the quiz is passed. Needs TV Setup. |
 | `&tv=Bedroom` | Computer app only: acts on the saved TV with this name (or address), not the one selected now. A wrong name answers with the list of TVs. |
 | `/api/hook/state` | Read only: is the TV on, what is playing. |
 

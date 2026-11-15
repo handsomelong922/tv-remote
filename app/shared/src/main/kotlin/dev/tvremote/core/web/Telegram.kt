@@ -168,6 +168,7 @@ class Telegram(
             status = "ok"; lastError = ""; backoff = 0; lastOk = clock()
             val got = r.body.optJSONArray("result") ?: JSONArray()
             quiet = got.length() == 0
+            if (stopping || !store.enabled || store.token.isEmpty()) return -1   // switched off while the poll was out: its answers are not acted on
             handle(got)
             return 0
         } catch (e: IOException) {
@@ -228,15 +229,40 @@ class Telegram(
         val secret = cmd.name in HIDDEN                                  // what was typed or said is the family's, not the log's
         WireLog.all.add("←", "telegram ${known.name}: /${cmd.name} ${if (secret) "…(${cmd.arg.length})" else cmd.arg}".trim())
         outcome.set("ok")
-        try { command(known, cmd, m.optJSONObject("from")?.optString("language_code") ?: "") } catch (e: Exception) { outcome.set("error"); throw e }
+        run(known, cmd, m.optJSONObject("from")?.optString("language_code") ?: "")
         history.add(clock(), known, "/" + cmd.name + (if (secret || cmd.arg.isEmpty()) "" else " " + cmd.arg.take(40)), outcome.get())
     }
 
     /** A plain sentence in a private chat that is paired: the way to the commands. Groups and strangers: nothing. */
     private fun onText(id: Long, chat: JSONObject) {
         if (chat.optString("type") != "private" || chats().none { it.id == id } || !limit.ok(id, clock())) return
-        send(id, w("telegram.plain"))
+        send(id, w("telegram.plain"), menu())
     }
+
+    /**
+     * [cmd] with the chat kept informed: "typing…" / "sending a photo…" first for the slow ones (ADB, a screenshot), one "still
+     * waiting" line when the TV has not answered in [SLOW_MS], and a plain "that did not work" for a fault instead of silence.
+     * The command itself is never cut: "/off" that finishes late still turns the TV off and says so.
+     */
+    private fun run(c: Chat, cmd: Cmd, lang: String = "") {
+        if (cmd.name in SLOW) try {
+            api.call(store.token, "sendChatAction", JSONObject().put("chat_id", c.id).put("action", if (cmd.name == "shot") "upload_photo" else "typing"), 5)
+        } catch (e: IOException) { }
+        val late = watchdog.schedule({ send(c.id, w("tg.slow")) }, SLOW_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        try { command(c, cmd, lang) }
+        catch (e: Exception) {
+            outcome.set("error")
+            WireLog.all.add("·", "telegram /${cmd.name}: " + clean(e.message ?: e.javaClass.simpleName))
+            send(c.id, w("tg.failed"))
+        } finally { late.cancel(false) }
+    }
+
+    /** The buttons under /help, /start and a plain sentence: the everyday commands without typing them. */
+    private fun menu() = keyboard(grid(MENU.map { button(w(MENU_WORDS.getValue(it)), "m:$it") }, 3))
+    private val MENU_WORDS = mapOf("remote" to "tg.menu_remote", "status" to "tg.menu_status", "now" to "tg.menu_now",
+        "apps" to "tg.menu_apps", "scenes" to "tg.menu_scenes", "off" to "tg.menu_off")
+
+    private val watchdog by lazy { java.util.concurrent.Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "telegram-slow").apply { isDaemon = true } } }
 
     private fun onTap(cb: JSONObject) {
         val data = cb.optString("data")
@@ -248,7 +274,9 @@ class Telegram(
         val rest = data.substringAfter(':', "")
         WireLog.all.add("←", "telegram ${known.name}: tap ${data.take(40)}")
         outcome.set("ok")
-        try { tap(known, data, rest, qid, msg, id) } finally { history.add(clock(), known, "tap " + data.substringBefore(':') + (if (data.startsWith("k:") || data.startsWith("u:")) " $rest" else ""), outcome.get()) }
+        try { tap(known, data, rest, qid, msg, id) }
+        catch (e: Exception) { outcome.set("error"); WireLog.all.add("·", "telegram tap: " + clean(e.message ?: e.javaClass.simpleName)); send(id, w("tg.failed")) }
+        finally { history.add(clock(), known, "tap " + data.substringBefore(':') + (if (data.startsWith("k:") || data.startsWith("u:")) " $rest" else ""), outcome.get()) }
     }
 
     private fun tap(known: Chat, data: String, rest: String, qid: String, msg: JSONObject?, id: Long) {
@@ -277,6 +305,7 @@ class Telegram(
             }
             "r" -> { answer(qid, ""); change(known, rest) }
             "z" -> { answer(qid, ""); undo(known, rest) }
+            "m" -> { answer(qid, ""); if (rest in MENU) run(known, Cmd(rest, "")) }   // a button of the /help menu
             "u" -> grant(known, rest, qid, msg, id)                       // a parent's answer to "ask a parent" (kids mode)
             else -> answer(qid, "")
         }
@@ -317,7 +346,7 @@ class Telegram(
     private fun command(c: Chat, cmd: Cmd, lang: String = "") {    // [lang]: the sender's Telegram language, for /speak's voice
         val a = cmd.arg
         when (cmd.name) {
-            "start", "help" -> send(c.id, help(c.scope))
+            "start", "help" -> send(c.id, help(c.scope), menu())
             "status" -> send(c.id, statusText())
             "off" -> send(c.id, done(perform(c, "power", "off"), c, w("telegram.off_done")))
             "on" -> send(c.id, done(perform(c, "power", "on"), c, w("telegram.on_done")))
@@ -362,6 +391,7 @@ class Telegram(
             "alerts" -> send(c.id, w("telegram.alerts_title"), alertsMarkup(c))
             "apps" -> appsMenu(c)
             "usage" -> usage(c)
+            "week" -> week(c)
             "now" -> now(c)
             "channel" -> channel(c, a)
             "type" -> {
@@ -477,7 +507,10 @@ class Telegram(
         val text = w("telegram.al_" + (args.firstOrNull { it.first == "why" }?.second ?: kind), *args)
         WireLog.all.add("→", "telegram alert $kind → ${to.size} chat(s)")
         history.add(now, null, "alert $kind", "ok", to.map { it.name })
-        val job = Runnable { for (c in to) send(c.id, text) }
+        // "limit" says which app (or the TV's total: pkg ""): a parent with Full rights answers with one tap, the same buttons and grant as a child's question
+        val more = args.firstOrNull { it.first == "pkg" }?.second?.toString()?.takeIf { kind == "limit" && it.length <= 50 && (it.isEmpty() || PKG.matches(it)) }
+        val markup = more?.let { p -> keyboard(listOf(listOf(button(w("tg.btn_30"), "u:30:$p"), button(w("tg.btn_60"), "u:60:$p"), button(w("tg.btn_today"), "u:d:$p")))) }
+        val job = Runnable { for (c in to) send(c.id, text, if (c.scope == FULL) markup else null) }
         if (background) speaker.execute { try { job.run() } catch (e: Exception) { WireLog.all.add("·", "telegram alert: " + clean(e.message ?: "")) } } else job.run()
     }
 
@@ -529,6 +562,37 @@ class Telegram(
         val labels = st.optJSONObject("labels")
         val lines = day.entries.sortedByDescending { it.value }.take(5).joinToString("\n") { "• " + appLabel(it.key, labels) + " – " + minutes(it.value) }
         send(c.id, w("telegram.usage_title", "total" to minutes(day.values.sum())) + "\n" + lines)
+    }
+
+    /** The last [n] days (today last) as day keys, from the Calendar so a month or year edge is right; the keys are the clock's own, as TV Setup wrote them. */
+    internal fun lastDays(n: Int, now: Long): List<String> {
+        val f = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = now }
+        return (0 until n).map { f.format(cal.time).also { cal.add(java.util.Calendar.DAY_OF_YEAR, -1) } }.reversed()
+    }
+
+    /** The week as lines: one bar per day (the longest day is 8 blocks), then the 5 apps used longest. A day key outside [days] (a clock that jumped) is never read; null when under a minute was recorded. */
+    internal fun weekText(usage: JSONObject?, days: List<String>, labels: JSONObject?): String? {
+        val per = days.map { secondsOf(usage?.optJSONObject(it)) }
+        val totals = per.map { it.values.sum() }
+        val all = totals.sum()
+        if (all < 60) return null
+        val max = totals.max()
+        val bars = days.indices.joinToString("\n") { i ->
+            val k = days[i]
+            "${k.substring(8)}/${k.substring(5, 7)} " + "█".repeat(if (totals[i] <= 0) 0 else maxOf(1, (totals[i] * 8 / max).toInt())) + " " + (if (totals[i] > 0) minutes(totals[i]) else "–")
+        }
+        val apps = HashMap<String, Long>()
+        for (d in per) for ((p, s) in d) apps[p] = (apps[p] ?: 0L) + s
+        val top = apps.entries.sortedByDescending { it.value }.take(5).joinToString("\n") { "• " + appLabel(it.key, labels) + " – " + minutes(it.value) }
+        return w("telegram.week_title", "total" to minutes(all), "avg" to minutes(all / days.size)) + "\n" + bars + "\n\n" + top
+    }
+
+    private fun week(c: Chat) {
+        val out = get(c, "/api/stats", mapOf("days" to "7"))
+        if (out.status == 403) return send(c.id, w("telegram.scope_denied"))
+        val st = body(out) ?: return send(c.id, say(out, c))
+        send(c.id, weekText(st.optJSONObject("usage"), lastDays(7, clock()), st.optJSONObject("labels")) ?: w("telegram.week_none"))
     }
 
     private fun now(c: Chat) {
@@ -820,7 +884,7 @@ class Telegram(
         "help" to w("telegram.cmd_help"), "status" to w("telegram.cmd_status"), "off" to w("telegram.cmd_off"), "on" to w("telegram.cmd_on"),
         "vol" to w("telegram.cmd_vol"), "key" to w("telegram.cmd_key"), "open" to w("telegram.cmd_open"), "scene" to w("telegram.cmd_scene"),
         "timer" to w("telegram.cmd_timer"), "say" to w("telegram.cmd_say"), "speak" to w("telegram.cmd_speak"), "shot" to w("telegram.cmd_shot"), "remote" to w("telegram.cmd_remote"),
-        "now" to w("telegram.cmd_now"), "apps" to w("telegram.cmd_apps"), "usage" to w("telegram.cmd_usage"), "channel" to w("telegram.cmd_channel"),
+        "now" to w("telegram.cmd_now"), "apps" to w("telegram.cmd_apps"), "usage" to w("telegram.cmd_usage"), "week" to w("telegram.cmd_week"), "channel" to w("telegram.cmd_channel"),
         "type" to w("telegram.cmd_type"), "scenes" to w("telegram.cmd_scenes"), "bedtime" to w("telegram.cmd_bedtime"), "limits" to w("telegram.cmd_limits"),
         "schedule" to w("telegram.cmd_schedule"), "alerts" to w("telegram.cmd_alerts"),
         "unlock" to w("tg.cmd_unlock"), "lock" to w("tg.cmd_lock"), "time" to w("tg.cmd_time"), "more" to w("tg.cmd_more"),
@@ -916,6 +980,11 @@ class Telegram(
 
     companion object {
         const val REMOTE = "remote"
+        /** The /help menu's buttons, each a command with no argument. */
+        val MENU = listOf("remote", "status", "now", "apps", "scenes", "off")
+        /** Commands that wait on the TV (ADB, a screenshot, speech): the chat shows "typing…" meanwhile. */
+        val SLOW = setOf("off", "on", "shot", "now", "say", "speak", "channel", "type", "open", "scene", "apps", "usage", "week")
+        const val SLOW_MS = 20_000L
         const val FULL = "full"
         const val VIEW = "view"                         // /status and /shot only; the router refuses the rest
         private val SCOPES = listOf(FULL, REMOTE, VIEW)

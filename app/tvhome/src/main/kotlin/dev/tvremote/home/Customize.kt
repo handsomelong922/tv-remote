@@ -892,6 +892,7 @@ object Customize {
             section(a.getString(R.string.g_sec_shown))                // nothing on the first screen is forced: each can go (HomeConfig.SHOWS)
             tile(R.drawable.ic_timer, a.getString(R.string.show_clock), null, "showClock")
             tile(R.drawable.ic_calendar, a.getString(R.string.show_date), null, "showDate")
+            tile(R.drawable.ic_updown, a.getString(R.string.fix_head), null, "fixHead")   // default off (HomeConfig "fixHead")
             tile(R.drawable.ic_wifi, a.getString(R.string.show_net), null, "showNet")
             tile(R.drawable.ic_input, a.getString(R.string.show_inputs), null, "showInputs")   // default off (HomeConfig "showInputs")
             tile(R.drawable.ic_settings, a.getString(R.string.show_gear), null, "showGear")
@@ -951,6 +952,10 @@ object Customize {
         groups[4].fill = {
             tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
             tile(R.drawable.ic_clock, a.getString(R.string.dface), null, "dface", HomeConfig.DFACES.map { it to a.getString(when (it) { "modern" -> R.string.home_ov_modern; "digital" -> R.string.home_ov_digital; else -> R.string.dface_big }) })
+            // photo slideshow (default off: the wallpaper and the clock as before); a folder needs the storage permission, asked here when no client granted it
+            tile(R.drawable.ic_image, a.getString(R.string.dphoto), null, "dphoto", HomeConfig.DPHOTOS.map { it to a.getString(when (it) { "mine" -> R.string.dphoto_mine; "pictures" -> R.string.dphoto_pictures; "dcim" -> R.string.dphoto_dcim; "usb" -> R.string.dphoto_usb; else -> R.string.dphoto_off }) },
+                then = { PhotoShow.ask(a, Store.get(a).optString("dphoto")) })
+            tile(R.drawable.ic_clock, a.getString(R.string.dpclock), null, "dpclock")
             // dark hours (OLED care, default off): a switch, and when on the From and To tiles, OK opens a stepper (timeStepper)
             fun span() = HomeConfig.dark(Store.get(a).optString("ddark")).ifEmpty { null }?.split("-")
             fun setSpan(from: String, to: String) { Store.change(a, JSONObject().put("ddark", if (from == to) "" else "$from-$to")) }
@@ -1303,7 +1308,7 @@ object Customize {
             panelDialog?.dismiss(); onHome(a, HomeConfig.ADD) { it.addPanel(back = { backTo(it, 0) }) }
         }
         if (!quick) door(R.drawable.ic_pen, a.getString(R.string.el_edit), { a.getString(R.string.el_edit_sub) }) { panelDialog?.dismiss(); onHome(a, HomeConfig.EDIT) { it.edit(back = { backTo(it, 1) }) } }
-        if (quick) door(R.drawable.ic_keyboard, a.getString(R.string.c_quickkeys), { a.getString(if (Keys.setup(a)) R.string.k_everywhere else R.string.k_need_setup) }) { QuickKeys.show(a) }
+        if (quick) door(R.drawable.ic_keyboard, a.getString(R.string.c_quickkeys), { a.getString(if (!Keys.setup(a)) R.string.k_need_setup else if (Keys.refused(a)) R.string.k_refused else R.string.k_everywhere) }) { QuickKeys.show(a) }
         return doors
     }
 

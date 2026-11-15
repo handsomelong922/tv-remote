@@ -220,6 +220,9 @@ object KeyFix {
     fun wanted(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)
     fun want(c: Context, on: Boolean) { c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("on", on).apply(); sync(c) }
     fun can(c: Context): Boolean = c.packageManager.checkPermission(PERM, c.packageName) == PackageManager.PERMISSION_GRANTED
+    /** The TV took the service out [REARM] times and KeyFix gave up (keyfix_refused): kept so TV Home and the page say why the keys work on Home only. */
+    fun refusedByTv(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("refused", false)
+    private fun refusedByTv(c: Context, on: Boolean) { if (refusedByTv(c) != on) c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("refused", on).apply() }
 
     /**
      * The list with [SERVICE] put in or taken out, the others (KeyCatch while the screen is off, TalkBack) as they were. The entries
@@ -284,8 +287,9 @@ object KeyFix {
         val others = (Settings.Secure.getString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: "").split(":").count { it.isNotEmpty() && !isOurs(it) }
         val on = try { Settings.Secure.getInt(r, Settings.Secure.ACCESSIBILITY_ENABLED) } catch (e: Exception) { -1 }
         val adb = dev.tvremote.setup.RemoteService.adb()
-        return "sdk ${Build.VERSION.SDK_INT}, adb ${if (adb != null) "up" else "down"}, add-on by $installer, $addon, known $known, others $others, a11y $on" +
-            (adb?.let { a -> try { ", " + seen(a.shell(SEEN_CMD, 5000)) } catch (e: Exception) { "" } } ?: "")
+        // the fields that tell the kinds apart first: the census keeps 150 characters, and "com.android.shell" pushed rs / bound past them (5b2afde4)
+        val seen = adb?.let { a -> try { seen(a.shell(SEEN_CMD, 5000)) + ", " } catch (e: Exception) { "" } } ?: ""
+        return "${seen}sdk ${Build.VERSION.SDK_INT}, adb ${if (adb != null) "up" else "down"}, add-on by ${installer.removePrefix("com.android.")}, $addon, known $known, others $others, a11y $on"
     }
 
     // ADT-3 (sdk 34, census fbed4da8): known yes, add-on running and allowed, yet taken out with nothing else in the list. Whether Android
@@ -336,6 +340,7 @@ object KeyFix {
             android.util.Log.i("KeyFix", "global keys ${map.size}, to bring back ${now0.keys}, service on=$has")   // adb logcat -s KeyFix
             val need = (wanted(c) && now0.isNotEmpty()) || HoldKeys.on(c) || MicVoice.on(c)   // a dead key to bring back, "hold to use Input" (HoldKeys), or the mic button (MicVoice)
                 || KeyTest.live()                                     // the key tester is open: Home and the app buttons are shown through the filter
+                || HomeKeys.multiOn(c)                                // a key with a double press or a hold of its own (MultiKey)
                 || HomeKeys.bar(c)                                    // Home over an app shows TV Home's bar ([HomeBar])
                 || HomeKey.pkg(c) != null                             // Home to the launcher picked: asked for on the page, not by the dead-key switch
             if (need && !KeysAddon.current(c)) { KeysAddon.installThen(c) { sync(c) }; return }   // the service is in the add-on: put it on the TV first (it comes back here)
@@ -347,11 +352,11 @@ object KeyFix {
                 later?.invoke(3000) ?: run { Thread.sleep(3000); sync(c) }
                 return
             }
-            if (need == has && !old && !back) { if (has && System.currentTimeMillis() - wrote >= 60000) refused = 0; return }   // it stayed past the guard: the policy let go
+            if (need == has && !old && !back) { if (has && System.currentTimeMillis() - wrote >= 60000) { refused = 0; refusedByTv(c, false) }; return }   // it stayed past the guard: the policy let go
             val t = System.currentTimeMillis()
             if (need && !old && !back && t - wrote < 60000) {                // the system took it out again just now (a policy): not every few seconds
                 val wait = rearm(t, wrote, refused)
-                if (wait == null) "service taken out ${REARM}x; ${refusedWhy(c)}".let { android.util.Log.w("KeyFix", "refused: $it"); dev.tvremote.setup.health.AdbReport.once(c, "keyfix_refused", it) }
+                if (wait == null) "service taken out ${REARM}x; ${refusedWhy(c)}".also { refusedByTv(c, true) }.let { android.util.Log.w("KeyFix", "refused: $it"); dev.tvremote.setup.health.AdbReport.once(c, "keyfix_refused", it) }
                 else {                                                // the add-on's ACCESS_RESTRICTED_SETTINGS may be back to ignore since the link's prepare
                     refused++                                         // (ADT-3, census fbed4da8: the same signature as the API 34 emulator with it set to ignore)
                     dev.tvremote.setup.RemoteService.adb()?.let { KeysAddon.prepare(it) }
@@ -359,7 +364,7 @@ object KeyFix {
                 }
                 return
             }
-            if (need) wrote = t
+            wrote = if (need) t else 0L                                  // taken out by us: put back within a minute is not "the system took it out"
             val now = list(was, need)
             Settings.Secure.putString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, now.ifEmpty { null })
             Settings.Secure.putInt(r, Settings.Secure.ACCESSIBILITY_ENABLED, if (now.isEmpty()) 0 else 1)

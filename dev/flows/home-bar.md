@@ -3,7 +3,7 @@
 Read [README.md](README.md) first: change the row a fault belongs to, and this file in the same commit. Next to
 [home-screen.md](home-screen.md): that one decides which launcher Home opens; this one decides whether Home first shows a bar.
 
-**Code:** `app/tvsetup/src/main/kotlin/dev/tvremote/setup/home/HomeBar.kt`, `app/tvsetup/src/main/kotlin/dev/tvremote/setup/KeysBridge.kt`,
+**Code:** `app/tvsetup/src/main/kotlin/dev/tvremote/setup/home/HomeBar.kt`, `app/tvsetup/src/main/kotlin/dev/tvremote/setup/KeysBridge.kt`, `app/tvsetup/src/main/kotlin/dev/tvremote/setup/rules/Usage.kt`,
 `app/tvsetup/src/main/kotlin/dev/tvremote/setup/home/HomeKeys.kt`, `app/tvsetup/src/main/kotlin/dev/tvremote/setup/keys/KeyFix.kt`,
 `app/tvhome/src/main/kotlin/dev/tvremote/home/DockBarActivity.kt`.
 
@@ -29,14 +29,14 @@ the app beneath stays visible and running. No service, receiver or timer of our 
 | # | Told apart by | Then | Test |
 |---|---|---|---|
 | 1 | option off | `KeysBridge` plan has no bar: Home as before (the swap, or the key way's rule `homekey`) | |
-| 2 | option on, an app in front | the bar (`KeyFix.BAR`) | `anAppInFrontGetsTheBar` |
+| 2 | option on, an app in front (`Usage.front`: the last 15 min of usage events, else the last 6 h, so a film watched for an hour still counts) | the bar (`KeyFix.BAR`) | `anAppInFrontGetsTheBar` |
 | 3 | option on, TV Home in front (home screen, or the bar itself) | Home as before: the rule `homekey`'s launcher, else the HOME intent; from the bar this is the second Home, the bar closes in `onStop` | `aHomeScreenInFrontLetsHomeThrough` |
 | 4 | option on, nothing known in front, or the system's bars | Home as before | `nothingKnownOrTheSystemsBarsLetHomeThrough` |
 | 5 | Home held 500 ms | the TV's own long press, as in the key way (`HomeKey.longPress`) | |
 | 6 | the add-on not installed or not on (no key filter); turned off in Settings: left off, not written again (`KeyFix.addonOff`); turned on again: taken out of the list and put back 3 s later, or Android keeps it "crashed" and unbound | Home as before; the page's text says the bar needs TV Setup | |
 | 7 | screen off | the add-on does not take keys while it is off: Home wakes the TV as before | |
 | 8 | a client's Home: the TV web page (`/api/key` -> `KeysBridge.press`) or the Computer app's ADB fallback (`RulesClient.key`, only when its remote link is down) | the same decision as a real press: option on and an app in front: the bar (`KeysBridge.press` -> `homeBar`); option off: injected, Home as before. The Phone app's ADB link and `input keyevent` skip the filter: no bar there | |
-| 9 | the add-on's service taken out again within 60 s of being written (a policy, or its ACCESS_RESTRICTED_SETTINGS back to ignore: Android 14 drops it then) | with ADB up its appops are set again (`KeysAddon.prepare`) before one more look; after `REARM` tries: Home as before, `keyfix_refused` reported once with `KeyFix.seen` (the appop, bound / crashed) (KeyFixTest) | |
+| 9 | the add-on's service taken out again within 60 s of being written (a policy, or its ACCESS_RESTRICTED_SETTINGS back to ignore: Android 14 drops it then) | with ADB up its appops are set again (`KeysAddon.prepare`) before one more look; after `REARM` tries: Home as before, `keyfix_refused` reported once with `KeyFix.seen` (the appop, bound / crashed), and `KeyFix.refusedByTv` kept (cleared once the service stays): HomeInfo `keys` answers `refused`, so TV Home's key screens and the page say the keys work on TV Home only (sdk 29 "google" boxes: never bound, no appop to give back) (KeyFixTest) | |
 
 ## In the bar
 
@@ -53,3 +53,14 @@ link sets. Without TV Setup nothing starts it, so there is no bar and Home is th
 
 A key given "Voice command" (target `do:voice`, `KeyFix.VOICE`, `SetupNeed` "voicekey") opens TV Setup's `MicActivity` from the key
 filter, the same way the bar is started; the key is taken only when a voice recognizer is on the TV. Home is never such a key.
+
+A key can also have a **double press** and a **hold** of its own (`keydbl` / `keyhold`, `HomeConfig.KEY_MULTI`; never Home, Back, arrows, OK, volume, power, numbers).
+`KeysBridge.multi` runs them through `app/tvsetup/src/main/kotlin/dev/tvremote/setup/keys/MultiKey.kt` (`SetupNeed` "keymulti", test `MultiKeyTest`):
+
+| # | Told apart by | Then |
+|---|---|---|
+| K1 | the key has neither, or "keyon" is off | passes at once, nothing waits |
+| K2 | a double press only | its up is eaten and `DOUBLE_MS` (300 ms) waited: a second down is the double; else the plain press (the key's rule, else `input keyevent` over ADB) |
+| K3 | a hold (with or without a double) | acts on release, not on press: held `HOLD_MS` (600 ms) is the hold, shorter is the plain press |
+| K4 | no rule of its own and no ADB link | passes at once (the plain press cannot be given back); nothing more happens |
+| K5 | another key during the wait | the waiting key's plain press runs first |

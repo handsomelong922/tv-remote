@@ -4,7 +4,31 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.54.0 - 2026-11-14
+
+Web 0.54.0 · Phone app 0.51.0 · TV app 0.52.0 · TV Home 0.34.0 · TV Channels 0.24.0 · TV Games 0.24.0 · TV Apps 0.8.0
+
+- TV Channels: "Pin to home screen" is always offered. When the home screen is another launcher (Google TV's own after a reset), it says so and offers "Use TV Home": TV Setup switches the home screen, and the channel is pinned on return
+- TV Setup's screen: an app update blocked by Google Play Protect says so in words instead of showing "launcher:install:INSTALL_FAILED_VERIFICATION_FAILURE".
+- TV Home's bar over an app now opens after an hour in the same film too (it looked only at the last 15 minutes)
+- TV Home stops its timers under a screensaver on Android 10 and older; the photo screensaver no longer retries unreadable pictures every half second
+- A sleep timer set while the TV's clock ran ahead is dropped once the clock is corrected; double press / hold timers no longer fire twice when two keys are held
+- Page fixes: "+30 min" no longer says "done" when the TV refused it; Telegram history shows the wrong-code alert by name and stops polling while the tab is hidden; Russian and Arabic counts use the right plural forms; running lines scroll the right way in Arabic; the update check stops retrying after the Computer app quits.
+- Fixes: a dropped Android TV connection (TV still starting, weak Wi-Fi) is retried instead of being taken for "not paired", and a wrong pairing code is no longer reported for a network error; keys queued while reconnecting are dropped after 1.5 s instead of all firing at once; a screenshot that stalls is an error, not a cut picture; Telegram sends no longer get cut by Stop and do not act on updates after it is switched off; the Home Assistant / Shortcuts "power on" answers at once instead of waiting up to 60 s; the phone app stops probing the TV's ADB port while in the background.
+
+- Telegram `/week`: screen time of the last 7 days (bars per day, daily average, top 5 apps). TV Setup drops usage days dated in the future (a box that booted with a wrong year) and no longer cuts real history when its clock is ahead.
+- TV Home screensaver: a photo slideshow (Customize → Screensaver, or the web page) from the wallpaper photos you sent, the TV's Pictures or DCIM folder, or a USB stick; crossfade every 20 s, optional clock, off by default.
+- More time for kids: the Telegram "app closed" / "TV time is up" alert has 30 min / 1 hour / Today buttons (Full chats), and a parent's grant for one app now also lifts that app's daily limit and its schedule until it ends (it only lifted the PIN before); on the page, an app outside its schedule window gets "+30 min" and shows "Open until". A grant never lasts more than a day, so a TV clock jump cannot keep it. Needs TV Setup 0.51.1 or newer.
+- Telegram: /help, /start and a plain message come with buttons (remote, status, playing, apps, scenes, TV off); slow commands show "typing…", a TV silent for 20 s gets one "still waiting" line, and a failed command says so instead of staying quiet.
+- Remote keys: a double press and a hold per key (color keys, YouTube / Netflix / Prime buttons, Menu, Info, Guide) can each open an app, a shortcut or a scene, set in Quick keys on the page. Off by default; only a key with a double press waits 0.3 s, the others stay instant. Needs TV Setup 0.51.1.
+- Xiaomi TVs on Android 14: a new home screen no longer turns PatchWall off (with it off, every volume press blanked the screen); Home reaches it through TV Setup's key filter instead.
+- TV Home: a switch to keep the clock, date and top buttons in place while the apps scroll under them (off by default; Customize > Look, the header's menu and the page). Apps and widgets fade out as they pass under it.
+- Clearer names for Quick keys in every language: "Quick keys & power-on" for the card, "press a remote key to open an app" for what it does.
+- TV Setup, TV Home: on boxes that keep switching TV Setup's key filter off (many cheap Android 10 boxes), TV Home's Quick keys and the web page now say the keys work only on TV Home, instead of claiming they work in every app.
+
+## 0.53.0 - 2026-11-12
+
+Web 0.53.0 · Phone app 0.50.0 · TV app 0.51.0 · TV Home 0.33.0 · TV Channels 0.23.0 · TV Games 0.24.0 · TV Apps 0.8.0
 
 - TV Setup: on Android 14 boxes (ADT-3) where the key add-on lost its "restricted settings" permission, dead keys, the mic button and the Home bar stopped working after three tries; TV Setup now gives that permission back over ADB before trying again.
 - TV Home: a "Now playing" widget. Music or a video playing behind Home (SmartTube, Spotify...) shows its app and title; OK pauses or plays it, and an app paused behind Home plays again. With nothing playing it shows the last one played (OK opens that app), never a blank box. Read by TV Setup over ADB (needs TV Setup 0.50.1).

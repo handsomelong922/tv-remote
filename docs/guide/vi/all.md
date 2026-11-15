@@ -509,9 +509,9 @@ Chọn nhiều hình rồi đặt **Đổi hình nền** (30 phút → mỗi l�
 | Trên TV Home | Là gì |
 | --- | --- |
 | Thanh trên cùng | Hai nút: **Mạng** (trạng thái) và **Cài đặt** = [Cài đặt nhanh](#home-control), nơi có Nguồn vào và các nút Tắt nguồn / Khởi động lại / Tắt màn hình / Chế độ chờ. |
-| Tùy chỉnh | Danh sách nhóm, OK để vào từng nhóm: **Chủ đề**, Hình nền, **Giao diện** (cả bố cục), Widget, **Màn chờ**, **Phím & khởi động**, **Hệ thống** (**Màn hình chính**, Ngôn ngữ). |
+| Tùy chỉnh | Danh sách nhóm, OK để vào từng nhóm: **Chủ đề**, Hình nền, **Giao diện** (cả bố cục), Widget, **Màn chờ**, **Phím nhanh & khi bật TV**, **Hệ thống** (**Màn hình chính**, Ngôn ngữ). |
 | Màn hình chính | Trong **Hệ thống**: mở bộ chọn launcher của TV Setup để đổi sang launcher khác (cần TV Setup) |
-| Phím & khởi động | Phím remote mở app, app tự mở khi bật TV |
+| Phím nhanh & khi bật TV | Phím remote mở app, app tự mở khi bật TV |
 
 ### Mẹo
 
@@ -672,6 +672,8 @@ Hai tùy chọn cho nền của TV Home, tính trên TV, không cần mạng.
 3. Màn OLED: chọn nền **Đen**, rồi bật **Nhích nhẹ màn hình mỗi phút** (Tùy chỉnh → Màn chờ). Mặc định tắt.
 4. Cả màn hình chính dịch 1 dp mỗi phút trong ô vuông 6 dp, không thấy giật; hình nền đứng yên.
 5. Màn chờ tối đen ban đêm (Tùy chỉnh → Màn chờ): bật, rồi chọn **Từ** và **Đến**, mỗi bước 30 phút (trên TV: OK hoặc Phải). Trong giờ đó chỉ còn màn đen. Mặc định tắt.
+6. **Ảnh cho màn chờ** (Tùy chỉnh → Màn chờ, hoặc trang web): chiếu ảnh chậm, 20 giây một tấm, mờ dần. Nguồn: ảnh nền bạn đã gửi, thư mục Pictures, DCIM hoặc USB. Mặc định tắt.
+7. Thư mục cần quyền đọc ảnh (cấp qua ADB, hoặc TV hỏi một lần). Có thể giấu đồng hồ.
 
 ## Cài đặt nhanh (TV Home)
 
@@ -690,6 +692,8 @@ Tắt hẳn khi TV không có ADB: bật TV Setup Keys (Hỗ trợ tiếp cận)
 Nút **Màu lớp phủ** cạnh đó: Tối, Lọc ánh sáng xanh, Vàng, Nâu cổ, Đỏ đêm, Xanh. Cần TV Setup mới.
 
 Nút **Nguồn vào** riêng trên thanh trên (mặc định tắt): Tùy chỉnh → Giao diện → **Hiện trên màn hình chính**.
+
+Tùy chỉnh → Giao diện → **Cố định giờ và ngày khi cuộn** (mặc định tắt): giờ, ngày và các nút đứng yên khi cuộn app.
 
 Tùy chỉnh → Giao diện → **Chỉ hiện cổng HDMI/AV đang cắm** (mặc định tắt): cổng trống nằm trong Nguồn vào khác.
 
@@ -731,7 +735,7 @@ Phím nhanh mở app ngay từ màn hình chính bằng một phím số hoặc 
 - Cùng ô đó có **Ứng dụng vừa dùng**: mở app đang chạy lúc tắt TV (mặc định tắt).
 - Live widget cũng gán được và hiện icon riêng. Có cả **Lệnh giọng nói**: mở micro của TV Remote (cần TV Setup 0.46.1).
 
-Tùy chỉnh → Phím & khởi động → **Phím Home trong app: hiện thanh app** (mặc định tắt).
+Tùy chỉnh → Phím nhanh & khi bật TV → **Phím Home trong app: hiện thanh app** (mặc định tắt).
 
 Home trong app mở thanh: Trang chủ, Dock, app gần đây. OK mở, Back đóng, Home lần nữa về TV Home. Cần TV Setup Keys.
 
@@ -739,9 +743,10 @@ Home trong app mở thanh: Trang chủ, Dock, app gần đây. OK mở, Back đ�
 
 Phím màu, phím số và nút đã hết tác dụng có thể mở app bạn chọn. Cần [TV Home](#home); muốn chạy ở mọi app thì cần thêm TV Setup.
 
-1. Trên TV: biểu tượng **⚙** góc trên → **Cài đặt nhanh** → **Tùy chỉnh** → **Phím & khởi động** → **Phím nhanh**. Điện thoại, máy tính: cùng tên, trong thẻ **Phím & khởi động**.
-2. Chọn ô của một phím, rồi chọn app, lối tắt hoặc live widget. Lần đầu chọn, phím tự bật. Ngoài TV Home, TV hiện "TV Setup đã mở…" để biết không phải TV lỗi.
-3. Ô **Khi bật TV**: chọn một app, hoặc **Ứng dụng vừa dùng** (app đang chạy lúc tắt TV). Mở một lần mỗi lần bật, không mở nếu TV đã vào app khác. Chọn cái này thì cái kia tắt.
+1. Trên TV: biểu tượng **⚙** góc trên → **Cài đặt nhanh** → **Tùy chỉnh** → **Phím nhanh & khi bật TV** → **Phím nhanh**. Điện thoại, máy tính: cùng tên, trong thẻ **Phím nhanh & khi bật TV**.
+2. Chọn ô của một phím, rồi chọn app, lối tắt hoặc live widget. Lần đầu chọn, phím tự bật.
+3. Ô **Khi bật TV**: chọn một app, hoặc **Ứng dụng vừa dùng** (app đang chạy lúc tắt TV). Mở một lần mỗi lần bật, không mở nếu TV đã vào app khác.
+4. **Bấm đúp và giữ**: phím màu, YouTube/Netflix/Prime, Menu, Info, Guide mở một app hay cảnh khi bấm đúp hoặc giữ 0,6 giây. Chỉ phím có bấm đúp mới chờ 0,3 giây.
 
 | Phím | Gán được khi nào |
 | --- | --- |
@@ -757,7 +762,7 @@ Phím màu, phím số và nút đã hết tác dụng có thể mở app bạn 
 
 ### Mẹo
 
-- Ô của app đã gán hiện phím ở góc trên (chấm màu, số hoặc biểu tượng), tắt phím nhanh thì ẩn.
+- Ô của app đã gán hiện phím ở góc trên.
 - Phím nhanh dùng chung bàn phím này: xem [Phím nhanh](#home-quickkeys).
 
 ## Sửa phím chết, giữ để đổi
@@ -780,6 +785,8 @@ Cần TV Setup trên TV và ADB đang bật. Các việc dưới đây tự ch�
 
 > 💡 TV không có ADB: add-on này cũng mở menu nguồn của hệ thống cho nút Tắt TV trên TV Home ([Cài đặt nhanh](#home-control)).
 
+> 💡 Vài hộp TV giá rẻ cứ tự tắt add-on. TV Setup thử 3 lần rồi thôi; Phím nhanh và trang web sẽ ghi: phím chỉ chạy ở TV Home.
+
 > 💡 Bạn tự tắt add-on trong Cài đặt của TV (Hỗ trợ tiếp cận) thì nó được để tắt, TV Setup không bật lại.
 
 ## TV Channels, kênh truyền hình miễn phí
@@ -795,6 +802,7 @@ App trên TV phát kênh từ danh sách công khai của iptv-org và các kên
 
 | Trên TV | Cách dùng |
 | --- | --- |
+| 📌 **Ghim ra màn hình chính** | Màn hình chính chưa phải TV Home: bấm “Dùng TV Home”, TV Setup đổi giúp, quay lại là kênh được ghim. |
 | 🔍 **Tìm kênh** | Dòng đầu bên trái, OK rồi gõ tên. Kênh của nước đang chọn hiện trước, rồi “Ở nước khác”. Lần đầu tải danh sách khoảng 3 MB. |
 | 🔔 **Nhắc chương trình** | Trong lịch phát sóng, OK trên chương trình sắp chiếu (OK lần nữa để bỏ). 2 phút trước giờ chiếu hiện thẻ ở góc: OK xem, Back bỏ qua. |
 | 🔔 **Trên app khác** | Cần quyền “hiển thị trên ứng dụng khác”: app điện thoại / máy tính tự bật khi dùng thẻ Kênh TV. Màn hình TV tắt thì không nhắc. |
@@ -1050,6 +1058,7 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 2. Bấm **Thêm giới hạn app**, chọn app và số phút mỗi ngày (30 phút đến 4 giờ).
 3. Hết giờ, TV báo trước rồi đóng app đó.
 4. **+30p** cho app thêm 30 phút hôm nay; **Đặt lại** bỏ phần cho thêm.
+5. Con hết giờ? Tin Telegram “đã đóng app” có nút **30 phút · 1 giờ · Hôm nay**: một chạm mở lại app, hết giờ tự đóng. Xem [Telegram](#telegram-more).
 
 | Thẻ | Làm gì |
 | --- | --- |
@@ -1099,7 +1108,7 @@ Ví dụ: YouTube chỉ mở từ thứ Hai đến thứ Sáu, 16:00 đến 18:0
 
 Giờ qua nửa đêm (22:00 đến 02:00) tính cho ngày bắt đầu.
 
-Trong giờ không hỏi PIN, trừ app đã khóa bằng [mã PIN](#lock). Cho thêm phút hôm nay: **＋30 phút** ở dòng của app.
+Trong giờ không hỏi PIN, trừ app đã khóa bằng [mã PIN](#lock). Cho thêm phút hôm nay: **＋30 phút** ở dòng của app. Ngoài giờ, **＋30 phút** mở app 30 phút.
 
 > 💡 Cần TV Setup bản mới (nhiều khung giờ cần bản mới hơn). Lịch chạy ngay trên TV, không cần điện thoại bật. Không chặn được riêng YouTube Shorts: chỉ chặn được cả app.
 
@@ -1154,6 +1163,8 @@ Lệnh:
 /say Ăn cơm nhé  /speak Ăn cơm nhé  /shot  /remote  /help
 ```
 
+**/help** có nút cho việc hay dùng. Lệnh chậm hiện “đang gõ…”; TV im 20 giây hay lỗi thì bot báo.
+
 Chat mới ghép chỉ có quyền **Chỉ remote**; chủ TV nâng lên **Toàn quyền** trong danh sách chat. **/speak** giống /say nhưng TV còn đọc to lời nhắn (cần giọng đọc trên TV).
 
 YouTube, Netflix và các app phim có bản quyền chặn chụp màn hình: **/shot** ra ảnh đen, kèm một câu giải thích.
@@ -1165,15 +1176,15 @@ YouTube, Netflix và các app phim có bản quyền chặn chụp màn hình: *
 Thêm lệnh cho bot, và TV tự nhắn khi có việc. Cần đã ghép đôi một chat (xem bài trước).
 
 ```
-/apps  /usage  /now  /scenes
+/apps  /usage  /week  /now  /scenes
 /channel VTV3  /type xin chào
 /bedtime  /limits  /schedule  /alerts
 ```
 
-1. **/apps** hiện app dùng nhiều nhất hôm nay; **/usage** cho 5 app dùng lâu nhất và tổng giờ màn hình.
+1. **/apps** hiện app dùng nhiều nhất hôm nay; **/usage** cho 5 app dùng lâu nhất và tổng giờ màn hình. **/week** cho 7 ngày qua: giờ từng ngày (thanh ngang), trung bình mỗi ngày và 5 app dùng nhiều nhất.
 2. **/now** cho biết đang phát gì, kèm nút chụp màn hình. **/channel** mở kênh trong TV Channels.
 3. **/bedtime**, **/limits**, **/schedule** cho xem luật. Chat **Toàn quyền** bật/tắt giờ ngủ, chặn hoặc mở app; mỗi thay đổi có nút **Hoàn tác**.
-4. **/alerts** chọn tin TV tự gửi: bật/tắt TV, app bị đóng, giờ ngủ, hẹn giờ tắt, thiết bị mới ghép. Tối đa một tin mỗi loại mỗi phút.
+4. **/alerts** chọn tin TV tự gửi: bật/tắt TV, app bị đóng, giờ ngủ, hẹn giờ tắt, thiết bị mới ghép. Tối đa một tin mỗi loại mỗi phút. Tin “đã đóng app” có nút thêm giờ.
 
 Trong **🛠️ Cài đặt** bạn thấy trạng thái bot, mã QR để ghép đôi bằng một lần quét, từng chat với quyền và loại tin, và lịch sử 7 ngày. Nội dung /type và /say không được lưu.
 
@@ -1220,7 +1231,7 @@ Máy phải cùng Wi-Fi với TV.
 | `notify=Có khách&title=Chuông cửa` | Hiện thẻ tin nhắn trên màn hình TV (title= và seconds= 1 đến 60 là tuỳ chọn; thêm `speak=1` để TV đọc to, `lang=` là ngôn ngữ). Cần TV Setup. |
 | `volume=20` / `up` / `down` / `mute` | Đặt âm lượng (0 đến 100) hoặc tăng, giảm, tắt tiếng. |
 | `power=on` / `off` / `toggle` | Bật, tắt hay đổi trạng thái. |
-| `minutes=15&for=com.google.android.youtube.tv` | Cho thêm phút xem hôm nay (1 đến 240) cho app đã đặt giới hạn; bỏ `for=` là cộng vào tổng giờ TV mỗi ngày. Hợp với web học bài: làm đạt thì gọi link. Cần TV Setup. |
+| `minutes=15&for=com.google.android.youtube.tv` | Cho thêm phút xem hôm nay (1 đến 240) cho app đã đặt giới hạn hay lịch; bỏ `for=` là cộng vào tổng giờ TV mỗi ngày. Hợp với web học bài: làm đạt thì gọi link. Cần TV Setup. |
 | `&tv=Phòng ngủ` | Chỉ app máy tính: làm trên TV đã lưu có tên (hoặc địa chỉ) này, không phải TV đang chọn. Sai tên thì báo lỗi kèm danh sách TV. |
 | `/api/hook/state` | Chỉ đọc: TV đang bật không, đang chạy gì. |
 

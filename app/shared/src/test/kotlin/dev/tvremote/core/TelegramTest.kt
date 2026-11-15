@@ -328,7 +328,7 @@ class TelegramTest {
         bot.step(); bot.step(); bot.step()
         assertEquals(1, api.named("deleteWebhook").size); assertEquals(1, api.named("setMyCommands").size)
         assertEquals(3, api.named("getUpdates").size)
-        assertEquals(27, api.named("setMyCommands")[0].getJSONArray("commands").length())
+        assertEquals(28, api.named("setMyCommands")[0].getJSONArray("commands").length())
         assertEquals("ok", bot.status)
     }
 
@@ -460,6 +460,17 @@ class TelegramTest {
         tap(42, "l:on", 52); now += 61_000; bot.alert("on"); assertEquals(n + 3, api.sent(42).size)   // switched off again
     }
 
+    @Test fun aLimitAlertCarriesMoreTimeButtonsForFullChatsOnly() {
+        pairChat(42, "full"); pairChat(43, "remote")
+        tap(42, "l:limit"); tap(43, "l:limit", 51)
+        bot.alert("limit", "app" to "Netflix", "why" to "limit", "pkg" to "com.netflix.ninja")
+        val kb = api.named("sendMessage").filter { it.optLong("chat_id") == 42L }.last().toString()
+        for (d in listOf("u:30:com.netflix.ninja", "u:60:com.netflix.ninja", "u:d:com.netflix.ninja")) assertTrue(d, kb.contains(d))
+        assertFalse(api.named("sendMessage").filter { it.optLong("chat_id") == 43L }.last().has("reply_markup"))   // a Remote chat cannot grant
+        tap(42, "u:30:com.netflix.ninja", 5)
+        assertEquals(JSONObject("""{"do":"unlock","minutes":30,"pkg":"com.netflix.ninja"}""").toString(), rulesPosts().last().toString())
+    }
+
     @Test fun anUnoptedAlertDoesNotStartTheMinute() {
         pairChat(42)
         bot.alert("bed")
@@ -503,6 +514,7 @@ class TelegramTest {
             "/api/scenes" -> HttpServer.Response.json(JSONObject().put("scenes", scenes))
             else -> HttpServer.Response.ok() } }
         say(42, "/usage", 1); assertTrue(api.sent(42).last().contains("Netflix") && api.sent(42).last().contains("1"))
+        say(42, "/week", 9); assertTrue(api.sent(42).last().contains("Netflix") && api.sent(42).last().contains("█"))
         say(42, "/now", 2); assertTrue(api.sent(42).last().contains("Dark"))
         assertTrue(api.named("sendMessage").last().toString().contains("i:shot"))
         say(42, "/apps", 3); assertTrue(api.named("sendMessage").last().toString().contains("a:com.netflix.ninja"))
@@ -687,5 +699,48 @@ class TelegramTest {
         assertEquals(1, dates.size); assertTrue(api.sent(42).any { it.contains("TV") })
         val before = api.sent(42).size; skew = 0
         b.onUpdate(msg(42, "/status", 2, date = (now - 200_000) / 1000 - 1)); assertEquals(before, api.sent(42).size)   // really old: ignored
+    }
+
+    @Test fun weekTextHasADayBarsAndTopApps() {
+        val t = java.util.Calendar.getInstance().apply { set(2026, 10, 2, 12, 0) }.timeInMillis        // Nov 2: the week crosses no month edge back to Oct 27
+        val days = bot.lastDays(7, t)
+        assertEquals(listOf("2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02"), days)
+        val u = JSONObject("""{"2026-11-02":{"com.netflix.ninja":7200},"2026-11-01":{"com.netflix.ninja":3600,"x.y":1800},"2027-04-09":{"z.z":99999},"1970-01-01":{"q.q":99999}}""")
+        val out = bot.weekText(u, days, JSONObject().put("com.netflix.ninja", "Netflix"))!!
+        assertTrue(out.contains("Netflix") && out.contains("02/11") && !out.contains("z.z") && !out.contains("q.q"))
+        assertEquals(null, bot.weekText(JSONObject("""{"2027-04-09":{"z.z":99999}}"""), days, null))     // a jumped clock's day never counts
+    }
+
+    // ---------------------------------------------------------------- menu, "typing…", faults
+    @Test fun helpAndAPlainSentenceCarryTheMenuAndAMenuButtonRunsItsCommand() {
+        pairChat()
+        bot.onUpdate(msg(42, "/help"))
+        val menu = api.named("sendMessage").last().getJSONObject("reply_markup").toString()
+        for (c in Telegram.MENU) assertTrue(c, menu.contains("\"m:$c\""))
+        now += 5000
+        bot.onUpdate(msg(42, "hello", 2))
+        assertTrue(api.named("sendMessage").last().has("reply_markup"))
+        now += 5000
+        bot.onUpdate(JSONObject("""{"update_id":3,"callback_query":{"id":"cb9","data":"m:status","message":{"chat":{"id":42}}}}"""))
+        assertEquals("cb9", api.named("answerCallbackQuery").last().optString("callback_query_id"))
+        assertTrue(api.sent(42).last().contains("Netflix"))              // /status ran: the app on screen
+        now += 5000
+        bot.onUpdate(JSONObject("""{"update_id":4,"callback_query":{"id":"cb10","data":"m:pair","message":{"chat":{"id":42}}}}"""))
+        assertTrue(seen.none { it.path.contains("pair") })               // only the menu's own commands
+    }
+
+    @Test fun aSlowCommandShowsTypingFirstAndAFaultIsToldNotSwallowed() {
+        pairChat()
+        bot.onUpdate(msg(42, "/off"))
+        val i = api.calls.indexOfFirst { it.first == "sendChatAction" }
+        assertTrue(i >= 0 && i < api.calls.indexOfLast { it.first == "sendMessage" })
+        assertEquals("typing", api.calls[i].second.optString("action"))
+        now += 5000; val before = api.named("sendChatAction").size
+        bot.onUpdate(msg(42, "/help", 2))
+        assertEquals(before, api.named("sendChatAction").size)          // instant ones: no "typing…"
+        now += 5000
+        answer = { throw IllegalStateException("boom") }
+        bot.onUpdate(msg(42, "/on", 3))
+        assertEquals(Words.get("en", "tg.failed"), api.sent(42).last())
     }
 }

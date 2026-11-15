@@ -112,6 +112,7 @@ class HomeActivity : Activity() {
         java.util.concurrent.ThreadPoolExecutor.DiscardPolicy())   // a late job after onDestroy's shutdown is dropped, not thrown (census 1d158634)
     private lateinit var backdrop: Backdrop
     private lateinit var scroll: ScrollView
+    private lateinit var col: Col
     private lateinit var content: FrameLayout
     private lateinit var glass: Glass
     private lateinit var clock: TextClock
@@ -226,8 +227,8 @@ class HomeActivity : Activity() {
         backdrop = Backdrop(window.decorView)
 
         Motion.read(this, conf)
-        scroll = Scroller(this, { if (!touchScrolled) { touchScrolled = true; veil() } }) { Frost.moved(); slideCap?.translationY = -scroll.scrollY.toFloat() }.apply { isVerticalScrollBarEnabled = false; isFillViewport = true; clipChildren = false }   // the caption leaves with the top bar (it stayed and wrote over the widgets)
-        val col = LinearLayout(this).apply {
+        scroll = Scroller(this, { if (!touchScrolled) { touchScrolled = true; veil() } }) { Frost.moved(); held() }.apply { isVerticalScrollBarEnabled = false; isFillViewport = true; clipChildren = false }   // the caption leaves with the top bar (it stayed and wrote over the widgets)
+        col = Col(this, dp(40)).apply {
             orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false
             setPadding(dp(48), dp(34), dp(48), dp(48))
         }
@@ -290,7 +291,7 @@ class HomeActivity : Activity() {
         bar.focusIn = { scrollToY(0); glassTo(it) }
         for (b in bar.buttons) b.onFocusChangeListener.let { l -> b.setOnFocusChangeListener { v, f -> l?.onFocusChange(v, f); if (!f) glassOff() } }
         head.addView(bar)
-        col.addView(head)
+        col.addView(head); col.head = head
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
         widgets.onMenu = ::widgetMenu
         widgets.onFocus = { v, f -> if (f) { glassTo(v); if (HomeConfig.side(place())) scrollToY(0) } else glassOff() }   // a side column is in the first screen
@@ -362,6 +363,7 @@ class HomeActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (locked) return
+        dreamPaused = false                                           // the ticks start again below
         wantStart?.let { i -> wantStart = null; bar.post { if (!isDestroyed) startAction(i) } }   // started for one menu (the Input key, the Control Center over an app): once the home is up
         dev.tvremote.home.ui.ControlCenter.warm(this)
         layoutBack()
@@ -490,8 +492,8 @@ class HomeActivity : Activity() {
     private fun moreItem(at: String = "look") = gi(R.drawable.ic_sliders, getString(R.string.el_more)) { customize(at) }
     private fun hideItem(label: Int, key: String) = gi(R.drawable.ic_eye_off, getString(label)) { Store.change(this, JSONObject().put(key, false)) }
     /** A switch that stays in the menu: the home screen behind it changes at once. */
-    private fun switchItem(icon: Int, label: Int, key: String) = gi(icon, getString(label), on = { Store.get(this).optBoolean(key, true) })
-        { Store.change(this, JSONObject().put(key, !Store.get(this).optBoolean(key, true))) }
+    private fun switchItem(icon: Int, label: Int, key: String, def: Boolean = true) = gi(icon, getString(label), on = { Store.get(this).optBoolean(key, def) })
+        { Store.change(this, JSONObject().put(key, !Store.get(this).optBoolean(key, def))) }
 
     private val glassFont: (TextView) -> Unit = { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
 
@@ -587,7 +589,7 @@ class HomeActivity : Activity() {
 
     private fun headMenu() = elementMenu(getString(R.string.el_head), listOf(
         switchItem(R.drawable.ic_clock, R.string.show_clock, "showClock"), switchItem(R.drawable.ic_calendar, R.string.show_date, "showDate"),
-        switchItem(R.drawable.ic_message, R.string.greet, "greet"), moreItem(), editItem()), anchor = headLeft)
+        switchItem(R.drawable.ic_message, R.string.greet, "greet"), switchItem(R.drawable.ic_updown, R.string.fix_head, "fixHead", false), moreItem(), editItem()), anchor = headLeft)
 
     private fun barMenu(b: BarBtn) {
         val gear = b === settingsPill
@@ -675,7 +677,23 @@ class HomeActivity : Activity() {
     }
 
     override fun onPause() { if (locked) { super.onPause(); return }   // before the first unlock nothing below was made; unlocking recreate()s through here (census 91a5ee66)
-        if (moving != null) endMove(false); zoom.paused(); widgets.paused(true); ui.removeCallbacks(widgetTick); ui.removeCallbacks(clockTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(slideTick); ui.removeCallbacks(liveTick); ui.removeCallbacks(skyTick); ui.removeCallbacks(shiftTick); super.onPause() }
+        if (moving != null) endMove(false); zoom.paused(); ticksOff(); super.onPause() }
+
+    /** Every repeating look of the home screen stopped: left (onPause), or a screensaver laid over it on a TV that does not pause it. */
+    private fun ticksOff() {
+        widgets.paused(true); ui.removeCallbacks(widgetTick); ui.removeCallbacks(clockTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick)
+        ui.removeCallbacks(slideTick); ui.removeCallbacks(liveTick); ui.removeCallbacks(skyTick); ui.removeCallbacks(shiftTick)
+    }
+
+    /** [ticksOff] undone when the screensaver over a home screen that stayed resumed ends (onResume does the same for a real return). */
+    private fun ticksOn() {
+        ui.removeCallbacks(liveTick); ui.post(liveTick)
+        widgetsDrawn = ""; ui.removeCallbacks(widgetTick); ui.post(widgetTick); widgets.paused(false)
+        ui.removeCallbacks(clockTick); if (Build.VERSION.SDK_INT < 31) ui.postDelayed(clockTick, 61_000 - System.currentTimeMillis() % 60_000)
+        ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS)
+        slideGo(); wallTimer()
+    }
+    private var dreamPaused = false                                  // ticksOff by DREAMING_STARTED while Home stayed resumed (Android 10 and older)
 
     private var cpuAgain = false
 
@@ -1018,8 +1036,9 @@ class HomeActivity : Activity() {
     private val tick = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
             // a screensaver over Home: Android 11+ stops the activity, older TVs only lay a window over it and the video went on decoding
-            when (i.action) { Intent.ACTION_DREAMING_STARTED -> { video?.stop(); WebWall.sleep(web); return }
-                Intent.ACTION_DREAMING_STOPPED -> { if (!away) { video?.start(); WebWall.wake(web) }; return } }   // the live page sleeps under it too: it was drawing frames nobody sees
+            // ...and the live widgets, the network meter, the slides and the widgets' own timers went on all night: stopped with it
+            when (i.action) { Intent.ACTION_DREAMING_STARTED -> { video?.stop(); WebWall.sleep(web); if (!away && !locked) { ticksOff(); dreamPaused = true }; return }
+                Intent.ACTION_DREAMING_STOPPED -> { if (!away) { video?.start(); WebWall.wake(web) }; if (dreamPaused) { dreamPaused = false; if (!away) ticksOn() }; return } }   // the live page sleeps under it too: it was drawing frames nobody sees
             if (i.action == Intent.ACTION_TIME_TICK) ticked = android.os.SystemClock.elapsedRealtime()
             clockAndDay(); bingCheck()                                // Bing: a new day's picture seen while Home stays on
         }
@@ -1126,6 +1145,7 @@ class HomeActivity : Activity() {
         Motion.read(this, conf)
         Look.read(conf); glass.accent(Look.accent)
         if (!Motion.glass) glass.hide()
+        held()                                                        // "fixHead" switched: the top row goes back into the page, or stays
         wall()
         clockAndDay()
         widgetsRead()
@@ -1692,6 +1712,25 @@ class HomeActivity : Activity() {
      * [v] in view: the first row takes the page up with it; a row cut off by the screen's edge scrolls only as far
      * as it needs (a row a step, as CleanTV's Home: the upper third made each step down a long jump); one in full view stays put.
      */
+    /**
+     * "fixHead" (default off): the top row (clock, day, buttons) stays where it is while the page scrolls. It keeps its place in the
+     * column (so every measure that reads head.bottom is unchanged) and is moved down by the scroll; [Col] draws it last and cuts
+     * what scrolls under it at its bottom edge. Off: nothing runs but this one check per scroll step.
+     */
+    private fun held() {
+        val on = conf.optBoolean("fixHead", false)
+        if (on || col.on) {                                           // off (and never held): head.translationY stays enter()'s alone
+            val y = if (on) scroll.scrollY.toFloat() else 0f
+            if (head.translationY != y && !(on && y == 0f && head.alpha < 1f)) {   // at the top during enter()'s slide in: the slide owns it
+                col.on = on && y > 0
+                head.translationY = y; col.invalidate()              // the cut follows the scroll: the column's drawing is made again
+                glassAt?.let { if (it === headLeft || it is BarBtn) glassTo(it, false) }   // the pane was placed mid-glide (Up pressed twice): follow the row
+            }
+        }
+        slideCap?.translationY = head.translationY - scroll.scrollY   // the caption leaves with the top bar (it stayed and wrote over the widgets); kept with it
+    }
+    private fun headRoom() = if (conf.optBoolean("fixHead", false)) head.bottom else 0
+
     private fun reveal(v: View) {
         if (grid.indexOfChild(v.parent as? View) <= 0) { scrollToY(0); return }
         revealAt(v)
@@ -1701,8 +1740,8 @@ class HomeActivity : Activity() {
     private fun revealAt(v: View) {
         var y = 0; var p: View? = v
         while (p != null && p !== scroll) { y += p.top; p = p.parent as? View }
-        val margin = dp(40)
-        if (y - margin < scroll.scrollY) scrollToY(maxOf(0, y - margin))
+        val margin = dp(40); val top = headRoom()                    // kept in place, the top row covers that much of the screen
+        if (y - margin - top < scroll.scrollY) scrollToY(maxOf(0, y - margin - top))
         else if (y + v.height + margin > scroll.scrollY + scroll.height) scrollToY(y + v.height + margin - scroll.height)
     }
 
@@ -1897,7 +1936,7 @@ class HomeActivity : Activity() {
                 gravity = Gravity.END; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
         }
         root.addView(box, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(dp(CAP_X * 2), dp(CAP_Y), dp(CAP_X), 0) })
-        box.translationY = -scroll.scrollY.toFloat()
+        box.translationY = head.translationY - scroll.scrollY        // with the top row held ([held]) it stays with it
         box.animate().alpha(1f).setDuration(800).start()
         slideCap = box
     }
@@ -2860,6 +2899,55 @@ class HomeActivity : Activity() {
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean { if (e.actionMasked == android.view.MotionEvent.ACTION_MOVE) dragged(); return super.onTouchEvent(e) }
         override fun onGenericMotionEvent(e: android.view.MotionEvent): Boolean { if (e.actionMasked == android.view.MotionEvent.ACTION_SCROLL) dragged(); return super.onGenericMotionEvent(e) }   // a mouse wheel
         override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) { super.onScrollChanged(l, t, oldl, oldt); moved() }
+    }
+
+    /**
+     * The page's column: with the top row held ([held]) it draws that row last and cuts the rest at its bottom edge, so tiles and
+     * widgets pass under it. They fade out over [fade] px under the row (a hard cut sliced them right under the date) instead of
+     * stopping at a line: the band alone is drawn a second time, in a layer that size, masked by a gradient.
+     */
+    private class Col(c: Context, private val fade: Int) : LinearLayout(c) {
+        var head: View? = null
+        var on = false                                                // set by [held] only: the top row is held over a scrolled page
+        init { isChildrenDrawingOrderEnabled = true }
+        private var band = false                                     // drawing the faded band: the cut's top and bottom are its own
+        private val mask = android.graphics.Paint().apply {          // made once at 0..fade, moved to the cut (a new shader per scroll frame was GC on weak boxes)
+            xfermode = android.graphics.PorterDuffXfermode(PorterDuff.Mode.DST_IN)
+            shader = android.graphics.LinearGradient(0f, 0f, 0f, fade.toFloat(), 0, Color.BLACK, android.graphics.Shader.TileMode.CLAMP)
+        }
+        private var toHead = false                                    // this touch began above the cut: it is the row's, never a tile's hidden under it
+        private fun held() = on && head?.parent === this
+        private fun cut() = head!!.let { it.bottom + it.translationY }
+        override fun getChildDrawingOrder(n: Int, i: Int): Int {
+            if (!held()) return i
+            val h = indexOfChild(head)
+            return if (i == n - 1) h else if (i >= h) i + 1 else i
+        }
+        override fun dispatchTouchEvent(e: android.view.MotionEvent): Boolean {
+            if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) toHead = held() && e.y < cut()
+            if (!toHead) return super.dispatchTouchEvent(e)
+            val h = head!!
+            val m = android.view.MotionEvent.obtain(e); m.offsetLocation(-h.left - h.translationX, -h.top - h.translationY)
+            try { return h.dispatchTouchEvent(m) } finally { m.recycle() }
+        }
+        override fun dispatchDraw(canvas: android.graphics.Canvas) {
+            super.dispatchDraw(canvas)
+            if (!held()) return
+            val top = cut(); val w = width.toFloat()
+            @Suppress("DEPRECATION") val s = canvas.saveLayer(0f, top, w, top + fade, null, android.graphics.Canvas.ALL_SAVE_FLAG)
+            band = true
+            try { for (i in 0 until childCount) getChildAt(i).let { if (it !== head && it.visibility == View.VISIBLE) drawChild(canvas, it, drawingTime) } }
+            finally { band = false }
+            canvas.translate(0f, top); canvas.drawRect(0f, 0f, w, fade.toFloat(), mask)
+            canvas.restoreToCount(s)
+        }
+        override fun drawChild(canvas: android.graphics.Canvas, child: View, time: Long): Boolean {
+            if (child === head || !held()) return super.drawChild(canvas, child, time)
+            val top = cut()
+            val s = canvas.save()
+            if (band) canvas.clipRect(0f, top, width.toFloat(), top + fade) else canvas.clipRect(0f, top + fade, width.toFloat(), height + top + 10000f)
+            try { return super.drawChild(canvas, child, time) } finally { canvas.restoreToCount(s) }
+        }
     }
 
     /** A column whose alpha is applied to each child, not through a layer the size of the whole grid. */

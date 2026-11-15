@@ -5,7 +5,20 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-11-10**, upstream `3e06c1b2` (394 commits after `3c122bc073`), vgs-cleantv 4.0.9 (it republishes upstream's
+Last read: **2026-11-13**, upstream `b121838a66` (109 commits after `b95380483c`; 18 `debloat*.txt` new or changed: 5 new TVs, 135 packages not in our lists, none taken: each sits on one list or is a choice / held back / protected, e.g. Hisense `com.vt.*` on two lists of one brand), vgs-cleantv 4.1.2 (`c90b45193a`, lists unchanged), TV Slim `6b3cada1b9` (catalogue: only the Startlight launcher is now "disponible"). Noted, not acted on: PR 3848, a Xiaomi MiTV-ASTR0 (OS 4.0.1.0): with PatchWall (`com.mitv.tvhome`) disabled every volume press crashes MiTvSystemUI (NPE in `StatusbarManager.updateMuteState`); acted on in 9cb4a88c: on Android 14+ the home swap keeps PatchWall on and uses the key way (dev/flows/home-screen.md row 3c). Issue 3850 (Mi TV stick: custom home black-screens). No new breakage on any package we suggest.
+Before that: **2026-11-12**, upstream `b95380483c` (195 commits after `3e06c1b2`, 19 `debloat.txt` changed: 7 new or updated TVs, 103
+packages added, one removed), vgs-cleantv 4.1.0 (`6fc239b707`: a VGS account for TV settings and phone apps on its Home; no list
+changed; TV Home already lists phone apps, `Apps.kt`). Into bloat.json: KEEP Amazon `providers.contentsupport` (off on a Hisense
+55QD6QF Fire TV = in-app voice input stops, PR 3669 put it back), SUGGEST `com.android.ext.adservices.api` (the Privacy Sandbox
+module's name on some builds, the same as `adservices.api` we suggest). Already right: `xiaomi.mitv.updateservice` kept (PR 3656:
+it updates PatchWall), setupwraith before launcherx (3794, 3653). The rest were decided before (Google home rows / screensaver /
+Play Games / Duo: a choice; TCL `messagebox` / `usercenter` / `guard` / `smartalexa` / `waterfall`: held back or breaking; AOSP
+backup / CTS / health parts) or sit on one list each (Technicolor TIM box, Vestel `eib` / `speedup`, Xiaomi MFTR0 extras, MediaTek
+Freeview Play). Noted, not acted on: issue 3753, a Philips MediaTek TV (70PUS7906, Android TV 11) whose `com.mediatek.tv.service`
+opens the full Settings on Menu only when the top task is `com.google.android.tvlauncher`, Picture and Sound for any other Home
+(TV Home too); their fix watches for `tv.settings/.MainSettings` and reopens the full one. Needs a Philips to test: build it when
+one of our users reports it.
+Before that: **2026-11-10**, upstream `3e06c1b2` (394 commits after `3c122bc073`), vgs-cleantv 4.0.9 (it republishes upstream's
 lists). Into bloat.json: DROP Sony `sonybugreportsys` / `idd.agent` (issue 3608: off, USB Ethernet dies on a Sony VH2; their shared
 system uid holds NETWORK_SETTINGS; upstream PR 3609). Checked, already right: Undo turns Home screens on before the wizard (3578: setupwraith
 on with launcherx off ended in a factory reset; PRs 3620 / 3653 do the same). Noted, not acted on: 3446 / PR 3680 (setupwraith off kills

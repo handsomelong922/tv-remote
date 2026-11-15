@@ -28,7 +28,7 @@ const HOME_EVERY = { 'off': 'home.every_off', '30m': 'home.every_30m', '1h': 'ho
 // Remote keys that can open an app (HomeConfig.KEY_COLOURS / KEY_DEAD / KEY_NUMBERS), with their words; a dead key is listed only
 // when TV Setup offers it on this TV (config.keysDead: the dead keys, and the YouTube / Netflix / Prime buttons even while they work)
 const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.key_yellow', 186: 'home.key_blue', 170: 'home.key_tv', 178: 'home.key_input',
-  190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings' };
+  190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings', 82: 'home.key_menu', 165: 'home.key_info', 172: 'home.key_guide' };
 const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7
 const homeThemeName = (t) => (t.names || {})[window.LANG] || (t.names || {}).en || t.id;   // a ready-made theme's name in the page's language (the signed list's)
 const HOME_THEME_KEYS = ['wall', 'walls', 'wurl', 'wcol', 'wdir', 'wmode', 'wsnap', 'wkeep', 'wevery', 'shade', 'wfit', 'wfade', 'widgets', 'wsize', 'wopt', 'wplace', 'cols', 'center', 'rows', 'focus', 'tstyle', 'accent', 'motion', 'anim', 'clock24', 'greet'];   // HomeConfig.THEME_KEYS (tvcopy.test.js keeps them equal)
@@ -476,12 +476,16 @@ async function homeOpen() {
   const watchAtHead = el('h3', { textContent: T('home.watch_at') }), watchAt = el('div', { className: 'fchips' });   // where the Play Next items go (HomeConfig "watchAt"); only a TV Home that reports it
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
   const showInputs = el('input', { type: 'checkbox', onchange: () => send({ showInputs: showInputs.checked }) });   // HomeConfig "showInputs", default off
+  const fixHead = el('input', { type: 'checkbox', onchange: () => send({ fixHead: fixHead.checked }) });   // HomeConfig "fixHead", default off
   const infold = el('input', { type: 'checkbox', onchange: () => send({ infold: infold.checked }) });   // HomeConfig "infold", default off
   const lockLayout = el('input', { type: 'checkbox', onchange: () => send({ lockLayout: lockLayout.checked }) });   // HomeConfig "lockLayout", default off: the TV asks TV Setup's PIN before its layout changes; this page does not
   const homebar = el('input', { type: 'checkbox', onchange: async () => { if (homebar.checked && !await setupFor('homebar')) { homebar.checked = false; return; } send({ homebar: homebar.checked }); } });   // HomeConfig "homebar", default off; an older TV Setup would ignore it: asked to update first
   const shift = el('input', { type: 'checkbox', onchange: () => send({ shift: shift.checked }) });   // HomeConfig "shift", default off
   const dream = el('input', { type: 'checkbox', onchange: () => send({ dream: dream.checked }) });
   const dfaceHead = el('h3', { textContent: T('home.dface') }), dface = el('div', { className: 'fchips' });   // the screensaver's look (HomeConfig "dface"); only a TV Home that reports it
+  // the screensaver as a photo slideshow (HomeConfig "dphoto": "" = off, mine / pictures / dcim / usb; "dpclock" = the clock over it); only a TV Home that reports it
+  const dphotoHead = el('h3', { textContent: T('home.dphoto') }), dphoto = el('div', { className: 'fchips' });
+  const dpclock = el('input', { type: 'checkbox', onchange: () => send({ dpclock: dpclock.checked }) });
   // black screen in the night hours (HomeConfig "ddark": "" = off, else "HH:MM-HH:MM", 30-minute steps); only a TV Home that reports it
   const DARK_ON = '22:00-06:00';
   const ddarkOn = el('input', { type: 'checkbox', onchange: () => send({ ddark: ddarkOn.checked ? DARK_ON : '' }) });
@@ -493,7 +497,7 @@ async function homeOpen() {
   // remote keys that open an app, and the app that opens each time the TV turns on (HomeConfig keyon / keyapps / autoon / autoapp).
   // Both default off. TV Home answers a key on its own screen; TV Setup does it everywhere and the power-on app: said under each
   const keyOn = el('input', { type: 'checkbox', onchange: () => send({ keyon: keyOn.checked }) });
-  const keysHead = el('h3', { textContent: T('home.keys') }), keysNote = el('p', { className: 'note' }), keysList = el('div', { className: 'list' });
+  const keysHead = el('h3', { textContent: T('home.keys') }), keysNote = el('p', { className: 'note' }), keysList = el('div', { className: 'list' }), keysMulti = el('div');
   const keysOld = el('button', { type: 'button', className: 'small', onclick: homeUpdate, textContent: T('home.keys_old') });   // a TV Home from before them
   const autoNote = el('p', { className: 'note' });
   const autoAll = el('input', { type: 'checkbox', onchange: () => send({ autoall: autoAll.checked }) });   // HomeConfig autoall: also over an app or input the TV woke into
@@ -722,6 +726,7 @@ async function homeOpen() {
     lockLayout.checked = c.lockLayout === true; lockLayout.closest('label').hidden = c.lockLayout === undefined;   // an older TV Home does not report it
     shift.checked = c.shift === true; shift.closest('label').hidden = c.shift === undefined;
     showInputs.checked = c.showInputs === true; showInputs.closest('label').hidden = c.showInputs === undefined;   // an older TV Home does not report it
+    fixHead.checked = c.fixHead === true; fixHead.closest('label').hidden = c.fixHead === undefined;   // an older TV Home does not report it
     infold.checked = c.infold === true; infold.closest('label').hidden = c.infold === undefined;   // an older TV Home does not report it
     for (const k of SHOWS) { shows[k].checked = c[k] !== false; shows[k].closest('label').hidden = c[k] === undefined; }
     showHead.hidden = c.showClock === undefined;
@@ -749,6 +754,10 @@ async function homeOpen() {
     dfaceHead.hidden = dface.hidden = c.dface === undefined;
     dface.replaceChildren(...[['big', 'home.dface_big'], ['modern', 'home.ov_modern'], ['digital', 'home.ov_digital']].map(([k, id]) =>
       el('button', { type: 'button', className: c.dface === k ? 'on' : '', 'aria-pressed': String(c.dface === k), onclick: () => send({ dface: k }) }, T(id))));
+    dphotoHead.hidden = dphoto.hidden = c.dphoto === undefined;
+    dphoto.replaceChildren(...[['', 'home.dphoto_off'], ['mine', 'home.dphoto_mine'], ['pictures', 'home.dphoto_pictures'], ['dcim', 'home.dphoto_dcim'], ['usb', 'home.dphoto_usb']].map(([k, id]) =>
+      el('button', { type: 'button', className: (c.dphoto || '') === k ? 'on' : '', 'aria-pressed': String((c.dphoto || '') === k), onclick: () => send({ dphoto: k }) }, T(id))));
+    dpclock.checked = c.dpclock !== false; dpclock.closest('label').hidden = c.dphoto === undefined || !c.dphoto;
     ddarkOn.closest('label').hidden = c.ddark === undefined;
     const dk = /^(\d\d:\d\d)-(\d\d:\d\d)$/.exec(c.ddark || '');
     ddarkOn.checked = !!dk; ddarkTimes.hidden = c.ddark === undefined || !dk;
@@ -760,13 +769,15 @@ async function homeOpen() {
     const ka = c.keyapps || {}, kOk = !!c.keysOk;                     // an older TV Home has neither: shown, with its update
     keyOn.checked = !!c.keyon;
     keyOn.disabled = !kOk; keysOld.hidden = kOk;
-    keysNote.textContent = kOk ? T(!c.keysSetup ? 'home.keys_need_setup' : 'home.keys_everywhere') : '';
+    keysNote.textContent = kOk ? T(!c.keysSetup ? 'home.keys_need_setup' : c.keysRefused ? 'home.keys_refused' : 'home.keys_everywhere') : '';
     autoNote.textContent = kOk ? T(!c.keysSetup ? 'home.auto_need_setup' : 'home.auto_note') : '';
     keysList.hidden = !kOk;
     autoAll.checked = !!c.autoall;
     autoAllBox.hidden = autoAllNote.hidden = !kOk || c.autoall === undefined;      // a TV Home from before it does not keep it
     autoAll.disabled = !c.keysAll;                                                 // nor does a TV Setup from before it
     autoAllNote.textContent = T(!c.keysSetup ? 'home.auto_need_setup' : !c.keysAll ? 'home.auto_all_old' : c.autoapp ? 'home.auto_all_app' : 'home.auto_all_home');
+    keysMulti.hidden = !kOk || c.keydbl === undefined;             // a TV Home older than it keeps neither
+    if (!keysMulti.hidden) quickKeysMulti(keysMulti, c, r.apps, send);
     if (kOk) quickKeysDraw(keysList, c, r.apps, send);              // the slots: 1-9 and 0, the colour keys, the power-on app
     const w = c.widgets;                                              // absent: a TV Home older than the widgets
     const qrs = c.qrs || {};                                          // the QR widgets' fields, by key (absent: a TV Home older than them)
@@ -1129,7 +1140,7 @@ async function homeOpen() {
       hScenes, wScenes, hColours, walls, ownHead, ownStops, ownDirHead, ownDir, ownNote]],
     ['look', 'sparkle', 180, 'home.g_look', [
       sect('home.sec_head', check(clock, 'home.clock24'), check(greet, 'home.greet'), gstyleHead, gstyle, gnameLine, gtextLine, gtokens, gtype, hsplit, dstyleHead, dstyle, dtextLine, dtokens, dtype),
-      sect(showHead, check(shows.showClock, 'home.show_clock'), check(shows.showDate, 'home.show_date'), check(shows.showNet, 'home.show_net'), check(showInputs, 'home.show_inputs'), check(shows.showGear, 'home.show_gear'),
+      sect(showHead, check(shows.showClock, 'home.show_clock'), check(shows.showDate, 'home.show_date'), check(fixHead, 'home.fix_head'), check(shows.showNet, 'home.show_net'), check(showInputs, 'home.show_inputs'), check(shows.showGear, 'home.show_gear'),
         check(shows.showAdd, 'home.show_add'), check(shows.showSuggest, 'home.show_suggest'), check(shows.showWatch, 'home.show_watch'), check(infold, 'home.show_infold'), watchAtHead, watchAt),
       sect('home.sec_motion', check(anim, 'home.anim'), motionHead, motion, focusHead, focus, tstyleHead, tstyle, accentHead, accent),
       sect('home.sec_grid', colsHead, cols, check(center, 'home.center'), wplaceHead, wplace, rowsHead, rowsLine, rowsNote),
@@ -1140,8 +1151,8 @@ async function homeOpen() {
       sect(null, picsHead, pics)]],
     ['widgets', 'chart', 210, 'home.g_widgets', [sect(null, wHead, wList, ...wLines), sect(null, packHead, packBox, packNote), sect(null, layHead, lay, layNote, placeHead, placeLine),
       sect(null, feedHead, feedLine, feedList, feedNote), sect(null, frameHead, frameList, frameNote), sect(null, noteHead, noteLine), sect(null, qrHead, qrList, qrNote)]],
-    ['dream', 'moon', 260, 'home.g_dream', [sect(null, check(dream, 'home.dream'), dfaceHead, dface, check(ddarkOn, 'home.ddark'), ddarkTimes, check(shift, 'home.show_shift'))]],
-    ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, autoNote, autoAllBox, autoAllNote, check(homebar, 'home.show_homebar')]],
+    ['dream', 'moon', 260, 'home.g_dream', [sect(null, check(dream, 'home.dream'), dfaceHead, dface, dphotoHead, dphoto, check(dpclock, 'home.dpclock'), check(ddarkOn, 'home.ddark'), ddarkTimes, check(shift, 'home.show_shift'))]],
+    ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, keysMulti, autoNote, autoAllBox, autoAllNote, check(homebar, 'home.show_homebar')]],
     ['system', 'power', 200, 'home.g_system', [langHead, langs]],                 // the TV's System page also has the launcher row (TV Setup's picker): TV only
   ];
   keysHead.hidden = true;                           // the page's own title says it

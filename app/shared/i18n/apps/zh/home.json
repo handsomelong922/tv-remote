@@ -933,5 +933,14 @@
   "pl_paused": "已暂停",
   "pl_last": "上次播放",
   "pl_none": "应用（如 SmartTube、Spotify）中播放的音乐和视频会显示在这里",
-  "pl_need_adb": "TV Setup 需要连接 ADB 才能查看播放内容"
+  "pl_need_adb": "TV Setup 需要连接 ADB 才能查看播放内容",
+  "dphoto": "屏保照片",
+  "dphoto_off": "关闭（使用壁纸）",
+  "dphoto_mine": "我的壁纸照片",
+  "dphoto_pictures": "Pictures 文件夹",
+  "dphoto_dcim": "DCIM 文件夹",
+  "dphoto_usb": "U 盘",
+  "dpclock": "在照片上显示时钟",
+  "fix_head": "固定时钟和日期的位置",
+  "k_refused": "此电视不允许 TV Setup 在其他应用内捕获按键，因此这些按键仅在 TV Home 中生效。"
 }

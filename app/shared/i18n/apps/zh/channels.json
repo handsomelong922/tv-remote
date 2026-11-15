@@ -138,5 +138,8 @@
   "cat_sports": "体育",
   "cat_travel": "旅游",
   "cat_weather": "天气",
-  "cat_xxx": "成人（18+）"
+  "cat_xxx": "成人（18+）",
+  "pin_other_home": "当前使用的主屏幕不是 TV Home，且不支持固定频道。请将 TV Home 设为主屏幕，然后返回此处，频道便会固定。",
+  "pin_set_home": "使用 TV Home",
+  "pin_not_home_yet": "未固定：主屏幕仍不是 TV Home。"
 }

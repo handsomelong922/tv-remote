@@ -12,9 +12,9 @@ async function loadRules(change, quiet) {
   if (rulesBusy && !change) return;
   rulesBusy = true;
   const gen = rulesGen;
-  const r = await api('/api/rules', change || null, quiet || (!change && !!RULES), change ? 0 : 20000);   // a read that times out with a list on screen keeps the list, no toast
+  const r = await api('/api/rules', change || null, quiet || (!change && !!RULES), change ? 30000 : 20000)   // a write too ends (a TV gone silent held rulesBusy for ever); a read that times out with a list on screen keeps the list, no toast
+    .finally(() => { if (gen === rulesGen) rulesBusy = false; });     // a new TV already reset it
   if (gen !== rulesGen) return null;
-  rulesBusy = false;
   if (!r) return null;
   RULES = r; if (r.now) rulesSkew = r.now - Date.now();
   renderRules(); return r;
@@ -70,7 +70,7 @@ function renderRules() {
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, el('span', { textContent: name }),
       el('small', { textContent: T(l.extra ? 'auto.limit_used_extra' : 'auto.limit_used', { used: minsShort(l.used), total: minsShort(total), extra: minsShort(l.extra || 0) }) }), meter),
       el('div', { className: 'acts' },
-        act(T('auto.plus_30_today'), async () => { await loadRules({ do: 'extra', pkg: l.pkg, minutes: 30 }); toast(T('auto.plus_30_done', { name })); }),
+        act(T('auto.plus_30_today'), async () => { if (await loadRules({ do: 'extra', pkg: l.pkg, minutes: 30 })) toast(T('auto.plus_30_done', { name })); }),
         l.extra ? act(T('auto.extra_reset'), async () => { if (await setupFor('unextra')) await loadRules({ do: 'extra', pkg: l.pkg, minutes: 0, set: true }); }) : null,
         act('✏️', async () => { const v = await askTime(T('auto.limit_how_long', { name }), l.minutes); if (v) await loadRules({ do: 'limit', pkg: l.pkg, minutes: v }); }, '', T('auto.edit')),
         act('🗑', async () => { if (await ask(T('auto.limit_drop_ask', { name }), { ok: T('auto.drop_limit') })) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger', T('auto.drop_limit'))));
@@ -96,10 +96,12 @@ function renderRules() {
     const icon = appIcon(x.pkg); onMeta(x.pkg, (m) => icon.fill(m));
     const name = x.label || appName(x.pkg), total = (x.max || 0) + (x.extra || 0);
     const when = x.block ? T('auto.sched_never') : schedText(x) + (x.max ? ' · ' + T('auto.sched_max', { time: minsShort(x.max) }) : '');
-    const now = x.block ? '' : !x.now ? T('auto.sched_closed_now') : x.max ? T('auto.limit_used', { used: minsShort(x.used), total: minsShort(total) }) : T('auto.sched_open_now');
+    const open = x.open_until > r.now;                                  // a parent's "more time" for this app (Rules.appGrant)
+    const now = open ? T('auto.kids_open_until', { at: clock(x.open_until) }) : x.block ? '' : !x.now ? T('auto.sched_closed_now') : x.max ? T('auto.limit_used', { used: minsShort(x.used), total: minsShort(total) }) : T('auto.sched_open_now');
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, el('span', { textContent: name }), el('small', { textContent: when }), now ? el('small', { textContent: now }) : null),
       el('div', { className: 'acts' },
-        x.max && x.now ? act(T('auto.plus_30_today'), async () => { await loadRules({ do: 'extra', pkg: x.pkg, minutes: 30 }); toast(T('auto.plus_30_done', { name })); }) : null,
+        !x.block && !x.now && !open ? act(T('auto.plus_30_today'), async () => { if (await setupFor('appgrant')) { if (await loadRules({ do: 'unlock', pkg: x.pkg, minutes: 30 })) toast(T('auto.plus_30_done', { name })); } }) : null,   // closed now: open for 30 min, then closed again
+        x.max && x.now ? act(T('auto.plus_30_today'), async () => { if (await loadRules({ do: 'extra', pkg: x.pkg, minutes: 30 })) toast(T('auto.plus_30_done', { name })); }) : null,
         act('✏️', () => openSched(x), '', T('auto.edit')),
         act('🗑', async () => { if (await ask(T('auto.sched_drop_ask', { name }), { ok: T('auto.sched_drop') })) await loadRules({ do: 'sched', pkg: x.pkg, on: false }); }, 'danger', T('auto.sched_drop'))));
   });

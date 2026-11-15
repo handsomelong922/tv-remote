@@ -124,6 +124,11 @@ import org.json.JSONObject
  *           ADB) and puts the previous screensaver back when this is switched off
  *   dface   the screensaver's look ([DFACES]): "big" (the big clock and the day, as before), "modern" (StandBy: the Modern clock
  *           face beside the day, the clock widget's own drawing), "digital" (the Digital face, filling the screen)
+ *   dphoto  the screensaver as a slow slideshow ([DPHOTOS]): "" = off (default: the wallpaper and the clock), "mine" = the wallpaper photos the person
+ *           sent to TV Home, "pictures" / "dcim" = the TV's /sdcard/Pictures or /sdcard/DCIM, "usb" = a USB stick. Crossfade every 20 s, pictures read at
+ *           screen size; nothing runs unless the screensaver is on screen. Folders need READ_MEDIA_IMAGES / READ_EXTERNAL_STORAGE ([GRANT_WIFI]); an empty
+ *           or unreadable source shows the wallpaper as before
+ *   dpclock the clock and the day over the slideshow, default true (false = the pictures alone; [dphoto] on only)
  *   ddark   dark hours of the screensaver: "" = off (default), else "HH:MM-HH:MM" (start-end, minutes 00 or 30, wraps midnight; start == end = off,
  *           [dark] cleans it; the older "22-6" is read as "22:00-06:00"): the screen is fully black then (OLED care, a TV left on at night).
  *           Checked by the screensaver's once-a-minute tick; not a theme key
@@ -150,6 +155,8 @@ import org.json.JSONObject
  *   keyon   remote keys that open something (default off); keyapps: {"183": target} the key code to its [Target] (a package, "pin:pkg/id"
  *           or "tile:provider/id"; a plain package is how older configs saved it), only keys [keyFree] allows. TV Home answers them on its own screen; TV Setup's key filter answers them everywhere (HomeInfo "keys").
  *           A TV Home that has this reports "keysOk": true, "keysSetup" (TV Setup took the map) and "keysDead" (the keys it found dead)
+ *   keydbl / keyhold   the same shape as keyapps ({"183": target}), for a double press and for a hold of the key; only keys [keyMultiAllowed] allows. TV Setup's
+ *           key filter alone answers them (TV Home never sees a key the filter takes) and only while "keyon" is on. Default empty: a key without one stays instant
  *   themes  the person's own themes, [THEMES_MAX]: [{id, name, conf}], conf = the look at the moment of saving ([THEME_KEYS]: background and its
  *           set, shade, video sound, widgets with sizes and looks, grid, focus, motion, clock; NOT the apps, the QR widgets (a Wi-Fi password),
  *           keys, language, screensaver, power button). Kept on the TV with the rest. Changed by ONE field every client sends,
@@ -159,6 +166,7 @@ import org.json.JSONObject
  *           keeps them ([themeUses], Videos.refs)
  *   infold  the Inputs list shows the connected HDMI ports first and folds the rest (jacks always; a port only when the TV says "disconnected" and its
  *           answers can be trusted) behind a "More inputs" row; default off (nothing new runs)
+ *   fixHead the top row (clock, day, greeting, buttons) stays in place while the apps scroll under it; default off (the row scrolls away)
  *   autoon  open [autoapp] (a [Target] too) once each time the TV is turned on (boot or wake from standby); default off. TV Setup does it
  *           (TV Home is not running in standby), so it needs TV Setup, said in the setting ("keysSetup")
  *   autolast the power-on app is "the app that was open when the TV turned off" instead of a fixed [autoapp]; its own setting, default
@@ -181,8 +189,8 @@ object HomeConfig {
     const val WRITE_SECURE = "android.permission.WRITE_SECURE_SETTINGS"
     /** Granted over ADB when TV Home is installed or set up, never asked on the TV: the Wi-Fi's name is location to Android (8.1+), and
      *  Android TV's "pair an accessory" screen (Control Center's Bluetooth) refuses to open for an app without BLUETOOTH_CONNECT (12+),
-     *  and other apps' Play Next and channels are READ_TV_LISTINGS (apps/Watch.kt); WRITE_SECURE_SETTINGS lets the Ad blocking widget set Private DNS. */
-    const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; pm grant $PKG android.permission.BLUETOOTH_CONNECT >/dev/null 2>&1; pm grant $PKG android.permission.READ_TV_LISTINGS >/dev/null 2>&1; pm grant $PKG $WRITE_SECURE >/dev/null 2>&1; "
+     *  and other apps' Play Next and channels are READ_TV_LISTINGS (apps/Watch.kt); WRITE_SECURE_SETTINGS lets the Ad blocking widget set Private DNS; READ_EXTERNAL_STORAGE (to Android 12) / READ_MEDIA_IMAGES (13+) the screensaver's photo folders (a grant of the one a version lacks is a silent no-op). */
+    const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; pm grant $PKG android.permission.BLUETOOTH_CONNECT >/dev/null 2>&1; pm grant $PKG android.permission.READ_TV_LISTINGS >/dev/null 2>&1; pm grant $PKG $WRITE_SECURE >/dev/null 2>&1; pm grant $PKG android.permission.READ_EXTERNAL_STORAGE >/dev/null 2>&1; pm grant $PKG android.permission.READ_MEDIA_IMAGES >/dev/null 2>&1; "
     /**
      * Private DNS names that block ads (DNS-over-TLS, host names only), the first is what the "adblock" widget turns on. The page's
      * `DNS_SETS.ads` in js/tvset.js is the same list (tests/home_adblock.test.js keeps the two equal).
@@ -442,6 +450,23 @@ object HomeConfig {
     /** The keys the stock launcher answered (app/tvsetup KeyFix.RULES; a test there holds the two lists equal): free once their handler is gone; the app buttons (190, 191, 195: KeyFix.APP_KEYS) even while it works. */
     val KEY_DEAD = listOf(170, 178, 190, 191, 195, 192, 284, 176)
     fun keyAllowed(code: Int) = code in KEY_COLOURS || code in KEY_NUMBERS || code in KEY_DEAD
+    /**
+     * Keys that may have a double press or a hold of their own: the colour keys and the app buttons (nothing else answers them), the
+     * PatchWall / All apps buttons, Menu, Info, Guide. Never Home, Back, the arrows, OK, volume or power (navigation and the system: a key
+     * that waits for a second press makes them feel broken) and never the numbers (channel numbers and typing; they have their own 2 s hold).
+     */
+    val KEY_MULTI = KEY_COLOURS + listOf(190, 191, 195, 192, 284, 82, 165, 172)
+    fun keyMultiAllowed(code: Int) = code in KEY_MULTI
+    /** "keydbl" / "keyhold" as code to target, the codes allowed and the targets real. */
+    fun keyMulti(o: JSONObject?): Map<Int, String> {
+        val out = LinkedHashMap<Int, String>()
+        if (o != null) for (k in o.keys()) {
+            val code = k.toIntOrNull() ?: continue
+            val p = o.optString(k)
+            if (keyMultiAllowed(code) && Target.valid(p)) out[code] = p
+        }
+        return out
+    }
     /** "keyapps" as code to package, the codes allowed and the packages real names. */
     fun keyApps(o: JSONObject?): Map<Int, String> {
         val out = LinkedHashMap<Int, String>()
@@ -470,6 +495,7 @@ object HomeConfig {
     const val GNAME_MAX = 24
     const val GTEXT_MAX = 60
     val DFACES = listOf("big", "modern", "digital")
+    val DPHOTOS = listOf("", "mine", "pictures", "dcim", "usb")
     const val DARK_ON = "22:00-06:00"                                // what switching the dark hours on starts with
     /** [v] as "HH:MM-HH:MM" in half hours, or "" when it is off, bad or start == end. Reads the older "22-6" (hours) too. */
     fun dark(v: String): String {
@@ -794,6 +820,7 @@ object HomeConfig {
             .also { n -> for (k in SHOWS) n.put(k, o.optBoolean(k, true)) }
             .put("showInputs", o.optBoolean("showInputs", false))   // the one switch that starts off: an extra button nobody asked for
             .put("infold", o.optBoolean("infold", false))
+            .put("fixHead", o.optBoolean("fixHead", false))           // the top row stays while the page scrolls (HomeActivity.held)
             .put("lockLayout", o.optBoolean("lockLayout", false))      // the PIN before the layout changes (HomeActivity.layoutGate)
             .put("watchAt", o.optString("watchAt").takeIf { it in WATCH_AT } ?: WATCH_AT[0])
             .put("anim", o.optBoolean("anim", true))
@@ -807,6 +834,8 @@ object HomeConfig {
             .put("rows", rows(o.optDouble("rows", 0.0)))
             .put("dream", o.optBoolean("dream", false))
             .put("dface", o.optString("dface").takeIf { it in DFACES } ?: "big")
+            .put("dphoto", o.optString("dphoto").takeIf { it in DPHOTOS } ?: "")
+            .put("dpclock", o.optBoolean("dpclock", true))
             .put("ddark", dark(o.optString("ddark")))
             .put("center", o.optBoolean("center", false))
             .put("wplace", o.optString("wplace").takeIf { it in WPLACES } ?: WPLACES[0])
@@ -815,6 +844,8 @@ object HomeConfig {
             .put("feeds", JSONArray(feeds(o.optJSONArray("feeds"))))
             .put("keyon", o.optBoolean("keyon", false))
             .put("keyapps", JSONObject().also { m -> keyApps(o.optJSONObject("keyapps")).toSortedMap().forEach { (k, v) -> m.put(k.toString(), v) } })
+            .put("keydbl", JSONObject().also { m -> keyMulti(o.optJSONObject("keydbl")).toSortedMap().forEach { (k, v) -> m.put(k.toString(), v) } })
+            .put("keyhold", JSONObject().also { m -> keyMulti(o.optJSONObject("keyhold")).toSortedMap().forEach { (k, v) -> m.put(k.toString(), v) } })
             .put("autoon", o.optBoolean("autoon", false))
             .put("autoapp", if (o.optBoolean("autoon", false)) Target.clean(o.optString("autoapp")) else "")   // one meaning: an app here opens at power-on; "autoon" stays for TV Setups that read it
             .put("autolast", o.optBoolean("autoon", false) && o.optBoolean("autolast", false) && Target.clean(o.optString("autoapp")).isEmpty())   // its own setting, default off; a fixed app wins if both arrive (the clients clear one when the other is chosen)

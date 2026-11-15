@@ -15,6 +15,13 @@ class HomeConfigTest {
     private fun dock(c: JSONObject) = c.getJSONArray("dock").let { a -> List(a.length()) { a.getString(it) } }
     private fun hidden(c: JSONObject) = c.getJSONArray("hidden").let { a -> List(a.length()) { a.getString(it) } }
 
+    @Test fun screensaverPhotosDefaultOffAndOnlyKnownModes() {
+        assertEquals("", HomeConfig.clean(JSONObject()).getString("dphoto"))
+        assertEquals(true, HomeConfig.clean(JSONObject()).getBoolean("dpclock"))
+        assertEquals("usb", HomeConfig.clean(JSONObject().put("dphoto", "usb")).getString("dphoto"))
+        assertEquals("", HomeConfig.clean(JSONObject().put("dphoto", "/etc")).getString("dphoto"))
+    }
+
     @Test fun darkHoursWrapMidnightAndDefaultOff() {
         fun cl(v: String) = HomeConfig.clean(JSONObject().put("ddark", v)).getString("ddark")
         assertEquals("", HomeConfig.clean(JSONObject()).getString("ddark"))
@@ -522,6 +529,14 @@ class HomeConfigTest {
         val both = HomeConfig.clean(JSONObject().put("autoon", true).put("autolast", true).put("autoapp", "a.b"))
         assertEquals("a.b", both.getString("autoapp")); assertFalse(both.getBoolean("autolast"))              // a fixed app wins
         assertFalse(HomeConfig.clean(JSONObject().put("autoon", false).put("autolast", true)).getBoolean("autolast"))
+    }
+
+    @Test fun doubleAndHoldKeysKeepOnlyAllowedKeysAndGoodTargets() {
+        val c = HomeConfig.clean(JSONObject().put("keydbl", JSONObject().put("183", "x.y").put("3", "x.z").put("4", "x.z").put("7", "x.z").put("82", "pin:a.b/c").put("186", "bad"))
+            .put("keyhold", JSONObject().put("190", "do:voice").put("24", "x.y")))
+        assertEquals(mapOf(183 to "x.y", 82 to "pin:a.b/c"), HomeConfig.keyMulti(c.getJSONObject("keydbl")))   // Home, Back, a number, a bad target: dropped
+        assertEquals(mapOf(190 to "do:voice"), HomeConfig.keyMulti(c.getJSONObject("keyhold")))
+        assertEquals(0, HomeConfig.clean(JSONObject()).getJSONObject("keydbl").length())                       // default: none
     }
 
     @Test fun keysSurviveTheForwardAndTheMerge() {
