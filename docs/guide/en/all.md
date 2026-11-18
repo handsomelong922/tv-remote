@@ -1003,9 +1003,10 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 
 1. Open **More keys → Tools → Video on the TV**.
 2. Tap **🎞️ Pick a video** to play a file, or **📷 Camera** to show your phone's or computer's camera (**🔄 Switch camera** for front / back).
-3. Drag the box to move it, drag its blue corner to resize it, even while it plays. Arrow keys and + / − work too.
-4. An upright video? Tap **↷ Rotate** to turn the picture 90°: it lies across the TV and the box grows to fill it. Needs TV Setup 0.47.1.
-5. Pause, turn the sound on, or **⏹ Remove from TV**.
+3. Want the TV to hear you too? Turn on **🔊 Sound** before or while the camera runs: the microphone plays on the TV's speakers. Off at first. Needs TV Setup 0.52.1.
+4. Drag the box to move it, drag its blue corner to resize it, even while it plays. Arrow keys and + / − work too.
+5. An upright video? Tap **↷ Rotate** to turn the picture 90°: it lies across the TV and the box grows to fill it. Needs TV Setup 0.47.1.
+6. Pause, turn the sound on, or **⏹ Remove from TV**.
 
 > 💡 The box sits over every app. Close the window and a video keeps playing; the camera stops. The camera works in the phone and computer apps only. Needs TV Setup 0.42.0.
 
@@ -1258,11 +1259,11 @@ Home Assistant sends the token in the `x-tvr-hook` header, out of the logs.
 
 > 💡 **🧹 Check-out** (guesthouses): clears the chosen apps' data, sets the volume, signs out paired browsers, goes Home. Asks first.
 
-> 💡 **📋 Copy settings to another TV** (Setup tab): tick groups, **Take from this TV**, switch TV, **Show what changes**, **Apply**. Save a file to carry it to another TV's web page.
+> 💡 **📦 To another TV** → **📋 Some settings**: tick groups, **Take from this TV**, switch TV, **Show what changes**, **Apply**. Save a file to carry it to another TV's web page.
 
 > 💡 Apps the other TV lacks are left out; own photo walls and QR codes are not copied. App locks need a PIN: type a new one for the other TV, the old one cannot be read back.
 
-> 💡 **📦 Move to a new TV** (Setup tab): **Save backup file** on the old TV, then on the new one **Open backup file**, tick items, **Restore**. PINs are not in the file.
+> 💡 **📦 To another TV** → **📦 The whole TV, by file**: **Save backup file** on the old TV, then on the new one **Open backup file**, tick items, **Restore**. PINs are not in the file.
 
 ## See every TV at a glance
 

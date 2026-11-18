@@ -4,6 +4,24 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## 0.55.1 - 2026-11-17
+
+Web 0.55.1 · Phone app 0.52.1 · TV app 0.53.1 · TV Home 0.34.0 · TV Channels 0.24.0 · TV Games 0.24.0 · TV Apps 0.8.0
+
+- TV Home stays the home screen on TVs with a hidden HOME entry (a remote's updater, cleanyourtv #4068): every "which app is Home?" now asks with MATCH_DEFAULT_ONLY, so Android no longer drops the saved Home and opens its picker.
+
+## 0.55.0 - 2026-11-16
+
+Web 0.55.0 · Phone app 0.52.0 · TV app 0.53.0 · TV Home 0.34.0 · TV Channels 0.24.0 · TV Games 0.24.0 · TV Apps 0.8.0
+
+- Video on the TV: a 🔊 Sound switch sends the phone's or computer's microphone along with its camera (off at first; needs TV Setup 0.53.0)
+- Feature search: Video on the TV, Send a notification, the TV's clipboard and Screen off now open the feature itself, also in the phone app's Manage screen (it used to open the guide there)
+- Setup tab: "Move to a new TV" and "Copy settings to another TV" are now one card, To another TV, with two choices: the whole TV by file, or some settings; the setting groups wrap instead of hiding off the side on a phone
+- TV Setup: a phone or computer dropping its connection while drawing on the TV or showing a video no longer shows an error box on the TV
+- When TV Setup cannot reach ADB, the message now names the last error instead of only "still connecting"
+- The web page no longer shows an error box for a browser add-on's own script errors
+- The web page's now playing bar no longer throws when something else took it off the page
+
 ## 0.54.0 - 2026-11-14
 
 Web 0.54.0 · Phone app 0.51.0 · TV app 0.52.0 · TV Home 0.34.0 · TV Channels 0.24.0 · TV Games 0.24.0 · TV Apps 0.8.0

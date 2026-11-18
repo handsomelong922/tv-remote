@@ -130,29 +130,34 @@
   "note": "keyfix_refused on VISION XS100MINI+, 6th box (WS, ADT-3, G-Two, SWTV, X96mini): cause logged from the next TV Setup (a20c4155), left"
  },
  "0bea8243f97640450535da70|0.47.0": {
-  "at": "2026-11-12T23:22:07+07:00",
+  "at": "2026-11-16T23:11:23+07:00",
   "n": 1,
-  "note": "keyfix_refused (JmGO K920 projector, sdk 28) again on 0.51.0: add-on 'stopped', the box's RAM cleaner force-stops it and Android drops the a11y entry; same as before, nothing to fix in the app. Clients now say keys work on TV Home only (e9452995)"
+  "note": "JmGO K920 again on 0.53.0: its RAM cleaner force-stops the add-on; nothing to fix, clients say keys work only on TV Home"
  },
  "0bea8243f97640450535da70|0.48.0": {
-  "at": "2026-11-12T23:22:07+07:00",
+  "at": "2026-11-16T23:11:23+07:00",
   "n": 1,
-  "note": "keyfix_refused (JmGO K920 projector, sdk 28) again on 0.51.0: add-on 'stopped', the box's RAM cleaner force-stops it and Android drops the a11y entry; same as before, nothing to fix in the app. Clients now say keys work on TV Home only (e9452995)"
+  "note": "JmGO K920 again on 0.53.0: its RAM cleaner force-stops the add-on; nothing to fix, clients say keys work only on TV Home"
  },
  "0bea8243f97640450535da70|0.49.0": {
-  "at": "2026-11-12T23:22:07+07:00",
+  "at": "2026-11-16T23:11:23+07:00",
   "n": 1,
-  "note": "keyfix_refused (JmGO K920 projector, sdk 28) again on 0.51.0: add-on 'stopped', the box's RAM cleaner force-stops it and Android drops the a11y entry; same as before, nothing to fix in the app. Clients now say keys work on TV Home only (e9452995)"
+  "note": "JmGO K920 again on 0.53.0: its RAM cleaner force-stops the add-on; nothing to fix, clients say keys work only on TV Home"
  },
  "0bea8243f97640450535da70|0.50.0": {
-  "at": "2026-11-12T23:22:07+07:00",
+  "at": "2026-11-16T23:11:23+07:00",
   "n": 1,
-  "note": "keyfix_refused (JmGO K920 projector, sdk 28) again on 0.51.0: add-on 'stopped', the box's RAM cleaner force-stops it and Android drops the a11y entry; same as before, nothing to fix in the app. Clients now say keys work on TV Home only (e9452995)"
+  "note": "JmGO K920 again on 0.53.0: its RAM cleaner force-stops the add-on; nothing to fix, clients say keys work only on TV Home"
  },
  "0bea8243f97640450535da70|0.51.0": {
-  "at": "2026-11-12T23:22:07+07:00",
+  "at": "2026-11-16T23:11:23+07:00",
   "n": 1,
-  "note": "keyfix_refused (JmGO K920 projector, sdk 28) again on 0.51.0: add-on 'stopped', the box's RAM cleaner force-stops it and Android drops the a11y entry; same as before, nothing to fix in the app. Clients now say keys work on TV Home only (e9452995)"
+  "note": "JmGO K920 again on 0.53.0: its RAM cleaner force-stops the add-on; nothing to fix, clients say keys work only on TV Home"
+ },
+ "0bea8243f97640450535da70|0.53.0": {
+  "at": "2026-11-16T23:11:23+07:00",
+  "n": 1,
+  "note": "JmGO K920 again on 0.53.0: its RAM cleaner force-stops the add-on; nothing to fix, clients say keys work only on TV Home"
  },
  "0cc42fae2aa5fd9fed3c6839|0.31.0": {
   "at": "2026-11-05T17:16:53+07:00",
@@ -168,6 +173,11 @@
   "at": "2026-11-11T06:02:15+07:00",
   "n": 1,
   "note": "keyfix_refused: firmware takes the key add-on's accessibility service out; the next TV Setup reports known/others/a11y (e957a72e, unreleased): wait for that data"
+ },
+ "0ee09e20e4599e5f27129745|0.50.0": {
+  "at": "2026-11-15T16:19:22+07:00",
+  "n": 1,
+  "note": "0.50.0 BRAVIA VU31 sdk 34: add-on 'stopped' (force-stopped, Android drops the entry; cleaner kind); ADB is up again on that TV (adbd hang 1c570f26 cleared); 0.52.0 says keys work only on TV Home"
  },
  "0f04c812319be9eca1ee7d4f|0.35.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -320,29 +330,34 @@
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
  },
  "1246e79da13b1f97f2bdb7fc|0.47.0": {
-  "at": "2026-11-15T02:53:42+07:00",
+  "at": "2026-11-17T02:04:18+07:00",
   "n": 2,
-  "note": "0.52.0: Allwinner G-Two Box again, bound 0 crashed 0: firmware drops the a11y entry; 0.52.0 clients now say keys work only on TV Home"
+  "note": "G-Two Box (Allwinner) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
  },
  "1246e79da13b1f97f2bdb7fc|0.49.0": {
-  "at": "2026-11-15T02:53:42+07:00",
+  "at": "2026-11-17T02:04:18+07:00",
   "n": 2,
-  "note": "0.52.0: Allwinner G-Two Box again, bound 0 crashed 0: firmware drops the a11y entry; 0.52.0 clients now say keys work only on TV Home"
+  "note": "G-Two Box (Allwinner) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
  },
  "1246e79da13b1f97f2bdb7fc|0.50.0": {
-  "at": "2026-11-15T02:53:42+07:00",
+  "at": "2026-11-17T02:04:18+07:00",
   "n": 2,
-  "note": "0.52.0: Allwinner G-Two Box again, bound 0 crashed 0: firmware drops the a11y entry; 0.52.0 clients now say keys work only on TV Home"
+  "note": "G-Two Box (Allwinner) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
  },
  "1246e79da13b1f97f2bdb7fc|0.51.0": {
-  "at": "2026-11-15T02:53:42+07:00",
+  "at": "2026-11-17T02:04:18+07:00",
   "n": 1,
-  "note": "0.52.0: Allwinner G-Two Box again, bound 0 crashed 0: firmware drops the a11y entry; 0.52.0 clients now say keys work only on TV Home"
+  "note": "G-Two Box (Allwinner) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
  },
  "1246e79da13b1f97f2bdb7fc|0.52.0": {
-  "at": "2026-11-15T02:53:42+07:00",
+  "at": "2026-11-17T02:04:18+07:00",
   "n": 1,
-  "note": "0.52.0: Allwinner G-Two Box again, bound 0 crashed 0: firmware drops the a11y entry; 0.52.0 clients now say keys work only on TV Home"
+  "note": "G-Two Box (Allwinner) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
+ },
+ "1246e79da13b1f97f2bdb7fc|0.53.0": {
+  "at": "2026-11-17T02:04:18+07:00",
+  "n": 1,
+  "note": "G-Two Box (Allwinner) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
  },
  "13b5562e22b1aff18d3e7207|0.15.0": {
   "at": "2026-10-30T09:07:55+07:00",
@@ -473,6 +488,11 @@
   "at": "2026-10-27T09:37:03+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "1a256e72249eab88b09b7ad8|0.51.0": {
+  "at": "2026-11-15T14:05:56+07:00",
+  "n": 1,
+  "note": "0.51.0 SWTV Android 9: sleep rule could not turn the TV off: adbd running but 5555 refused (network ADB off, e.g. after a restart); 'still connecting' was getQuiet's wait, the next TV Setup names the dial error (d7671a0a)"
  },
  "1b64c0fdb7081f015b2765c2|0.22.1": {
   "at": "2026-11-14T14:55:26+07:00",
@@ -620,9 +640,19 @@
   "note": "fixed in 314c0f33 (Adb ArrayList(streams.values))"
  },
  "1eb7f68a7d1e7939564c3332|0.47.0": {
-  "at": "2026-11-08T03:23:05+07:00",
+  "at": "2026-11-18T05:26:35+07:00",
   "n": 1,
-  "note": "keyfix_refused on IP STATION, 7th box on 0.47.0; next TV Setup reports whether the add-on was force-stopped (a RAM cleaner) or turned off"
+  "note": "keyfix_refused on IP STATION (sdk 31) on 0.53.1: firmware takes the key add-on's service out 3x (rs -, by -, crashed 0, add-on running); the firmware kind, clients say so since e9452995"
+ },
+ "1eb7f68a7d1e7939564c3332|0.52.0": {
+  "at": "2026-11-18T05:26:35+07:00",
+  "n": 1,
+  "note": "keyfix_refused on IP STATION (sdk 31) on 0.53.1: firmware takes the key add-on's service out 3x (rs -, by -, crashed 0, add-on running); the firmware kind, clients say so since e9452995"
+ },
+ "1eb7f68a7d1e7939564c3332|0.53.1": {
+  "at": "2026-11-18T05:26:35+07:00",
+  "n": 1,
+  "note": "keyfix_refused on IP STATION (sdk 31) on 0.53.1: firmware takes the key add-on's service out 3x (rs -, by -, crashed 0, add-on running); the firmware kind, clients say so since e9452995"
  },
  "21d6ea2f3f739402aeb51852|0.32.1": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -775,9 +805,14 @@
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
  "2f7b4a5845c32315a71d9ed8|0.48.0": {
-  "at": "2026-11-10T20:00:58+07:00",
+  "at": "2026-11-16T06:26:58+07:00",
   "n": 1,
-  "note": "keyfix_refused: firmware takes the key add-on's accessibility service out; the next TV Setup reports known/others/a11y (e957a72e, unreleased): wait for that data"
+  "note": "Allwinner sun50iw12p1 projector (fake adt3, a11): firmware drops the a11y entry; nothing to fix"
+ },
+ "2f7b4a5845c32315a71d9ed8|0.52.0": {
+  "at": "2026-11-16T06:26:58+07:00",
+  "n": 1,
+  "note": "Allwinner sun50iw12p1 projector (fake adt3, a11): firmware drops the a11y entry; nothing to fix"
  },
  "304d571eb8351582e87856f4|0.26.3": {
   "at": "2026-10-26T21:47:43+07:00",
@@ -1190,14 +1225,19 @@
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
  },
  "3fd52ef15449ebe1bb5ee526|0.49.0": {
-  "at": "2026-11-12T08:52:42+07:00",
+  "at": "2026-11-16T01:46:13+07:00",
   "n": 1,
-  "note": "keyfix_refused (MBOX, sdk 29) on 0.50.0: known yes, others 0, a11y 0, add-on running: same firmware signature as KOBRA/Z1/G-Two; waiting for 8f344ac1's rs/bound/crashed data (not released yet)"
+  "note": "Allwinner H616 MBOX (sun50iw9p1, a10): firmware drops the a11y entry, a11y 0; nothing to fix"
  },
  "3fd52ef15449ebe1bb5ee526|0.50.0": {
-  "at": "2026-11-12T08:52:42+07:00",
+  "at": "2026-11-16T01:46:13+07:00",
   "n": 1,
-  "note": "keyfix_refused (MBOX, sdk 29) on 0.50.0: known yes, others 0, a11y 0, add-on running: same firmware signature as KOBRA/Z1/G-Two; waiting for 8f344ac1's rs/bound/crashed data (not released yet)"
+  "note": "Allwinner H616 MBOX (sun50iw9p1, a10): firmware drops the a11y entry, a11y 0; nothing to fix"
+ },
+ "3fd52ef15449ebe1bb5ee526|0.52.0": {
+  "at": "2026-11-16T01:46:13+07:00",
+  "n": 1,
+  "note": "Allwinner H616 MBOX (sun50iw9p1, a10): firmware drops the a11y entry, a11y 0; nothing to fix"
  },
  "41dd31f77cb49ce98c2242e0|0.28.0": {
   "at": "2026-10-27T09:37:26+07:00",
@@ -1460,9 +1500,14 @@
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
  },
  "511f3a265738aafe0658b20a|0.47.0": {
-  "at": "2026-11-07T23:21:48+07:00",
+  "at": "2026-11-16T08:00:36+07:00",
   "n": 1,
-  "note": "state, not a crash: Skyworth SWTV-22AE (Android 11) firmware takes the key filter's accessibility service out; KeyFix gives up after 3 tries by design, same as 1246e79d (G-Two Box)"
+  "note": "Skyworth SWTV-22AE a11 (MStar m7332): add-on 'stopped', RAM cleaner kind; nothing to fix"
+ },
+ "511f3a265738aafe0658b20a|0.52.0": {
+  "at": "2026-11-16T08:00:36+07:00",
+  "n": 1,
+  "note": "Skyworth SWTV-22AE a11 (MStar m7332): add-on 'stopped', RAM cleaner kind; nothing to fix"
  },
  "516d4346df0ee681f688361c|0.33.1": {
   "at": "2026-10-30T09:08:13+07:00",
@@ -1855,14 +1900,19 @@
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
  },
  "657718557b80576c615cdf0a|0.50.0": {
-  "at": "2026-11-13T11:38:58+07:00",
+  "at": "2026-11-16T21:03:09+07:00",
   "n": 1,
-  "note": "keyfix_refused on a TCL G10 (sdk 31): add-on stopped, TCL's cleaner force-stops it and Android drops the a11y entry (like JmGO 0bea8243); told on the clients since e9452995"
+  "note": "TCL G10 sdk 31 again on 0.53.0: add-on stopped, the TV's cleaner force-stops it; nothing to fix, clients say keys work only on TV Home"
  },
  "657718557b80576c615cdf0a|0.51.0": {
-  "at": "2026-11-13T11:38:58+07:00",
+  "at": "2026-11-16T21:03:09+07:00",
+  "n": 3,
+  "note": "TCL G10 sdk 31 again on 0.53.0: add-on stopped, the TV's cleaner force-stops it; nothing to fix, clients say keys work only on TV Home"
+ },
+ "657718557b80576c615cdf0a|0.53.0": {
+  "at": "2026-11-16T21:03:09+07:00",
   "n": 2,
-  "note": "keyfix_refused on a TCL G10 (sdk 31): add-on stopped, TCL's cleaner force-stops it and Android drops the a11y entry (like JmGO 0bea8243); told on the clients since e9452995"
+  "note": "TCL G10 sdk 31 again on 0.53.0: add-on stopped, the TV's cleaner force-stops it; nothing to fix, clients say keys work only on TV Home"
  },
  "657db7980ca8eda492ca97eb|0.29.0": {
   "at": "2026-10-28T14:05:41+07:00",
@@ -1908,6 +1958,11 @@
   "at": "2026-11-05T10:40:21+07:00",
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+ },
+ "67bc1f2dbd1b0c64f4cfb26b|0.53.1": {
+  "at": "2026-11-17T21:01:26+07:00",
+  "n": 1,
+  "note": "keyfix_refused on Skyworth SWTV (sdk 30) on 0.53.1: firmware takes the key add-on's service out (rs -, by -, crashed 0), same as earlier SWTV boxes; nothing to fix, clients already say so (e9452995)"
  },
  "67c022dfb5a21bcb3a3560b8|0.24.1": {
   "at": "2026-11-04T16:11:40+07:00",
@@ -2089,6 +2144,16 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "6adcc5a5440291e4548ddb8f|0.50.0": {
+  "at": "2026-11-16T17:01:28+07:00",
+  "n": 3,
+  "note": "POCO X3 NFC phone running TV Setup: 5555 refused (ADB over Wi-Fi off on a phone); nothing to fix"
+ },
+ "6adcc5a5440291e4548ddb8f|0.52.0": {
+  "at": "2026-11-16T17:01:28+07:00",
+  "n": 1,
+  "note": "POCO X3 NFC phone running TV Setup: 5555 refused (ADB over Wi-Fi off on a phone); nothing to fix"
+ },
  "6b2b5368c5ee63755ac02afc|0.29.0": {
   "at": "2026-10-28T14:05:42+07:00",
   "n": 1,
@@ -2224,6 +2289,11 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "6fd12ce4975f43e7ddc5a3f4|0.52.0": {
+  "at": "2026-11-16T06:31:53+07:00",
+  "n": 1,
+  "note": "DrawLayer.serve readLine (R8 map: Adb lambda0 line 204 = DrawLayer.kt:70): a sender's reset reached Guard as an uncaught thread error; fixed: draw/video threads catch IOException"
+ },
  "70ce0f419f77afe2a702668d|0.25.0": {
   "at": "2026-10-27T09:37:16+07:00",
   "n": 1,
@@ -2315,14 +2385,19 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "758c005882cb2cbebf891004|0.47.0": {
-  "at": "2026-11-13T20:32:22+07:00",
+  "at": "2026-11-17T21:24:52+07:00",
   "n": 1,
-  "note": "rules_no_adb on a CHiQ AI PONT (mt5896, sdk 34): a rule could not turn the TV off, ADB still connecting and 5555 closed (adbd up, no TCP port). A user state, the message already says what to do; not a fault"
+  "note": "rules_no_adb (CHiQ AI PONT, Android 14) on 0.53.1: only Wireless debugging (TLS, not paired), no 5555, so the sleep timer could not turn the TV off; the TV's state, same as the Chromecast 3375 note, TV Setup already shows the howto"
  },
  "758c005882cb2cbebf891004|0.51.0": {
-  "at": "2026-11-13T20:32:22+07:00",
+  "at": "2026-11-17T21:24:52+07:00",
+  "n": 2,
+  "note": "rules_no_adb (CHiQ AI PONT, Android 14) on 0.53.1: only Wireless debugging (TLS, not paired), no 5555, so the sleep timer could not turn the TV off; the TV's state, same as the Chromecast 3375 note, TV Setup already shows the howto"
+ },
+ "758c005882cb2cbebf891004|0.53.1": {
+  "at": "2026-11-17T21:24:52+07:00",
   "n": 1,
-  "note": "rules_no_adb on a CHiQ AI PONT (mt5896, sdk 34): a rule could not turn the TV off, ADB still connecting and 5555 closed (adbd up, no TCP port). A user state, the message already says what to do; not a fault"
+  "note": "rules_no_adb (CHiQ AI PONT, Android 14) on 0.53.1: only Wireless debugging (TLS, not paired), no 5555, so the sleep timer could not turn the TV off; the TV's state, same as the Chromecast 3375 note, TV Setup already shows the howto"
  },
  "768f27f158deb2344eee289b|0.33.1": {
   "at": "2026-10-29T17:19:46+07:00",
@@ -2413,6 +2488,11 @@
   "at": "2026-11-05T10:40:23+07:00",
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+ },
+ "81c0e4e71323d44362a94b37|0.53.1": {
+  "at": "2026-11-18T11:54:35+07:00",
+  "n": 1,
+  "note": "keyfix_refused on onn. 4K Plus (sdk 34, rs allow) on 0.53.1: add-on 'stopped', a cleaner force-stops it and Android drops the a11y entry (JmGO/TCL/Xiaomi kind); clients say so since e9452995"
  },
  "822b0111c9f2158f9464d890|0.32.1": {
   "at": "2026-10-29T17:20:07+07:00",
@@ -2624,6 +2704,11 @@
   "n": 1,
   "note": "ADB refused / error: ADB off on the user's TV (known)"
  },
+ "8b454ce2f884181ea89722e1|0.52.0": {
+  "at": "2026-11-15T20:21:29+07:00",
+  "n": 1,
+  "note": "Allwinner H713 (sun50iw12p1) projector firmware drops the a11y entry, a11y 0, rs -; same kind as Allwinner/JmGO, nothing to fix, clients say so since e9452995"
+ },
  "8baf906db5be83b7065a065b|0.35.0": {
   "at": "2026-11-02T22:17:48+07:00",
   "n": 2,
@@ -2633,6 +2718,11 @@
   "at": "2026-11-02T22:17:48+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+ },
+ "8d176ce1e9c94e8638a81670|0.52.0": {
+  "at": "2026-11-16T06:26:59+07:00",
+  "n": 1,
+  "note": "Chromecast a14, rs allow, others 1: another a11y app enabled, ours dropped; nothing to fix"
  },
  "8d19b0bf4fbfe9ad10c5143b|0.34.1": {
   "at": "2026-10-30T09:08:20+07:00",
@@ -2695,9 +2785,9 @@
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
  },
  "91a5ee662f21120ec67e968e|0.30.0": {
-  "at": "2026-11-09T07:39:11+07:00",
-  "n": 19,
-  "note": "TV Home 0.30.0 only: onPause on a locked Home, fixed in 5de6ba6f (0.31.0, v0.50.0)"
+  "at": "2026-11-16T01:02:34+07:00",
+  "n": 20,
+  "note": "TV Home 0.30.0 only, again 1x: fixed in 5de6ba6f (0.31.0); that TV still on 0.30.0"
  },
  "91edf9043da787065b68c466|0.38.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -2875,9 +2965,19 @@
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
  },
  "a0ef02bfc8edf9bdb3f78d1d|0.51.0": {
-  "at": "2026-11-13T10:14:42+07:00",
+  "at": "2026-11-17T05:38:58+07:00",
   "n": 1,
-  "note": "keyfix_refused on an Amlogic t950s box (sdk 33, fake redfin fps, rs allow, another a11y app on): firmware drops our a11y entry; told on the clients since e9452995"
+  "note": "Amlogic t950s fake-Pixel box again on 0.53.0 (a13, rs allow): another a11y app, ours dropped; nothing to fix"
+ },
+ "a0ef02bfc8edf9bdb3f78d1d|0.52.0": {
+  "at": "2026-11-17T05:38:58+07:00",
+  "n": 1,
+  "note": "Amlogic t950s fake-Pixel box again on 0.53.0 (a13, rs allow): another a11y app, ours dropped; nothing to fix"
+ },
+ "a0ef02bfc8edf9bdb3f78d1d|0.53.0": {
+  "at": "2026-11-17T05:38:58+07:00",
+  "n": 1,
+  "note": "Amlogic t950s fake-Pixel box again on 0.53.0 (a13, rs allow): another a11y app, ours dropped; nothing to fix"
  },
  "a11df287c4b27a276b8f644e|0.27.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -3149,6 +3249,11 @@
   "n": 1,
   "note": "0.51.0: rs allow now (appop fix worked), still running/bound 0/crashed 0: cheap RK3528 stick with fake redfin fingerprint drops the a11y entry, firmware kind; clients say keys work only on TV Home (e9452995)"
  },
+ "aaa561abf78db4410f816c4c|0.52.0": {
+  "at": "2026-11-16T18:30:00+07:00",
+  "n": 1,
+  "note": "same RK3528 stick on 0.52.0 (rs allow, bound 0, crashed 0): firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
+ },
  "ac1f05f98ad5126b3167283a|0.37.0": {
   "at": "2026-11-02T22:17:48+07:00",
   "n": 1,
@@ -3205,9 +3310,19 @@
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
  "b14376f49ad285f8b2deab96|0.37.0": {
-  "at": "2026-11-02T22:17:48+07:00",
+  "at": "2026-11-16T01:02:33+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+  "note": "Amlogic p291 MXQ clone: 5555 ECONNREFUSED, adbd not on TCP (ADB off); nothing to fix, client asks to turn ADB on"
+ },
+ "b14376f49ad285f8b2deab96|0.50.0": {
+  "at": "2026-11-16T01:02:33+07:00",
+  "n": 2,
+  "note": "Amlogic p291 MXQ clone: 5555 ECONNREFUSED, adbd not on TCP (ADB off); nothing to fix, client asks to turn ADB on"
+ },
+ "b14376f49ad285f8b2deab96|0.52.0": {
+  "at": "2026-11-16T01:02:33+07:00",
+  "n": 1,
+  "note": "Amlogic p291 MXQ clone: 5555 ECONNREFUSED, adbd not on TCP (ADB off); nothing to fix, client asks to turn ADB on"
  },
  "b1999d21c00cbbc951ce9906|0.10.0": {
   "at": "2026-10-28T14:05:22+07:00",
@@ -3215,9 +3330,9 @@
   "note": "left: NPE inside system_server, platform"
  },
  "b1ccd0d29d66cdd753d27562|0.27.0": {
-  "at": "2026-11-15T01:00:35+07:00",
-  "n": 9,
-  "note": "phone 0.27.0 on a Meizu Android 6 (latest 0.51.0): R8 lambda NoClassDefFoundError on old ART, no newer version affected; still the one install that never updates"
+  "at": "2026-11-16T17:01:28+07:00",
+  "n": 11,
+  "note": "same Meizu Android 6 on phone 0.27.0 again; never updates"
  },
  "b2b52cae0dafc491fb1e1cd6|0.34.0": {
   "at": "2026-10-30T09:08:25+07:00",
@@ -3388,6 +3503,11 @@
   "at": "2026-10-29T17:20:15+07:00",
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "bac19fdaa1aa27155075ee89|0.54.0": {
+  "at": "2026-11-16T09:45:30+07:00",
+  "n": 1,
+  "note": "playing.js plDraw: #pltitle gone (2nd time after 3cefc344; no code of ours removes it, Windows Chromium, likely a page translator/add-on); plDraw returns when the bar is gone"
  },
  "bb235b5156d5dfe6f4b07f66|0.31.0": {
   "at": "2026-11-04T03:07:30+07:00",
@@ -3934,15 +4054,25 @@
   "n": 2,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
- "da6214721e9abe7601758e7a|0.26.3": {
-  "at": "2026-11-01T20:54:31+07:00",
+ "da50a2a97ce344aacdf69023|0.53.0": {
+  "at": "2026-11-16T21:03:10+07:00",
   "n": 1,
-  "note": "fixed: contains() guarded in core.js popover"
+  "note": "SHARP AQUOS-TVX22A sdk 34, rs allow, add-on by shell, stopped: the TV's cleaner force-stops it (like TCL 65771855, Skyworth 49e38a61); nothing to fix, clients say keys work only on TV Home"
+ },
+ "da6214721e9abe7601758e7a|0.26.3": {
+  "at": "2026-11-15T15:35:59+07:00",
+  "n": 1,
+  "note": "Safari: stack 'contains@[native code]' then '@', no file of ours (our own contains() calls were made safe in cdaa4c2d, 0.40.1): a script Safari or an add-on put in; errbox ignores native-only stacks now"
  },
  "da6214721e9abe7601758e7a|0.38.0": {
-  "at": "2026-11-02T22:17:48+07:00",
+  "at": "2026-11-15T15:35:59+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
+  "note": "Safari: stack 'contains@[native code]' then '@', no file of ours (our own contains() calls were made safe in cdaa4c2d, 0.40.1): a script Safari or an add-on put in; errbox ignores native-only stacks now"
+ },
+ "da6214721e9abe7601758e7a|0.52.0": {
+  "at": "2026-11-15T15:35:59+07:00",
+  "n": 1,
+  "note": "Safari: stack 'contains@[native code]' then '@', no file of ours (our own contains() calls were made safe in cdaa4c2d, 0.40.1): a script Safari or an add-on put in; errbox ignores native-only stacks now"
  },
  "db1680a09090e1bebbd561b8|0.47.0": {
   "at": "2026-11-08T07:30:43+07:00",
@@ -4330,49 +4460,59 @@
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
  "f450a91c33294b34be468f07|0.30.0": {
-  "at": "2026-11-11T06:02:25+07:00",
+  "at": "2026-11-17T13:01:44+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
  },
  "f450a91c33294b34be468f07|0.31.0": {
-  "at": "2026-11-11T06:02:25+07:00",
+  "at": "2026-11-17T13:01:44+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
  },
  "f450a91c33294b34be468f07|0.32.1": {
-  "at": "2026-11-11T06:02:25+07:00",
+  "at": "2026-11-17T13:01:44+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
  },
  "f450a91c33294b34be468f07|0.33.1": {
-  "at": "2026-11-11T06:02:25+07:00",
+  "at": "2026-11-17T13:01:44+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
  },
  "f450a91c33294b34be468f07|0.38.1": {
-  "at": "2026-11-11T06:02:25+07:00",
+  "at": "2026-11-17T13:01:44+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
  },
  "f450a91c33294b34be468f07|0.38.2": {
-  "at": "2026-11-11T06:02:25+07:00",
+  "at": "2026-11-17T13:01:44+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
  },
  "f450a91c33294b34be468f07|0.42.0": {
-  "at": "2026-11-11T06:02:25+07:00",
+  "at": "2026-11-17T13:01:44+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
  },
  "f450a91c33294b34be468f07|0.47.0": {
-  "at": "2026-11-11T06:02:25+07:00",
+  "at": "2026-11-17T13:01:44+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
  },
  "f450a91c33294b34be468f07|0.49.0": {
-  "at": "2026-11-11T06:02:25+07:00",
+  "at": "2026-11-17T13:01:44+07:00",
   "n": 1,
-  "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired / reset), not a code fault"
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
+ },
+ "f450a91c33294b34be468f07|0.52.0": {
+  "at": "2026-11-17T13:01:44+07:00",
+  "n": 2,
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
+ },
+ "f450a91c33294b34be468f07|0.53.0": {
+  "at": "2026-11-17T13:01:44+07:00",
+  "n": 1,
+  "note": "HiSilicon Hi3798MV200 box (Android 9, operator IPTV kind): network ADB on 5555 not listening; ADB off or locked by the operator, TV Setup's own steps to turn it on apply; nothing to fix"
  },
  "f47e3e4ff3e9c81406ab9094|0.31.0": {
   "at": "2026-10-29T17:19:52+07:00",
@@ -4504,30 +4644,45 @@
   "n": 2,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "fbcdebf9099ea493b3b61d33|0.52.0": {
+  "at": "2026-11-16T06:26:59+07:00",
+  "n": 1,
+  "note": "MOKA R3G Realtek rtd2841a a14, rs allow, a11y 0: firmware drops the a11y entry; nothing to fix"
+ },
  "fbceab7d03188e5e17141936|0.28.0": {
   "at": "2026-10-27T09:37:25+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "fbed4da875a2ffa6e96f47b8|0.47.0": {
-  "at": "2026-11-14T06:18:44+07:00",
+  "at": "2026-11-17T16:50:50+07:00",
   "n": 2,
-  "note": "again (0.51.0 x4): the fake ADT-3 (Allwinner sun50iw15p1); firmware drops the a11y entry, nothing to fix; told on the clients since e9452995"
+  "note": "fake ADT-3 (Allwinner sun50iw15p1) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
  },
  "fbed4da875a2ffa6e96f47b8|0.49.0": {
-  "at": "2026-11-14T06:18:44+07:00",
+  "at": "2026-11-17T16:50:50+07:00",
   "n": 1,
-  "note": "again (0.51.0 x4): the fake ADT-3 (Allwinner sun50iw15p1); firmware drops the a11y entry, nothing to fix; told on the clients since e9452995"
+  "note": "fake ADT-3 (Allwinner sun50iw15p1) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
  },
  "fbed4da875a2ffa6e96f47b8|0.50.0": {
-  "at": "2026-11-14T06:18:44+07:00",
+  "at": "2026-11-17T16:50:50+07:00",
   "n": 5,
-  "note": "again (0.51.0 x4): the fake ADT-3 (Allwinner sun50iw15p1); firmware drops the a11y entry, nothing to fix; told on the clients since e9452995"
+  "note": "fake ADT-3 (Allwinner sun50iw15p1) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
  },
  "fbed4da875a2ffa6e96f47b8|0.51.0": {
-  "at": "2026-11-14T06:18:44+07:00",
+  "at": "2026-11-17T16:50:50+07:00",
   "n": 4,
-  "note": "again (0.51.0 x4): the fake ADT-3 (Allwinner sun50iw15p1); firmware drops the a11y entry, nothing to fix; told on the clients since e9452995"
+  "note": "fake ADT-3 (Allwinner sun50iw15p1) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
+ },
+ "fbed4da875a2ffa6e96f47b8|0.52.0": {
+  "at": "2026-11-17T16:50:50+07:00",
+  "n": 2,
+  "note": "fake ADT-3 (Allwinner sun50iw15p1) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
+ },
+ "fbed4da875a2ffa6e96f47b8|0.53.0": {
+  "at": "2026-11-17T16:50:50+07:00",
+  "n": 1,
+  "note": "fake ADT-3 (Allwinner sun50iw15p1) again on 0.53.0: firmware drops the a11y entry; nothing to fix, clients say keys work only on TV Home"
  },
  "fc50f4abd4e3d69b9a57334c|0.34.1": {
   "at": "2026-10-30T09:08:32+07:00",
