@@ -20,7 +20,7 @@ Màn hình chính không quảng cáo, chỉnh từ điện thoại hoặc máy 
 
 | Hình nền | Là gì |
 | --- | --- |
-| Gợi ý | Slideshow Việt Nam, video êm, trang web sống; danh sách cập nhật từ site, không cần bản app mới |
+| Gợi ý | Slideshow Việt Nam, video êm, trang web sống; danh sách cập nhật từ site |
 | Tự chọn | 1 màu hoặc 2-4 màu chuyển dần, 9 hướng; trên TV đổi bằng ◀ ▶ |
 | Hình vẽ | Có sẵn, không cần mạng |
 | Bing | Ảnh 8 ngày gần nhất; bấm lại ô Bing trên TV = ảnh hôm trước |
@@ -28,7 +28,7 @@ Màn hình chính không quảng cáo, chỉnh từ điện thoại hoặc máy 
 | Ảnh của bạn | Tối đa 10; ảnh dọc: **Hiện trọn ảnh**, hai bên mờ |
 | Trang web | Dán liên kết http/https; TV mở thử rồi báo kết quả |
 
-Chọn nhiều hình rồi đặt **Đổi hình nền** (30 phút → mỗi lần mở) để xoay vòng.
+Bật **Chọn nhiều hình nền**, đánh ✓ hoặc **Chọn tất cả**: chúng thay nhau làm nền.
 
 **Phủ tối** 0-100 %: chữ dễ đọc trên mọi hình.
 
@@ -43,7 +43,7 @@ Chọn nhiều hình rồi đặt **Đổi hình nền** (30 phút → mỗi l�
 
 - Trên TV: bánh răng góc trên phải → Cài đặt nhanh → Tùy chỉnh, hoặc phím Menu.
 - Giữ OK trên app: mở, ghim, dời, ẩn, đổi tên, gán phím, khóa hoặc giới hạn giờ (hỏi mã PIN phụ huynh), dừng, xóa bộ nhớ đệm.
-- Mỗi widget **To** hoặc **Nhỏ**; hai widget nhỏ chung một cột.
+- Widget **To** hoặc **Nhỏ**: 1-2 hàng trên app, hoặc bên cạnh.
 - **Số cột**: 4 đến 8 app mỗi hàng (mặc định 5).
 - Bấm Home trong một app: về TV Home, đứng đúng ở app đó.
 - **Màn chờ TV Home**: đồng hồ lớn và hình nền khi TV rảnh.

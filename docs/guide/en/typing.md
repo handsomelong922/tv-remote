@@ -10,3 +10,5 @@
 > 💡 Select a text field on the TV, or when the TV keyboard pops up, and the typing box and phone keyboard open by themselves in under a second. Leave the field without typing and it closes.
 
 > 💡 Turn it off in Settings (🛠️) → About → “The TV’s keyboard” → **Don't open it**.
+
+> 💡 When the TV reports a text field (no ADB needed; with ADB: in the phone app turn on Settings → About → “Type straight into the TV's text box”, in the computer app pair the remote in the Setup tab), the box starts with the text in it (the field's name is the hint), edits replace it on the TV, and **↵** submits. Apps with a keyboard of their own (Downloader…) still get key presses, as before.

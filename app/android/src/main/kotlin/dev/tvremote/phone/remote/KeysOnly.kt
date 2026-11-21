@@ -98,7 +98,7 @@ internal fun MainActivity.startBasic(ip: String, justPaired: Boolean) {
                 show(true)
                 layoutRemote()
                 status.text = title(ip) + " · " + keysLine(a)
-                if (a is Atv) watchAdb(a, ip)
+                if (a is Atv) { watchAdb(a, ip); watchField(a) }
             }
         } catch (e: Remote.Refused) {
             a.close()
@@ -135,7 +135,7 @@ internal fun MainActivity.resumeBasic(ip: String) {
                 waiting.visibility = View.GONE
                 status.text = title(entry ?: ip) + " · " + keysLine(a)
                 layoutRemote()
-                if (a is Atv) watchAdb(a, ip)
+                if (a is Atv) { watchAdb(a, ip); watchField(a) }
             }
         } catch (e: Exception) {
             a.close()
@@ -176,7 +176,7 @@ internal fun MainActivity.vidaaCert() {
 }
 
 /** On a worker thread: the TV shows a code, the person types it here (6 characters on an Android TV, 4 digits on a Hisense). */
-internal fun MainActivity.pair(ip: String) {
+internal fun MainActivity.pair(ip: String, done: () -> Unit = { startBasic(ip, true) }) {   // done: on the UI thread, once paired
     val vidaa = kindOf(entry ?: ip) == Remote.Kind.VIDAA
     val p = Remote.of(kindOf(entry ?: ip), filesDir, ip) as CodePairing
     try { p.startPairing() } catch (e: Exception) {
@@ -196,7 +196,7 @@ internal fun MainActivity.pair(ip: String) {
                 Thread {
                     try {
                         p.finishPairing(typed)
-                        ui.post { startBasic(ip, true) }
+                        ui.post { done() }
                     } catch (e: Exception) {
                         p.close()
                         val net = e is java.io.IOException && e.message != "pairing refused" && e.message != "the TV closed the pairing"   // a dropped link is not a wrong code

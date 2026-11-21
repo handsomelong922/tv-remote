@@ -73,7 +73,7 @@ Without ADB the Manage page shows you how to turn it on: tap **🧭 Turn ADB on 
 
 A small app on the TV: it runs the TV's web page, the sleep timer, app limits and more.
 
-> 📱 **Have the phone or computer app? No Downloader needed.** Pick the TV (ADB on), open **Manage → ⏰ Automation**, press **⚡ Install TV Setup on the TV**. One button, and Play Protect does not block it.
+> 📱 **Have the phone or computer app? No Downloader needed.** Pick the TV (ADB on), open **Manage → ⏰ Automation**, press **⚡ Install TV Setup on the TV**. If the TV asks about Play Protect, choose Install anyway.
 
 ### Only the TV: install with Downloader
 
@@ -259,6 +259,8 @@ While it floats, leaving for Home or another app (Android 8+) puts it in the sys
 
 > 💡 Turn it off in Settings (🛠️) → About → “The TV’s keyboard” → **Don't open it**.
 
+> 💡 When the TV reports a text field (no ADB needed; with ADB: in the phone app turn on Settings → About → “Type straight into the TV's text box”, in the computer app pair the remote in the Setup tab), the box starts with the text in it (the field's name is the hint), edits replace it on the TV, and **↵** submits. Apps with a keyboard of their own (Downloader…) still get key presses, as before.
+
 ## The TV's clipboard (accents, pasting)
 
 The clipboard holds the text the TV last copied. Use it to read it, copy it to your device, or send text to the TV.
@@ -428,17 +430,19 @@ At the top: **🧹 Clean caches**, **📥 Restore** (from a.tar file), **↻ Rel
 A slow TV? Optimize makes apps open faster. Nothing is uninstalled, and **Undo** puts it back.
 
 1. Go to the **📺 Setup** tab → the **⚡ Optimize TV** card.
-2. Choose what you want: **Turn off transition animations**, **Use [TV Home](#home) as the home screen**, **Suggested apps to turn off**, **Turn off other apps**.
+2. Choose: **Turn off transition animations**, **Use [TV Home](#home) as the home screen**, **Suggested apps to turn off**, **Turn off other apps**.
 3. Tap **⚡ Run optimize** and confirm.
-4. Not happy? Tap **↩ Undo** (an app that hangs is skipped and named: tap again later).
+4. Tap **↩ Undo** (a hung app is skipped and named: tap again).
 
-> 💡 Works on Android TV and Google TV. Where the TV will not let it change, TV Setup still makes Home open the one you picked.
+> 💡 Where the TV will not let Home change, TV Setup still makes Home open the one you picked.
 
 > 💡 Lost the home screen after optimizing? On the TV: Settings → Apps → System apps → Android TV Home (or Google TV Home) → **Enable**.
 
 > 💡 Remote buttons (Input, YouTube, Netflix) dead after the stock launcher is off? TV Setup brings them back (switch off in **Optimize TV** > **Remote buttons**). See [dead keys](#keyfix).
 
 > 💡 Lists from [cleanyourtv](https://github.com/Gathin23/cleanyourtv) (400+ TVs), UAD-NG, TV Slim, our users.
+
+> 🧊 An app the TV will not turn off is barred from background running. Undo restores it.
 
 > 🛡️ Apps holding saved Wi-Fi or the HDMI / TV inputs are never turned off, cleared or removed.
 
@@ -494,7 +498,7 @@ A home screen with no ads, set up from the phone or computer. Install it from th
 
 | Background | What it is |
 | --- | --- |
-| Suggested | A Việt Nam slideshow, calm videos, a live page; the list updates from the site, no app release |
+| Suggested | A Việt Nam slideshow, calm videos, a live page; the list updates from the site |
 | Custom | One color or 2-4 blended, 9 directions; on the TV ◀ ▶ change it live |
 | Drawn scene | Built in, no internet needed |
 | Bing | The last 8 days' pictures; press the Bing tile again on the TV = the day before |
@@ -502,7 +506,7 @@ A home screen with no ads, set up from the phone or computer. Install it from th
 | Your photos | Up to 10; a portrait one: **Whole photo**, blurred sides |
 | Web page | Paste an http/https link; the TV tries it first |
 
-Pick several; **Change background** rotates them.
+**Pick several backgrounds** on: ticked ones take turns.
 
 **Dim** 0-100 %: readable text on any picture.
 
@@ -517,7 +521,7 @@ Pick several; **Change background** rotates them.
 
 - On the TV: the gear at the top right → Quick settings → Customize, or the Menu key.
 - Hold OK on an app: open, pin, move, hide, rename, assign a key, lock or limit its time (asks the parent PIN), force stop, clear cache.
-- Each widget **Big** or **Small**; two small ones share a column.
+- Widgets **Big** or **Small**: 1-2 rows above the apps, or beside.
 - **Columns**: 4 to 8 apps per row (default 5).
 - Home pressed in an app: back on TV Home, on that app.
 - **TV Home screensaver**: a big clock and the background while the TV is idle.
@@ -526,7 +530,7 @@ Pick several; **Change background** rotates them.
 
 TV remote only: Downloader, code **4356026**, then make TV Home the home screen. Direct link: [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk).
 
-Google TV: **Accounts & profiles** is empty while TV Home is in use. To switch profile: **Use the TV's own launcher**, switch, then pick TV Home again.
+Google TV: **Accounts & profiles** is empty under TV Home. To switch: **Use the TV's own launcher**, switch, then back to TV Home.
 
 ## Market, News, weather map and ⚙
 
@@ -734,6 +738,7 @@ Quick keys open an app from the home screen with one number or color key on the 
 - The **At power-on** slot: pick an app = it opens at power-on, clear = off. **Auto-open … at power-on**: opens it (empty: TV Home) even if the TV woke into HDMI or another app, except during a cast.
 - The same slot offers **Last app used**: the app open when the TV turned off (off by default).
 - Live widgets can be assigned too and show their own icon. There is also **Voice command**: opens TV Remote's microphone (needs TV Setup 0.46.1).
+- **Other key**: press any remote key (play, channel, Info…) to give it an app; it works on TV Home's screen only.
 
 Customize → Quick keys & power-onup → **Home key in an app: show the app bar** (off by default).
 
@@ -752,6 +757,7 @@ Color keys, number keys and buttons that no longer do anything can open the app 
 | --- | --- |
 | Red, green, yellow, blue | Always: no app uses them |
 | 0-9 | On TV Home: a press. In other apps: hold 2 s (needs TV Setup) |
+| Other keys: play, channel, Info… | On TV Home only. On the TV: the **Other key** tile, then press that key (not Space or a gamepad button) |
 | YouTube, Netflix, Prime Video | Always: given another app, the button opens it instead (needs TV Setup) |
 | TV, Input, PatchWall, All apps, Settings | Only while the button is dead. A working button is never taken |
 | Voice command (in the list, next to apps) | For a color or app key when the system keeps the Assistant button (Xiaomi). Needs TV Setup 0.46.1+ |
@@ -974,9 +980,10 @@ Reading aloud needs Google Speech Services (or another engine) with that languag
 1. Tap **✏️** by the picture (or More keys → Draw on the TV).
 2. Pick a color and draw on the picture. **↩** undoes a stroke.
 3. Add **💬 Text**, a **🖼️ Picture** or a **🎞️ Video** (opens the [Video on TV box](#video)). For a picture, size it with − / + then tap **✓ Put on TV**.
-4. Tap **✓ Done** when finished. To clear: **🗑 Clear all**.
+4. **⏱** sets how long it stays after the last stroke: 10 min, 30 min, 1 hour or **Until cleared** (kept when the TV restarts).
+5. Tap **✓ Done** when finished. To clear: **🗑 Clear all**, or **Clear the drawing** in TV Setup on the TV.
 
-> 💡 The drawing sits over every app and clears after 10 minutes. Needs TV Setup.
+> 💡 The drawing sits over every app. Needs TV Setup (⏱ needs a recent one; the app asks to update).
 
 ## Put a picture on the TV
 
@@ -989,7 +996,7 @@ Two ways: lay a picture **over the TV's screen** (above every app), or **play** 
 
 To play it properly: **More keys → Open on the TV → Play a photo / video from the phone** (on a computer: from this device).
 
-> 💡 The overlay clears after 10 minutes, or tap **🗑 Clear all**. Needs TV Setup (if missing the app asks to update).
+> 💡 The overlay clears with the drawing (10 minutes unless **⏱** says otherwise), or tap **🗑 Clear all**. Needs TV Setup (if missing the app asks to update).
 
 ## TV screenshot
 
@@ -1035,6 +1042,8 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 
 > 💡 The TV could not be turned off (ADB is off, or TV Setup can’t connect)? The timer does not clear itself: it says so once and keeps trying.
 
+> 💡 “23:30” follows the TV's clock; the page says so when the TV is in another time zone.
+
 ## Bedtime
 
 1. Tab **⏰ Automation → 🌙 Bedtime**.
@@ -1044,6 +1053,8 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 > 💡 Needs TV Setup on the TV. The TV does the turning off itself.
 
 > 💡 The TV could not be turned off (ADB is off, or TV Setup can’t connect)? It says so once and tries again; Telegram does not report “off” by mistake.
+
+> 💡 Bedtime, limits and schedules wait while the TV's clock is still wrong after it starts (some boxes boot in the wrong year). Times follow the TV's clock; if the TV is in another time zone, the page says so.
 
 ## Welcome screen
 
@@ -1069,6 +1080,8 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 > 💡 All of it lives on the TV and needs TV Setup. It holds even with your device off.
 
 > 💡 The app could not be closed (ADB is off, or TV Setup can’t connect)? It says so once and tries again; the “app closed” alert is not sent by mistake.
+
+> 💡 A home screen (TV Home, the TV's own) cannot get a limit: closing it only opens it again.
 
 ## Kids mode: quick setup
 
@@ -1107,7 +1120,7 @@ For example: YouTube opens only Monday to Friday, 16:00 to 18:00, at most 30 min
 2. Pick the app, the days it may open, and the start and end time. For a cap on minutes inside the window choose **At most**. To block an app for good tap **Block entirely**.
 3. Different hours on different days (Mon–Fri 16:00–18:00, Sat and Sun 08:00–22:00)? Tap **＋ Add a time window**, each with its own days and hours, remove with **✕**. Up to 8; inside any one it may open.
 
-A window that runs past midnight (22:00 to 02:00) belongs to the day it starts on.
+A window that runs past midnight (22:00 to 02:00) belongs to the day it starts on, and so do its **At most** minutes. Times are the TV's.
 
 No PIN is asked inside the window, unless the app also has a [PIN lock](#lock). For more minutes today use **+30 min** on the app's row. Outside the window **+30 min** opens it for 30 minutes.
 
@@ -1145,6 +1158,8 @@ If the TV was off or its clock jumped past the time, that run is skipped, not ma
 
 Back up with **⬇️ Export a backup file** and **⬆️ Import from a file**.
 
+> 💡 A scene started again while it runs is skipped, not run twice.
+
 ## Control the TV from Telegram
 
 Message your own bot to turn the TV off or on, set the volume, open apps, take a screenshot. The bot runs in TV Setup and opens no port to the Internet.
@@ -1153,8 +1168,8 @@ Message your own bot to turn the TV off or on, set the volume, open apps, take a
 2. BotFather returns a **token** (`123456789:AAH…`). Whoever has it controls the bot: share it with no one.
 3. 🛠️ Settings on the TV or its web page → **Control by Telegram** → **On**, paste the token, **Save**.
 4. Press **Make pairing code**: a 6-digit code shows in Settings and on the TV screen, single use, 5 minutes.
-5. Open the bot (private chat or group), send `/pair 123456`. Unknown chats get no answer at all.
-6. Five wrong tries cancel the code and lock pairing for 15 minutes; a new code unlocks.
+5. Open the bot (private chat, or a group: admins only), send `/pair 123456`. Unknown chats get no answer at all.
+6. 5 wrong in one chat: that chat is out. 30 in all: pairing locks 15 min.
 
 Commands:
 
@@ -1188,6 +1203,8 @@ More bot commands, and the TV messages you when something happens. A paired chat
 4. **/alerts** picks what the TV sends by itself: TV on or off, app closed, bedtime, sleep timer, a new device. At most one per kind per minute. The “app closed” alert has more-time buttons (see [limits](#limits)).
 
 In **🛠️ Settings** you see the bot's status, a QR to pair with one scan, each chat with its rights and alerts, and a 7-day history. The words of /type and /say are never kept.
+
+> 💡 In a group only the admins can command the TV; the others still see the alerts.
 
 ## Home Assistant · Shortcuts (Siri)
 
@@ -1367,6 +1384,8 @@ Menu paths from [cleanyour.tv](https://cleanyour.tv/not-android).
 - **🔍 Find** (end of the tab bar): type a word like “sleep” or “lock” to go straight to it, whatever tab it is in.
 - **Send anonymous stats** (on by default): see [Anonymous stats](#census). In the phone app it is under Privacy.
 
+> 💡 Phone app: About → **Type straight into the TV's text box** (off by default): with ADB on, Enter sends the field and its text can be edited. The first time the TV shows a code to pair.
+
 ## The self-check when it will not connect
 
 Cannot connect? The app checks by itself in under 4 seconds and gives **one conclusion with the fix**. No guessing.
@@ -1378,6 +1397,7 @@ Cannot connect? The app checks by itself in under 4 seconds and gives **one conc
 | This TV only has Wireless debugging | Pair once with the 6-digit code: Developer options → Wireless debugging → Pair with pairing code. |
 | ADB debugging is off on the TV | Keys still work. For picture and apps tap **🧭 Turn ADB on for me** or switch it on in Developer options. |
 | The TV is waiting for you to allow | Look at the TV: tick “Always allow”, choose OK. |
+| ADB is on, but it does not let this app in | Tap **🔄 Try again**. Still no: restart the TV (unplug it for 10 seconds); if it asks, tick “Always allow”, choose OK. |
 | This device is on another network than the TV | Join the TV's own Wi-Fi, not a guest network or mobile data. |
 | This device is not on Wi-Fi | Turn Wi-Fi on. |
 | Tailscale is off on this device | Turn Tailscale on, then try again. |
@@ -1434,7 +1454,7 @@ The phone app's Manage screen uses Android's own browser (WebView). If it is too
 | The TV's page asks for the code again | Pair again once; avoid private windows. |
 | Choppy picture | Lower size and bitrate ([Picture quality](#quality)). |
 | Tailscale shows no link | Wait a bit, then tap **🔑** again ([Tailscale](#away)). |
-| Play Protect warns | Choose “Install anyway”. The source is public. |
+| Play Protect warns | Press “Install anyway” (or “More details”, then “Install anyway”) on the TV itself. While an install waits, the app shows this hint. The source is public. |
 | An.apks /.xapk /.apkm says a part is missing or locked | Use the complete file, without a password; the app sends only the parts that fit the TV. |
 | Fire TV: TV Setup cannot reach ADB though it is on | Amazon blocks an app on the TV from using its own ADB; use the phone or computer app. |
 | Fire TV: Home / Alexa buttons dead, other keys work | First setup never finished: the app says so at the top, press **Fix** (sets `user_setup_complete` to 1). |

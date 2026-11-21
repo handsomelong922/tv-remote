@@ -17,7 +17,8 @@ import java.util.Locale
  * Who may command it: a chat that sent `/pair 123456` with the code the TV showed (one at a time, five minutes, five wrong
  * guesses cancel it and lock pairing, as [Hook] does for tokens). Anyone else is ignored silently, so a stranger who finds the bot
  * learns nothing, not even that it listens. A paired chat has a scope like a shared browser (Scope.kt in TV Setup): REMOTE by
- * default, FULL when the owner raises it.
+ * default, FULL when the owner raises it. In a paired group only the group's admins command it (the user, 2026-11-21): the others
+ * read what it sends, alerts too, and a command or tap of theirs gets one line saying so ([mayControl]).
  *
  * Nothing here presses a key: every command becomes the request the page would have sent and goes to the core's own router
  * ([route], with the chat's scope, so a REMOTE chat is refused exactly where a REMOTE browser is), through [Hook.perform] for the
@@ -43,7 +44,11 @@ class Telegram(
     private val onDate: (Long) -> Unit = { },
     /** How far ahead of the real time the TV's clock is (ms; negative: behind), so a TV whose clock is minutes out still hears fresh commands. */
     private val skew: () -> Long = { 0L },
+    /** Where a scene runs (it can wait minutes): never on the poll thread, which would stop hearing commands meanwhile. Null: a pool of its own (inline when not [background]). */
+    later: ((Runnable) -> Unit)? = null,
 ) {
+    private val later: (Runnable) -> Unit = later ?: if (background) { r -> SCENE_RUNS.execute(r) } else { r -> r.run() }
+
     /** Where the switch, the token and the paired chats live (TV Setup's prefs). The token is never written anywhere else. */
     interface Store {
         var enabled: Boolean
@@ -82,7 +87,8 @@ class Telegram(
 
     private var code: String? = null
     private var codeUntil = 0L
-    private var wrong = 0
+    private var wrong = 0                           // wrong codes from all chats: at [MAX_WRONG_ALL] the code dies (guesses from many chats)
+    private val wrongBy = HashMap<Long, Int>()      // wrong codes per chat: one stranger shuts out only himself
     private var lockedUntil = 0L
     private val limit = Limiter(MIN_GAP)
     private val history by lazy { History(store, clock) }
@@ -96,6 +102,7 @@ class Telegram(
     private var backoff = 0L
     @Volatile private var quiet = false
     @Volatile private var kicked = false
+    @Volatile private var backlog = false                      // the next poll reads what queued while nobody listened (a start, switched on again)
 
     /** Starts the loop when it is wanted and stops it when not; call after the switch, the token or the language changed. */
     fun sync() {
@@ -128,7 +135,9 @@ class Telegram(
             if (w == 0L && quiet && System.nanoTime() - t0 < 500_000_000L) w = 1000   // an answer with nothing in it, at once: a proxy that does not hold the call must not make this spin
             synchronized(wake) {
                 if (stopping) return
-                if (w < 0) { wake.wait() } else if (w > 0) wake.wait(w)
+                if (!kicked) {                                          // a sync() since the check above: its notify came before this wait, go round at once
+                    if (w < 0) { wake.wait() } else if (w > 0) wake.wait(w)
+                }
             }
         }
     }
@@ -152,6 +161,7 @@ class Telegram(
                 if (!dw.ok) return fail("deleteWebhook", describe(dw), dw)
                 api.call(token, "setMyCommands", JSONObject().put("commands", commandList()))   // best effort: the bot works without the "/" menu
                 readyFor = key
+                backlog = true
             }
             if (store.offset <= 0L) {                // first start: what was sent while nobody listened is not for now
                 val last = api.call(token, "getUpdates", JSONObject().put("offset", -1).put("timeout", 0))
@@ -159,17 +169,22 @@ class Telegram(
                 if (!last.ok) return fail("getUpdates", describe(last), last)
                 val a = last.body.optJSONArray("result")
                 store.offset = (if (a != null && a.length() > 0) a.getJSONObject(a.length() - 1).optLong("update_id") + 1 else 1L)
+                backlog = false                                         // skipped whole already
             }
-            val p = JSONObject().put("timeout", POLL_S).put("offset", store.offset).put("allowed_updates", JSONArray(ALLOWED))
-            val r = api.call(token, "getUpdates", p, POLL_S + 15)
+            // The queue left from before (the bot was switched off for a day, TV Setup was not running) is read at once (timeout 0) and its
+            // taps dropped: a tap carries no date, and an old "m:off" or "u:" (more time in kids mode) is not for now. Its messages keep the 120 s check.
+            val first = backlog
+            val p = JSONObject().put("timeout", if (first) 0 else POLL_S).put("offset", store.offset).put("allowed_updates", JSONArray(ALLOWED))
+            val r = api.call(token, "getUpdates", p, if (first) 15 else POLL_S + 15)
             if (refused(r)) return -1
             if (r.status == 409) { readyFor = ""; return fail("getUpdates", "another listener (webhook?)", r) }
             if (!r.ok) return fail("getUpdates", describe(r), r)
             status = "ok"; lastError = ""; backoff = 0; lastOk = clock()
             val got = r.body.optJSONArray("result") ?: JSONArray()
-            quiet = got.length() == 0
+            quiet = got.length() == 0 && !first                     // an empty backlog answers at once by design
+            backlog = false
             if (stopping || !store.enabled || store.token.isEmpty()) return -1   // switched off while the poll was out: its answers are not acted on
-            handle(got)
+            handle(got, taps = !first)
             return 0
         } catch (e: IOException) {
             if (stopping) return -1
@@ -201,11 +216,12 @@ class Telegram(
      * [updates] as getUpdates gave them. The offset moves past all of them and is kept BEFORE any is answered: a command that
      * crashes the loop (or a restart in the middle) must not come back and run twice; "/off" twice is the worse fault.
      */
-    fun handle(updates: JSONArray) {
+    fun handle(updates: JSONArray, taps: Boolean = true) {
         var top = store.offset
         for (i in 0 until updates.length()) top = maxOf(top, updates.getJSONObject(i).optLong("update_id") + 1)
         if (top != store.offset) store.offset = top
         for (i in 0 until updates.length()) {
+            if (!taps && updates.getJSONObject(i).has("callback_query")) { WireLog.all.add("·", "telegram: a tap from before the start, not run"); continue }
             try { onUpdate(updates.getJSONObject(i)) } catch (e: Exception) { WireLog.all.add("·", "telegram update: " + clean(e.message ?: e.javaClass.simpleName)) }
         }
     }
@@ -223,14 +239,20 @@ class Telegram(
         val cmd = parse(text, store.bot) ?: return onText(id, chat)
         val known = chats().firstOrNull { it.id == id }
         // t.me/<bot>?start=<code> sends "/start <code>": the same code, the same limits as /pair
-        if (known == null) { if ((cmd.name == "pair" || (cmd.name == "start" && cmd.arg.isNotEmpty())) && pair(id, nameOf(chat), cmd.arg, chat.optString("type"))) send(id, w("telegram.paired", "scope" to REMOTE) + "\n\n" + help(REMOTE)); return }   // anyone else: nothing, not even an answer
+        val from = m.optJSONObject("from")
+        if (known == null) { if ((cmd.name == "pair" || (cmd.name == "start" && cmd.arg.isNotEmpty())) && mayControl(id, from, m.optJSONObject("sender_chat")) && pair(id, nameOf(chat), cmd.arg, chat.optString("type"))) send(id, w("telegram.paired", "scope" to REMOTE) + "\n\n" + help(REMOTE)); return }   // anyone else: nothing, not even an answer
         if (!limit.ok(id, clock())) return
+        if (!mayControl(id, from, m.optJSONObject("sender_chat"))) { send(id, w("tg.admins_only")); return }
         touch(known)
         val secret = cmd.name in HIDDEN                                  // what was typed or said is the family's, not the log's
         WireLog.all.add("←", "telegram ${known.name}: /${cmd.name} ${if (secret) "…(${cmd.arg.length})" else cmd.arg}".trim())
-        outcome.set("ok")
-        run(known, cmd, m.optJSONObject("from")?.optString("language_code") ?: "")
-        history.add(clock(), known, "/" + cmd.name + (if (secret || cmd.arg.isEmpty()) "" else " " + cmd.arg.take(40)), outcome.get())
+        val lang = m.optJSONObject("from")?.optString("language_code") ?: ""
+        val job = Runnable {
+            outcome.set("ok")
+            run(known, cmd, lang)
+            history.add(clock(), known, "/" + cmd.name + (if (secret || cmd.arg.isEmpty()) "" else " " + cmd.arg.take(40)), outcome.get())
+        }
+        if (cmd.name == "scene") later(job) else job.run()            // a scene can wait minutes: answered when it is done
     }
 
     /** A plain sentence in a private chat that is paired: the way to the commands. Groups and strangers: nothing. */
@@ -271,12 +293,16 @@ class Telegram(
         val known = chats().firstOrNull { it.id == id } ?: return
         val qid = cb.optString("id")
         if (!limitTap.ok(id, clock())) { answer(qid, ""); return }
+        if (!mayControl(id, cb.optJSONObject("from"))) { answer(qid, w("tg.admins_only")); return }   // shown to the one who tapped only
         val rest = data.substringAfter(':', "")
         WireLog.all.add("←", "telegram ${known.name}: tap ${data.take(40)}")
-        outcome.set("ok")
-        try { tap(known, data, rest, qid, msg, id) }
-        catch (e: Exception) { outcome.set("error"); WireLog.all.add("·", "telegram tap: " + clean(e.message ?: e.javaClass.simpleName)); send(id, w("tg.failed")) }
-        finally { history.add(clock(), known, "tap " + data.substringBefore(':') + (if (data.startsWith("k:") || data.startsWith("u:")) " $rest" else ""), outcome.get()) }
+        val job = Runnable {
+            outcome.set("ok")
+            try { tap(known, data, rest, qid, msg, id) }
+            catch (e: Exception) { outcome.set("error"); WireLog.all.add("·", "telegram tap: " + clean(e.message ?: e.javaClass.simpleName)); send(id, w("tg.failed")) }
+            finally { history.add(clock(), known, "tap " + data.substringBefore(':') + (if (data.startsWith("k:") || data.startsWith("u:")) " $rest" else ""), outcome.get()) }
+        }
+        if (data.startsWith("s:")) later(job) else job.run()          // a scene of /scenes: off the poll thread, as /scene
     }
 
     private fun tap(known: Chat, data: String, rest: String, qid: String, msg: JSONObject?, id: Long) {
@@ -293,7 +319,7 @@ class Telegram(
             }
             "s" -> {                                                      // a scene of /scenes
                 val out = perform(known, "scene", rest)
-                answer(qid, if (out.status in 200..299) w("telegram.scene_done", "name" to sceneName(known, rest)) else say(out, known))
+                answer(qid, if (out.status in 200..299) sceneDone(out, sceneName(known, rest)) else say(out, known))
             }
             "i" -> { answer(qid, ""); if (rest == "shot") shot(known) }  // the /now screenshot button
             "l" -> {                                                      // an alert switch of /alerts
@@ -311,11 +337,34 @@ class Telegram(
         }
     }
 
+    // ---------------------------------------------------------------- groups: only the admins
+    private val admins = HashMap<Pair<Long, Long>, Pair<Boolean, Long>>()   // (group, user) -> admin?, until when
+
+    /**
+     * Whether [from] may command the TV in [chat]: always in a private chat; in a group (its id is negative) only its creator and
+     * admins, asked of Telegram (getChatMember) and kept [ADMIN_MS]. An admin posting as the group ([senderChat], anonymous) is one.
+     * No answer from Telegram: no (asked again next time).
+     */
+    private fun mayControl(chat: Long, from: JSONObject?, senderChat: JSONObject? = null): Boolean {
+        if (chat > 0) return true
+        if (senderChat != null && senderChat.optLong("id") == chat) return true
+        val user = from?.optLong("id") ?: 0L
+        if (user <= 0L) return false
+        val key = chat to user
+        synchronized(admins) { admins[key]?.let { if (clock() < it.second) return it.first } }
+        val r = try { api.call(store.token, "getChatMember", JSONObject().put("chat_id", chat).put("user_id", user), 10) } catch (e: IOException) { return false }
+        if (!r.ok) return false
+        val status = r.body.optJSONObject("result")?.optString("status") ?: ""
+        val yes = status == "creator" || status == "administrator"
+        synchronized(admins) { if (admins.size > 500) admins.clear(); admins[key] = yes to clock() + ADMIN_MS }
+        return yes
+    }
+
     // ---------------------------------------------------------------- pairing
     /** A fresh code (the old one dies), also on the TV's screen. Asking for it is the owner's act: it lifts a lock too. */
     @Synchronized fun newCode(): String {
         val c = String.format(Locale.ROOT, "%06d", random.nextInt(1_000_000))
-        code = c; codeUntil = clock() + CODE_MS; wrong = 0; lockedUntil = 0
+        code = c; codeUntil = clock() + CODE_MS; wrong = 0; wrongBy.clear(); lockedUntil = 0
         try { showCode(c) } catch (e: Exception) { }
         return c
     }
@@ -330,12 +379,16 @@ class Telegram(
         val now = clock()
         if (now < lockedUntil) return false
         val want = codeNow() ?: return false
+        if ((wrongBy[id] ?: 0) >= MAX_WRONG) return false               // this chat guessed wrong 5 times: no more tries with this code
         val got = given.replace(Regex("\\D"), "")
         if (!MessageDigest.isEqual(want.toByteArray(), got.toByteArray())) {
-            if (++wrong >= MAX_WRONG) { code = null; wrong = 0; lockedUntil = now + LOCK_MS; WireLog.all.add("·", "telegram: pairing locked after $MAX_WRONG wrong codes") }
+            val mine = (wrongBy[id] ?: 0) + 1
+            wrongBy[id] = mine
+            if (++wrong >= MAX_WRONG_ALL) { code = null; wrong = 0; wrongBy.clear(); lockedUntil = now + LOCK_MS; WireLog.all.add("·", "telegram: pairing locked after $MAX_WRONG_ALL wrong codes") }
+            else if (mine == MAX_WRONG) WireLog.all.add("·", "telegram: a chat sent $MAX_WRONG wrong codes: its tries end until a new code")
             return false
         }
-        code = null; wrong = 0
+        code = null; wrong = 0; wrongBy.clear()
         val list = chats().filter { it.id != id } + Chat(id, name, REMOTE, now, type = type, seen = now)
         save(list)
         WireLog.all.add("·", "telegram: paired $name (scope $REMOTE)")
@@ -370,7 +423,7 @@ class Telegram(
                     val list = (0 until (names?.length() ?: 0)).joinToString(", ") { names!!.optString(it) }
                     return send(c.id, if (list.isEmpty()) w("telegram.no_scenes") else w("telegram.no_scene", "list" to list))
                 }
-                send(c.id, done(out, c, w("telegram.scene_done", "name" to a)))
+                send(c.id, done(out, c, sceneDone(out, a)))
             }
             "timer" -> {
                 val n = a.toIntOrNull()?.takeIf { it in 0..720 } ?: return send(c.id, w("telegram.usage_timer"))
@@ -458,6 +511,8 @@ class Telegram(
 
     /** The answer for a finished command: [ok] words when it went through, else why not. */
     private fun done(out: HttpServer.Response, c: Chat, ok: String) = if (out.status in 200..299) ok else say(out, c)
+    /** A scene's answer: done, or still running from an earlier start (then it was not started again, [dev.tvremote.core.scenes.Scenes.once]). */
+    private fun sceneDone(out: HttpServer.Response, name: String) = if (body(out)?.optBoolean("running") == true) w("auto.already_running", "name" to name) else w("telegram.scene_done", "name" to name)
 
     /** The answer to /speak: read aloud, or shown with the reason it was not (nothing to read it with / no voice for the language). */
     private fun speakAnswer(out: HttpServer.Response): String {
@@ -998,8 +1053,12 @@ class Telegram(
         private fun alertsOf(a: JSONArray?): Set<String> = if (a == null) emptySet() else (0 until a.length()).map { a.optString(it) }.filter { it in ALERTS }.toSet()
         const val POLL_S = 50
         private const val STALE_S = 120L
+        private const val ADMIN_MS = 10 * 60_000L                         // a member made or unmade admin counts within ten minutes
         private const val CODE_MS = 5 * 60_000L
-        private const val MAX_WRONG = 5
+        private const val MAX_WRONG = 5                     // per chat
+        private const val MAX_WRONG_ALL = 30                // from all chats together: 30 tries of a million, then the code dies and pairing locks
+        /** Scene runs from chats ([later]): a few at once; the same scene twice is refused by [dev.tvremote.core.scenes.Scenes.once]. */
+        private val SCENE_RUNS by lazy { java.util.concurrent.Executors.newFixedThreadPool(3) { r -> Thread(r, "telegram-scene").apply { isDaemon = true } } }
         private const val LOCK_MS = 15 * 60_000L
         private const val MIN_GAP = 1000L                   // one command a second from one chat
         private const val MIN_GAP_TAP = 400L                // a keypad is tapped faster, but not without end

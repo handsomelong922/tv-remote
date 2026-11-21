@@ -31,6 +31,7 @@ import org.json.JSONObject
  *           [SHADE_DEFAULT] the usual one (darker at the top and the bottom, where the clock and the names are), 100 an even veil
  *           nearly black. A busy page or photo fights the words of the home screen at the usual one. A TV Home that has this
  *           reports "shadeOk": true
+ *   sug:<id> a wall too: one of the site's suggestions ([isSug]), drawn as the page at the address the signed list gives
  *   walls   the set the background turns through (any of the above, [WALLS_MAX]); never empty, [wall] is what shows now
  *   wevery  how often it moves on to the next of [walls] ([EVERY]): "off", "30m", "1h", "6h", "day" (the first time Home is seen on a
  *           new day), "show" (each time Home comes back on screen). Only while Home is on screen or when it comes back: nothing
@@ -134,7 +135,8 @@ import org.json.JSONObject
  *           Checked by the screensaver's once-a-minute tick; not a theme key
  *   center  the app grid's tiles sit in the middle of their row (a row with fewer tiles than [cols] too), default false = left-aligned.
  *           A look, so a theme key
- *   wplace  where the widgets sit ([WPLACES]): "top" (default, also a missing key) = one row under the top bar; "left" / "right" = a
+ *   wplace  where the widgets sit ([WPLACES]): "top" (default, also a missing key) = one row under the top bar; "top2" = two rows there
+ *           (more widgets, fewer apps on the first screen; [packRows]; an older TV Home reads it as "top"); "left" / "right" = a
  *           column of full-form widgets beside the grid (the grid keeps its tile size and takes fewer columns). No "under the apps": the grid is
  *           every app, so a row after it sat many rows down on a TV with 30 apps (2026-11-05). A look, so a theme key
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
@@ -253,9 +255,30 @@ object HomeConfig {
     val VRES = listOf("", "1080", "720", "480")
     /** Where a client puts a file before TV Home takes it in (HomeReceiver "addvideo" names it); the shell may write there. */
     const val VIDEO_STAGING = "/sdcard/Android/data/$PKG/files/videos/in"
-    /** A wall id this config knows: a gradient, a scene, Bing, the page, a photo slot or a library video. */
-    fun knownWall(id: String) = id in WALLS || isVideo(id)
+    /**
+     * One of the site's suggestions (docs/home/wallpapers.json: a slideshow, a video, a live page, a picture) as a stop of the set:
+     * "sug:" + its id. TV Home draws it as the web wall at the address its signed list gives (Suggest, Store.shown), so it can sit in
+     * a set with the person's photos where the page itself ([WEB], any address) cannot; one whose list is not on the TV is skipped.
+     * A TV Home that has this reports "wsug": true (the clients send the page itself to an older one).
+     */
+    const val SUG_PREFIX = "sug:"
+    private val SUG = Regex("sug:[a-z0-9][a-z0-9_-]{0,39}")
+    fun isSug(id: String) = SUG.matches(id)
+    /** A wall id this config knows: a gradient, a scene, Bing, the page, a photo slot, a library video or a site suggestion. */
+    fun knownWall(id: String) = id in WALLS || isVideo(id) || isSug(id)
     const val WALLS_MAX = 40
+    /**
+     * "Select all" of one group of backgrounds (the person's photos, videos, scenes, colours) in the rotation set: all of [group] in
+     * [set] already = they go out (one stays: a set is never empty); else the missing ones join, up to [WALLS_MAX]. Second = some did
+     * not fit. The page's homeWallsAll is the same (tests/walls_all_cases.json).
+     */
+    fun wallsAll(set: List<String>, group: List<String>): Pair<List<String>, Boolean> {
+        if (group.isEmpty()) return set to false
+        if (group.all { it in set }) return (set - group.toSet()).ifEmpty { listOf(group.first()) } to false
+        val add = group.filter { it !in set }.distinct()
+        val room = maxOf(0, WALLS_MAX - set.size)
+        return (set + add.take(room)) to (add.size > room)
+    }
     val EVERY = listOf("off", "30m", "1h", "6h", "day", "show")
     /** Where a client puts the first photo (the shell may write there; the app reads it with no permission). */
     const val PHOTO = "/sdcard/Android/data/$PKG/files/wall.jpg"
@@ -397,8 +420,10 @@ object HomeConfig {
     const val W_BIG = 100; const val W_CAL = 120; const val W_SMALL = 90; const val BUDGET = 415; const val FLOOR = 190
     fun weight(k: String, big: Boolean) = if (!big) W_SMALL else if (k == "calendar") W_CAL else W_BIG
     /** Where the widgets sit: the row under the top bar (default), or a column beside the grid. */
-    val WPLACES = listOf("top", "left", "right")
+    val WPLACES = listOf("top", "top2", "left", "right")
     fun side(place: String?) = place == "left" || place == "right"
+    /** Rows of widgets under the top bar: 2 for "top2", else 1. */
+    fun rows(place: String?) = if (place == "top2") 2 else 1
     /** The widgets of one column, top to bottom, and its weight (in a side column: its height in dp). */
     class Col(val keys: List<String>, val weight: Int)
     /** The columns that fit, left to right, and the widgets that wait (the pinned note, "note", never does). */
@@ -410,6 +435,17 @@ object HomeConfig {
      * small widget and keeps its place: the widgets before it give way, from the end.
      */
     fun pack(keys: List<String>, big: Set<String>, note: Boolean = false): Packed = packWith(keys, big, note, BUDGET, 0) { k, isBig, _ -> weight(k, isBig) }
+
+    /**
+     * The row(s) under the top bar ([rows] 2: "top2"): the first row as [pack] makes it without the note, the rest in the second with the
+     * note at its end; one row when everything fits in one (no lone note below). js/home.js `homePackRows` is its twin.
+     */
+    fun packRows(keys: List<String>, big: Set<String>, note: Boolean, rows: Int): List<Packed> {
+        val one = pack(keys, big, note)
+        if (rows < 2 || one.waiting.isEmpty()) return listOf(one)
+        val first = pack(keys, big, false)
+        return listOf(Packed(first.cols, emptyList()), pack(first.waiting, big, note))
+    }
 
     /** Heights in a side column (dp): a big widget or a stacked pair of small ones [H_FULL], a small one alone [H_HALF], [H_GAP] between. */
     const val H_FULL = 180; const val H_HALF = 90; const val H_GAP = 12
@@ -449,7 +485,26 @@ object HomeConfig {
     val KEY_NUMBERS = (7..16).toList()                                  // KEYCODE_0 .. KEYCODE_9
     /** The keys the stock launcher answered (app/tvsetup KeyFix.RULES; a test there holds the two lists equal): free once their handler is gone; the app buttons (190, 191, 195: KeyFix.APP_KEYS) even while it works. */
     val KEY_DEAD = listOf(170, 178, 190, 191, 195, 192, 284, 176)
-    fun keyAllowed(code: Int) = code in KEY_COLOURS || code in KEY_NUMBERS || code in KEY_DEAD
+    /**
+     * Never given an app, not even on TV Home's screen: navigation and the system (Home, Back, arrows, OK / Enter, volume, mute, power,
+     * sleep / wake, Esc), Space and a gamepad's A / B / X / Y (they click, go back and act in every screen; a pad is a remote here) and
+     * Menu, which opens TV Home's own menus. 0 = no key.
+     */
+    val KEY_NEVER = setOf(0, 3, 4, 19, 20, 21, 22, 23, 66, 160, 111, 24, 25, 164, 26, 223, 224, 82, 62, 96, 97, 99, 100)
+    const val KEY_CODE_MAX = 400                                       // past KeyEvent's last code (Android 14: 316) with room; a vendor key above it is not offered
+    /**
+     * Any other key the remote sends ("Other key" on the Quick keys screen: media, channel, Info, Guide, a brand's own button): works on
+     * TV Home's own screen only, like the numbers. TV Setup's filter never takes it (KeyFix only takes [KEY_COLOURS] and dead keys), so in
+     * another app it keeps its job (the user, 2026-11-19).
+     */
+    fun keyOther(code: Int) = code in 1..KEY_CODE_MAX && code !in KEY_NEVER && code !in KEY_COLOURS && code !in KEY_NUMBERS && code !in KEY_DEAD
+    /** Keys TV Home acts on itself while its screen is in front: the numbers, the colours and [keyOther]. */
+    fun keyOnHome(code: Int) = code in KEY_COLOURS || code in KEY_NUMBERS || keyOther(code)
+    fun keyAllowed(code: Int) = code in KEY_COLOURS || code in KEY_NUMBERS || code in KEY_DEAD || keyOther(code)
+    /** The keys with a name of their own (string k_<name> on TV, home.key_<name> on the page: js/home.js HOME_KEY_WORDS); any other is "Key <code>". */
+    val KEY_NAMES = linkedMapOf(183 to "red", 184 to "green", 185 to "yellow", 186 to "blue", 170 to "tv", 178 to "input", 190 to "btn3", 191 to "btn4",
+        195 to "btn8", 192 to "btn5", 284 to "allapps", 176 to "settings", 82 to "menu", 165 to "info", 172 to "guide", 166 to "chup", 167 to "chdown",
+        85 to "playpause", 86 to "stop", 87 to "next", 88 to "prev", 89 to "rew", 90 to "ffwd", 175 to "captions", 222 to "audio", 229 to "lastch")
     /**
      * Keys that may have a double press or a hold of their own: the colour keys and the app buttons (nothing else answers them), the
      * PatchWall / All apps buttons, Menu, Info, Guide. Never Home, Back, the arrows, OK, volume or power (navigation and the system: a key
@@ -548,8 +603,9 @@ object HomeConfig {
         val keys = strs(o.optJSONArray("widgets")).filter { it != "timer" && (it !in HomeQr.KEYS || qrs?.has(it) == true) }
         if (keys.isEmpty()) return keys
         val note = o.optString("note").isNotEmpty()
-        val p = if (side(o.optString("wplace"))) packColumn(keys, bigs(o), note, 378) else pack(keys, bigs(o), note)
-        return keys - p.waiting.toSet()
+        val waiting = if (side(o.optString("wplace"))) packColumn(keys, bigs(o), note, 378).waiting
+            else packRows(keys, bigs(o), note, rows(o.optString("wplace"))).last().waiting
+        return keys - waiting.toSet()
     }
 
     fun headLine(o: JSONObject, which: String, t: Map<String, String>): String {

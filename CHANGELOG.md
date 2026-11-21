@@ -4,6 +4,44 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## 0.57.0 - 2026-11-21
+
+Web 0.57.0 · Phone app 0.54.0 · TV app 0.55.0 · TV Home 0.36.0 · TV Channels 0.26.0 · TV Games 0.26.0 · TV Apps 0.10.0
+
+- Scenes: "Voice phrases", "Start at" and "Start when" are easier to tap on a phone (the whole row, as tall as a button).
+- TV Home: the lunar widget in a narrow spot (two rows of widgets) no longer cuts its date and year to "1…": the moon, then the day's square, give their room up.
+- Optimize TV: an app the TV will not let be turned off may no longer run in the background instead (only apps already chosen); Undo gives it back.
+- Installing an APK while the TV shows Google Play Protect's question: the install no longer waits in silence, it says what to press on the TV.
+- TV Home: no crash when a tile is taken out of its row (a row rebuilt) just as it gets the focus.
+- Typing with ADB on (Android TV, #31): when the TV reports a text field, text goes through the TV's keyboard service, so Enter submits the field instead of pressing the on-screen key and the text already in it can be edited. Computer app: once the remote is paired (Setup tab). Phone app: an extra, off by default (Settings → About → "Type straight into the TV's text box"); turning it on pairs the remote once with the code the TV shows.
+- Telegram: in a paired group only the group's admins can control the TV; other members still see alerts, and a command or button of theirs gets a short "only admins" note.
+- TV Home: with two rows of widgets over the grid, Down from the widgets now scrolls the focused app tile into view, and Up from the grid shows the whole widget area again (the top row was cut off).
+- Rules on the TV: an app schedule alone, a PIN alone, or a daily total set only for other days now keep working after the TV restarts; a schedule window across midnight (22:00-02:00) gives its minutes once, not again at midnight; bedtime, limits and schedules wait while the TV's clock is still wrong after boot, and a snooze or a wrong-PIN wait set on a wrong clock no longer lasts a year; home screens can no longer be limited, scheduled or locked; with no rule set, TV Setup's watcher stops.
+- Automation: when the TV is set to another time zone, the page says so, and the times shown and "turn off at 23:30" use the TV's clock (also in the phone app).
+- Telegram: buttons tapped while the bot was off (or TV Setup was not running) no longer run when it comes back (an old "Turn off" or "more time" tap was carried out); a scene runs beside the bot, so commands sent during a long scene are not lost; wrong pairing codes are counted per chat, so a stranger cannot lock pairing for everyone (30 wrong in all still lock it).
+- Scenes: the same scene started again while it runs (a second tap, its time and its event together, a chat) is skipped with "still running" instead of running twice; a scene with both a time and "Start when" no longer starts itself again through its own steps; scenes from the phone app's widget, tiles and icon shortcuts are no longer cut after 2 minutes.
+- Typing without ADB: Send no longer doubles the TV field's text on the web page; Enter right after live typing waits for the TV to have the letters (Google Play no longer jumps to Install); letters typed fast or right after a Backspace are no longer lost (each waits for the TV to show the one before); emoji delete and change cleanly; the phone app keeps accents and capitals when the TV reports no field.
+- Draw on the TV: ⏱ sets how long the drawing stays after the last stroke (10 min, 30 min, 1 hour, or until cleared, which survives a TV restart); TV Setup shows a Clear the drawing tile meanwhile.
+- TV Home: a suggested background (a slideshow, a video) picked on the phone or computer no longer turns into Night, nor is skipped in a rotating set, on a TV that had never opened its own Background page: TV Home fetches the list then.
+- TV Home: with widgets in two rows, the second row's widgets are no longer marked "waiting for room" (TV and page), the layout previews show both rows, and the apps no longer jump down a row at start.
+- TV Home: Quick keys' "Other key" no longer takes Space or a gamepad's A / B / X / Y; the page no longer lists a key that is dead only on another TV.
+- Draw on the TV fixes: ✓ no longer drops the last stroke or a picture just placed; a 💬 message is not placed when drawing could not start; strokes from two phones or pages no longer join; many pictures no longer run TV Setup out of memory (the oldest go); a kept drawing is never brought back empty, after a Clear, or lost when it could not be shown.
+- TV Setup: after "Allow USB debugging?" went unanswered three times its background jobs stop asking until someone opens TV Setup or uses the web page (it came back every few minutes, all night); a TV that never lets it in is tried less and less often (up to every 10 min); a single slow start of the TV's own ADB is tried again after 2 s instead of a minute.
+- TV Home's power, cache and WebView actions use TV Setup's ADB link instead of dialling their own, which asked the question again and could hang for minutes.
+- One command that hangs no longer drops the whole ADB connection (copies and the picture on it went with it); a TV is marked "one client at a time" only on that TV's own sign, and the mark expires after 30 days.
+- The self-check says "ADB is on, but it does not let this app in" (restart the TV) when port 5555 answers but ADB fails, instead of "the error was momentary".
+
+## 0.56.0 - 2026-11-20
+
+Web 0.56.0 · Phone app 0.53.0 · TV app 0.54.0 · TV Home 0.35.0 · TV Channels 0.25.0 · TV Games 0.25.0 · TV Apps 0.9.0
+
+- TV Home and the page: "Pick several backgrounds" switch at the top of the Background page (off: tap picks one; on: tick several, they take turns at the time you pick).
+- TV Home: the suggested backgrounds (Việt Nam and art slideshows, calm videos, live pages) join the rotating set with your photos and pictures; the Suggested group has "Select all" too.
+- Typing without ADB (Phone and Computer apps, Android TV): when the TV reports a text field, all text goes through it (not only accents), the box starts with the text already in the field, edits reach it as Backspaces then the new text (checked on a Sony BRAVIA), and Enter submits; Enter is held back when the app has already moved on by itself (Google Play jumps to Install on an exact match). Apps with their own keyboard (Downloader) still get key presses.
+- TV Home: "Select all" for each group of backgrounds (your photos, videos, scenes, colours) while the background changes by itself, up to 40; it says when the set is full.
+- TV Home: Quick keys has an "Other key" tile: press any remote key (play, channel, Info...) to give it an app; it works on TV Home's screen only, so in other apps the key keeps its job. Home, Back, arrows, OK, volume and power are never taken.
+- TV Home: widgets can sit in two rows above the apps (Widgets position → "Above the apps, 2 rows"), for more widgets on the first screen.
+
 ## 0.55.1 - 2026-11-17
 
 Web 0.55.1 · Phone app 0.52.1 · TV app 0.53.1 · TV Home 0.34.0 · TV Channels 0.24.0 · TV Games 0.24.0 · TV Apps 0.8.0

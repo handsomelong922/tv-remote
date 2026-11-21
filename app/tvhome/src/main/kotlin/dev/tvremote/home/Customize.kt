@@ -38,6 +38,8 @@ import dev.tvremote.home.keys.QuickKeys
 import dev.tvremote.home.wall.WallArt
 import dev.tvremote.home.wall.Walls
 import dev.tvremote.tvui.TvScroll
+import dev.tvremote.tvui.pill
+import dev.tvremote.tvui.pillText
 
 /**
  * TV Home's own settings, on the TV with the D-pad: a glass panel from the right, the home screen still showing beside it so
@@ -400,7 +402,7 @@ object Customize {
         val rotNote = label("", 12f, DIM)
         val nowNote = label("", 14f, ACCENT)                           // at the top of the page while it rotates: how many, how often, which is on screen
         fun wallOn(c: JSONObject, k: String) =
-            if (k.startsWith(Suggest.PREFIX)) c.optString("wall") == HomeConfig.WEB && Suggest.byKey(k)?.url == c.optString("wurl")   // a suggestion is the page it sets
+            if (k.startsWith(Suggest.PREFIX) && c.optString("wall") == HomeConfig.WEB) Suggest.byKey(k)?.url == c.optString("wurl")   // set as the page itself (before "sug:" walls, or by an older client)
             else if (c.optString("wevery") == "off") c.optString("wall") == k
             else c.getJSONArray("walls").let { s -> (0 until s.length()).any { s.getString(it) == k } }
         // a tile's ✓ (in the set) and "showing now" (filled, only while it rotates): made the first time one is shown, not on all
@@ -419,10 +421,17 @@ object Customize {
             }, if (tag == "check") FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) }
                else FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.START).apply { setMargins(dp(6), 0, 0, dp(6)) })
         }
+        // "Select all" under a group's title while it rotates: the whole group in the set (or out again), the user 2026-11-19
+        val alls = ArrayList<Pair<() -> List<String>, TextView>>()
         fun markAll() {
             val c = Store.get(a)                                         // once: reading it per tile cost 18 ms on the FPT box
             val rotating = c.optString("wevery") != "off"
             val shown = c.optString("wall")
+            val set = c.getJSONArray("walls").let { s -> List(s.length()) { s.getString(it) } }
+            for ((group, p) in alls) {
+                val g = group(); p.visibility = if (rotating && g.size > 1) View.VISIBLE else View.GONE
+                p.pillText(a.getString(if (g.isNotEmpty() && g.all { it in set }) R.string.wall_none else R.string.wall_all))
+            }
             // two marks when it rotates: a ✓ on each wall in the set, and "showing now" on the one on screen; one wall only: just the ✓
             for ((k, v) in tiles) {
                 val on = wallOn(c, k); v.isSelected = on
@@ -645,17 +654,20 @@ object Customize {
         }
         groups[1].fill = {
             // a photo from a phone on the same Wi-Fi is the first cell of "your photos" (a QR screen, no ADB and no TV Setup; when it was used the panel closes to show the new background)
-            col.addView(nowNote, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
-            // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
-            tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
-            // a photo cropped to fill the screen, or whole over itself blurred (HomeConfig "wfit": a portrait photo)
-            tile(R.drawable.ic_image, a.getString(R.string.c_fit), null, "wfit", listOf("cover" to a.getString(R.string.fit_cover), "contain" to a.getString(R.string.fit_contain)))
-            // a video's jump back to its start as a dissolve (HomeConfig "wfade"; the site's video themes set it for a clip whose end is not its start)
-            tile(R.drawable.ic_play, a.getString(R.string.c_fade), a.getString(R.string.c_fade_sub), "wfade")
-            col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(18); bottomMargin = dp(8) })
+            // one background, or several taking turns (the user, 2026-11-20: "Chọn nhiều", off by default, at the top where it is seen);
+            // it is HomeConfig "wevery" off / on, so no second setting: on, the interval picks below and the ✓ on each tile show
+            var lastEvery = conf.optString("wevery").takeIf { it != "off" } ?: "day"
+            lateinit var showRot: () -> Unit
+            tile(R.drawable.ic_image, a.getString(R.string.wall_multi), null, "wevery", listOf("off" to a.getString(R.string.w_off).replaceFirstChar { it.uppercase() }, "on" to a.getString(R.string.wall_multi_sub)),
+                then = { showRot(); markEvery(); markAll() },
+                read = { if (Store.get(a).optString("wevery") == "off") "off" else "on" },
+                write = { v -> val now = Store.get(a).optString("wevery"); if (now != "off") lastEvery = now; Store.change(a, JSONObject().put("wevery", if (v == "off") "off" else lastEvery)) })
+            val rotHead = label(a.getString(R.string.rot), 13f, Color.WHITE)
+            col.addView(rotHead, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(14); bottomMargin = dp(8) })
             var chipRow: LinearLayout? = null
-            HomeConfig.EVERY.forEachIndexed { i, k ->
-                if (i % 3 == 0) { chipRow = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }; col.addView(chipRow, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) }) }
+            val rotRows = ArrayList<View>()
+            HomeConfig.EVERY.drop(1).forEachIndexed { i, k ->              // "off" is the switch above
+                if (i % 3 == 0) { chipRow = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }; col.addView(chipRow, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) }); rotRows.add(chipRow!!) }
                 val chip = Font.on(TextView(a)).apply {
                     text = a.getString(everyWords.getValue(k)); textSize = 14f; gravity = Gravity.CENTER; maxLines = 1
                     setTextColor(Color.WHITE); isFocusable = true; isClickable = true; setPadding(dp(8), dp(11), dp(8), dp(11))
@@ -671,6 +683,15 @@ object Customize {
                 chipRow!!.addView(chip, LinearLayout.LayoutParams(0, -2, 1f).apply { if (i % 3 > 0) leftMargin = dp(8) })
             }
             col.addView(rotNote, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
+            showRot = { val on = Store.get(a).optString("wevery") != "off"; val v = if (on) View.VISIBLE else View.GONE; rotHead.visibility = v; rotRows.forEach { it.visibility = v } }
+            showRot()
+            col.addView(nowNote, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
+            // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
+            tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
+            // a photo cropped to fill the screen, or whole over itself blurred (HomeConfig "wfit": a portrait photo)
+            tile(R.drawable.ic_image, a.getString(R.string.c_fit), null, "wfit", listOf("cover" to a.getString(R.string.fit_cover), "contain" to a.getString(R.string.fit_contain)))
+            // a video's jump back to its start as a dissolve (HomeConfig "wfade"; the site's video themes set it for a clip whose end is not its start)
+            tile(R.drawable.ic_play, a.getString(R.string.c_fade), a.getString(R.string.c_fade_sub), "wfade")
             // the wall tiles by where they come from, each with the settings that belong to it (a video's sound only when there is a video)
             // the "add" cell: same size and rings as a background, a big + on it; OK opens the QR screen
             fun addTile() = FrameLayout(a).apply {
@@ -721,10 +742,6 @@ object Customize {
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener {
                         val c = Store.get(a)
-                        Suggest.byKey(k)?.let { sg ->                               // the page it is: one choice, as the web page tile (clean() keeps "web" alone in a set)
-                            Store.change(a, JSONObject().put("wall", HomeConfig.WEB).put("wurl", sg.url).put("wmode", "live").put("wfade", sg.fade)); markAll()
-                            return@setOnClickListener
-                        }
                         if (k == HomeConfig.WEB) {                                // the link is pasted on a phone (a QR), how it updates is picked there with the D-pad
                             PhotoScreen.show(a, web = true) { dialog.dismiss() }
                             return@setOnClickListener
@@ -735,7 +752,7 @@ object Customize {
                             val pv = getChildAt(0) as? ImageView
                             shots.execute { val b = thumb(a, k, w); a.runOnUiThread { if (b != null) pv?.setImageBitmap(b) } }
                         }
-                        else if (c.optString("wevery") == "off") Store.change(a, JSONObject().put("wall", k))       // one choice
+                        else if (c.optString("wevery") == "off" || c.optString("wall") == HomeConfig.WEB) Store.change(a, JSONObject().put("wall", k))   // one choice; leaving the page, the set starts again from this one (clean() keeps the page alone)
                         else {                                                                                      // a set: a tile in or out, never the last one out
                             val s = c.getJSONArray("walls"); val now = List(s.length()) { s.getString(it) }
                             val next = if (k in now) now - k else now + k
@@ -778,12 +795,25 @@ object Customize {
             val photos = keys.filter { HomeConfig.isPhoto(it) }
             val scenes = keys.filter { it in HomeConfig.ART }
             val colours = keys.filter { it !in online && it !in photos && it !in videos && it !in scenes }
+            fun selectAll(list: List<String>) {
+                val group = { list.filter { k -> tiles.any { it.first == k } } }                  // a photo deleted meanwhile is not in it
+                val p = a.pill(a.getString(R.string.wall_all), 13f) {
+                    val c = Store.get(a); if (c.optString("wevery") == "off") return@pill
+                    val web = c.optString("wall") == HomeConfig.WEB           // a web page is the whole set alone: leaving it, the set starts from the group
+                    val (next, full) = HomeConfig.wallsAll(if (web) emptyList() else c.getJSONArray("walls").let { s -> List(s.length()) { s.getString(it) } }, group())
+                    Store.change(a, JSONObject().put("walls", org.json.JSONArray(next)).also { if (web) it.put("wall", next.first()) })
+                    if (full) android.widget.Toast.makeText(a, a.getString(R.string.wall_full, HomeConfig.WALLS_MAX), android.widget.Toast.LENGTH_LONG).show()
+                    markAll()
+                }
+                col.addView(p, LinearLayout.LayoutParams(-2, dp(40)).apply { bottomMargin = dp(12) })
+                alls.add(group to p)
+            }
             fun part(title: Int, list: List<String>, more: () -> Unit = {}) {
                 if (list.isEmpty()) return
-                section(a.getString(title)); wallRows(list); more()
+                section(a.getString(title)); selectAll(list); wallRows(list); more()
             }
             // the person's own photos first (the + cell is always there), then the pages (Bing, a page of their own, the site's live pages), then the site's pictures and videos
-            section(a.getString(R.string.wall_h_photos)); wallRows(listOf(ADD) + photos)
+            section(a.getString(R.string.wall_h_photos)); if (photos.isNotEmpty()) selectAll(photos); wallRows(listOf(ADD) + photos)
             val onBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
             col.addView(onBox, LinearLayout.LayoutParams(-1, -2))
             // the site's suggestions (Suggest): drawn from the list kept, again when a newer one comes while the page is open
@@ -792,13 +822,13 @@ object Customize {
             fun sugFill() {
                 val pages = Suggest.items.filter { it.kind == "page" }.map { it.key }          // a page is a web page: beside Bing, not among the pictures
                 val list = Suggest.items.filter { it.kind != "page" }.map { it.key }
-                tiles.removeAll { it.first.startsWith(Suggest.PREFIX) || it.first in online }; onBox.removeAllViews(); sugBox.removeAllViews()
+                tiles.removeAll { it.first.startsWith(Suggest.PREFIX) || it.first in online }; onBox.removeAllViews(); sugBox.removeAllViews(); alls.removeAll { it.second.parent == null }   // the old "Select all" went with its rows
                 val was = col
                 col = onBox
                 if (online.isNotEmpty() || pages.isNotEmpty()) { section(a.getString(R.string.wall_h_online)); wallRows(online + pages) }
                 col = sugBox
                 if (list.isNotEmpty()) {
-                    section(a.getString(R.string.wall_h_suggest)); wallRows(list)
+                    section(a.getString(R.string.wall_h_suggest)); selectAll(list); wallRows(list)   // each is a wall of its own ("sug:<id>"): in the set with the person's photos
                     col.addView(label(a.getString(R.string.sug_note), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
                 }
                 col = was; markAll()
@@ -916,7 +946,7 @@ object Customize {
             val side = { Store.get(a).optString("wplace") in listOf("left", "right") }
             val rowsTile = tile(R.drawable.ic_updown, a.getString(R.string.c_rows), null, "rows").apply { visibility = if (side()) View.GONE else View.VISIBLE }   // beside a widget column every row shows: the setting would do nothing
             tile(R.drawable.ic_apps, a.getString(R.string.c_center), null, "center")   // a short row in the middle, default off
-            tile(R.drawable.ic_updown, a.getString(R.string.c_wplace), null, "wplace", HomeConfig.WPLACES.map { it to a.getString(when (it) { "left" -> R.string.c_wplace_left; "right" -> R.string.c_wplace_right; else -> R.string.c_wplace_top }) }, then = { rowsTile.visibility = if (side()) View.GONE else View.VISIBLE })   // where the widgets sit, default top
+            tile(R.drawable.ic_updown, a.getString(R.string.c_wplace), null, "wplace", HomeConfig.WPLACES.map { it to a.getString(when (it) { "left" -> R.string.c_wplace_left; "right" -> R.string.c_wplace_right; "top2" -> R.string.c_wplace_top2; else -> R.string.c_wplace_top }) }, then = { rowsTile.visibility = if (side()) View.GONE else View.VISIBLE })   // where the widgets sit, default top
             section(a.getString(R.string.g_sec_edit))
             val doors = launchPage(a, col, ::glass, ::label, gap, quick = false)
             doors.getOrNull(doorAt)?.let { v -> groups[2].start = { v } }; doorAt = -1   // come back from a door: on it
@@ -1413,7 +1443,7 @@ object Customize {
             val qrs = conf.optJSONObject("qrs") ?: JSONObject()
             val order = (on + HomeConfig.WIDGETS.filter { it !in on }).filter { canShow(it, qrs) }   // Private DNS is Android 9+; a QR widget is written on the phone or the web page: only those that exist
             val big = HomeConfig.bigs(conf)
-            val waiting = HomeConfig.pack(on, big, conf.optString("note").isNotEmpty()).waiting.toSet()
+            val waiting = HomeConfig.packRows(on, big, conf.optString("note").isNotEmpty(), HomeConfig.rows(conf.optString("wplace"))).last().waiting.toSet()   // "top2": the second row's widgets have a place
             var want: View? = null
             order.forEachIndexed { i, k ->
                 val r = WIDGET_ROWS.firstOrNull { it[0] == k } ?: QR_ROW
@@ -1507,7 +1537,7 @@ object Customize {
     }
 
     /**
-     * The result in miniature: the columns [HomeConfig.pack] makes of the widgets on, a big widget in the accent, small ones pale; what
+     * The result in miniature: the columns [HomeConfig.packRows] makes of the widgets on (two rows with "top2"), a big widget in the accent, small ones pale; what
      * waits is not drawn. Reads the settings when painted (the rows call invalidate after every change), never animated.
      */
     private var panelDialog: Dialog? = null
@@ -1539,10 +1569,9 @@ object Customize {
         override fun onDraw(cv: Canvas) {
             val conf = Store.get(context)
             val big = HomeConfig.bigs(conf)
-            val p = HomeConfig.pack(Store.list(context, "widgets"), big, conf.optString("note").isNotEmpty())
+            val lines = HomeConfig.packRows(Store.list(context, "widgets"), big, conf.optString("note").isNotEmpty(), HomeConfig.rows(conf.optString("wplace")))   // "top2": two rows, as on the screen
             val g = resources.displayMetrics.density * 4f
-            val sum = maxOf(HomeConfig.FLOOR, p.cols.sumOf { it.weight })
-            if (p.cols.isEmpty()) {                                         // nothing on: the frame of an empty row and why, not a bare title over nothing
+            if (lines[0].cols.isEmpty()) {                                         // nothing on: the frame of an empty row and why, not a bare title over nothing
                 paint.style = Paint.Style.STROKE; paint.strokeWidth = g / 2; paint.color = DOOR_EDGE
                 paint.pathEffect = android.graphics.DashPathEffect(floatArrayOf(g * 2, g * 1.5f), 0f)
                 cv.drawRoundRect(g / 2, g / 2, width - g / 2, height - g / 2, g * 2, g * 2, paint)
@@ -1551,24 +1580,30 @@ object Customize {
                 cv.drawText(context.getString(R.string.w_layout_empty), width / 2f, height / 2f - (paint.descent() + paint.ascent()) / 2, paint)
                 return
             }
-            val room = width - g * (p.cols.size - 1)
-            var x = 0f
-            for (col in p.cols) {
-                val w = room * col.weight / sum
-                val h = (height - g * (col.keys.size - 1)) / col.keys.size
-                col.keys.forEachIndexed { j, k ->
-                    val look = HomeConfig.optValue(conf, k, "look"); val tonal = look == "tonal"
-                    val pale = k == "clock" && HomeConfig.optValue(conf, k, "theme") == "light"
-                    paint.style = Paint.Style.FILL
-                    paint.color = if (tonal) GLYPH_TONAL else if (pale) GLYPH_PALE else if (look == "solid") GLYPH_SOLID else if (look == "none") GLYPH_NONE else if (k in big) 0x668AB4F8 else 0x30FFFFFF
-                    cv.drawRoundRect(x, j * (h + g), x + w, j * (h + g) + h, g * 2, g * 2, paint)
-                    if (named) drawName(cv, k, x, j * (h + g), w, h, pale || tonal)
-                    if (k == mark) {
-                        paint.style = Paint.Style.STROKE; paint.strokeWidth = g * 0.6f; paint.color = ACCENT
-                        cv.drawRoundRect(x, j * (h + g), x + w, j * (h + g) + h, g * 2, g * 2, paint)
+            val bandH = (height - g * (lines.size - 1)) / lines.size
+            lines.forEachIndexed { r, p ->
+                val sum = maxOf(HomeConfig.FLOOR, p.cols.sumOf { it.weight })
+                val room = width - g * (p.cols.size - 1)
+                val top = r * (bandH + g)
+                var x = 0f
+                for (col in p.cols) {
+                    val w = room * col.weight / sum
+                    val h = (bandH - g * (col.keys.size - 1)) / col.keys.size
+                    col.keys.forEachIndexed { j, k ->
+                        val look = HomeConfig.optValue(conf, k, "look"); val tonal = look == "tonal"
+                        val pale = k == "clock" && HomeConfig.optValue(conf, k, "theme") == "light"
+                        val y = top + j * (h + g)
+                        paint.style = Paint.Style.FILL
+                        paint.color = if (tonal) GLYPH_TONAL else if (pale) GLYPH_PALE else if (look == "solid") GLYPH_SOLID else if (look == "none") GLYPH_NONE else if (k in big) 0x668AB4F8 else 0x30FFFFFF
+                        cv.drawRoundRect(x, y, x + w, y + h, g * 2, g * 2, paint)
+                        if (named) drawName(cv, k, x, y, w, h, pale || tonal)
+                        if (k == mark) {
+                            paint.style = Paint.Style.STROKE; paint.strokeWidth = g * 0.6f; paint.color = ACCENT
+                            cv.drawRoundRect(x, y, x + w, y + h, g * 2, g * 2, paint)
+                        }
                     }
+                    x += w + g
                 }
-                x += w + g
             }
         }
     }
@@ -1639,7 +1674,7 @@ object Customize {
             a.getString(R.string.bg) to wall,
             a.getString(R.string.c_shade) to "${conf.optInt("shade", HomeConfig.SHADE_DEFAULT)}%",
             a.getString(R.string.w_widgets) to (if (widgets.isEmpty()) a.getString(R.string.th_none) else widgets.joinToString(", ")),
-            a.getString(R.string.c_wplace) to a.getString(when (conf.optString("wplace")) { "left" -> R.string.c_wplace_left; "right" -> R.string.c_wplace_right; else -> R.string.c_wplace_top }),
+            a.getString(R.string.c_wplace) to a.getString(when (conf.optString("wplace")) { "left" -> R.string.c_wplace_left; "right" -> R.string.c_wplace_right; "top2" -> R.string.c_wplace_top2; else -> R.string.c_wplace_top }),
             a.getString(R.string.c_cols) to "${conf.optInt("cols", HomeConfig.COLS_DEFAULT)}",
             a.getString(R.string.c_rows) to rowsWord(a, conf.optDouble("rows", 0.0)),
             a.getString(R.string.c_focus) to a.getString(if (conf.optString("focus") == "ring") R.string.c_focus_ring else R.string.c_focus_glass),
@@ -1670,7 +1705,8 @@ object Customize {
         k == "photo" -> a.getString(R.string.wall_photo)
         HomeConfig.isPhoto(k) -> a.getString(R.string.wall_photo_n, k.removePrefix("photo").toInt())
         HomeConfig.isVideo(k) -> Videos.list(a).firstOrNull { it.wall == k }?.name?.takeIf { it.isNotBlank() } ?: a.getString(R.string.wall_video)
-        else -> a.getString(a.resources.getIdentifier("wall_$k", "string", a.packageName))
+        HomeConfig.isSug(k) -> Suggest.wall(a, k)?.name(a.resources.locale0().language) ?: a.getString(R.string.wall_h_suggest)   // no list on this TV yet
+        else -> a.resources.getIdentifier("wall_$k", "string", a.packageName).takeIf { it != 0 }?.let { a.getString(it) } ?: k
     }
 }
 

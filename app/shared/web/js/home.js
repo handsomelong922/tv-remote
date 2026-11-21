@@ -24,12 +24,23 @@ function homeOwnCss(c, dir) {
 // The scenes TV Home paints itself (HomeConfig.ART; recipes in home_walls.js), the day's Bing picture, the person's photos (photo, photo2..)
 Object.assign(HOME_WALL_WORDS, { dawn: 'home.wall_dawn', peaks: 'home.wall_peaks', dunes: 'home.wall_dunes', waves: 'home.wall_waves', candy: 'home.wall_candy', peach: 'home.wall_peach', meadow: 'home.wall_meadow', mist: 'home.wall_mist', bokeh: 'home.wall_bokeh', canyon: 'home.wall_canyon', bing: 'home.wall_bing' });
 const HOME_WEBMODE = { live: 'home.web_mode_live', snap: 'home.web_mode_snap' };   // HomeConfig.WMODES, with its words
+const HOME_WALLS_MAX = 40;                                           // HomeConfig.WALLS_MAX
+// "Select all" of one group in the rotation set: all in already = out (one stays), else the rest join up to the max; full = some did
+// not fit (HomeConfig.wallsAll, the same table: tests/walls_all_cases.json)
+function homeWallsAll(set, group) {
+  if (!group.length) return { walls: set, full: false };
+  if (group.every((k) => set.includes(k))) { const w = set.filter((k) => !group.includes(k)); return { walls: w.length ? w : [group[0]], full: false }; }
+  const add = [...new Set(group.filter((k) => !set.includes(k)))], room = Math.max(0, HOME_WALLS_MAX - set.length);
+  return { walls: [...set, ...add.slice(0, room)], full: add.length > room };
+}
 const HOME_EVERY = { 'off': 'home.every_off', '30m': 'home.every_30m', '1h': 'home.every_1h', '6h': 'home.every_6h', 'day': 'home.every_day', 'show': 'home.every_show' };   // HomeConfig.EVERY, with its words
 // Remote keys that can open an app (HomeConfig.KEY_COLOURS / KEY_DEAD / KEY_NUMBERS), with their words; a dead key is listed only
 // when TV Setup offers it on this TV (config.keysDead: the dead keys, and the YouTube / Netflix / Prime buttons even while they work)
 const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.key_yellow', 186: 'home.key_blue', 170: 'home.key_tv', 178: 'home.key_input',
-  190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings', 82: 'home.key_menu', 165: 'home.key_info', 172: 'home.key_guide' };
-const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7
+  190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings', 82: 'home.key_menu', 165: 'home.key_info', 172: 'home.key_guide',
+  166: 'home.key_chup', 167: 'home.key_chdown', 85: 'home.key_playpause', 86: 'home.key_stop', 87: 'home.key_next', 88: 'home.key_prev', 89: 'home.key_rew', 90: 'home.key_ffwd',
+  175: 'home.key_captions', 222: 'home.key_audio', 229: 'home.key_lastch' };   // HomeConfig.KEY_NAMES
+const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : code >= 7 && code <= 16 ? String(code - 7) : T('home.key_code', { n: code });   // KEYCODE_0 is 7
 const homeThemeName = (t) => (t.names || {})[window.LANG] || (t.names || {}).en || t.id;   // a ready-made theme's name in the page's language (the signed list's)
 const HOME_THEME_KEYS = ['wall', 'walls', 'wurl', 'wcol', 'wdir', 'wmode', 'wsnap', 'wkeep', 'wevery', 'shade', 'wfit', 'wfade', 'widgets', 'wsize', 'wopt', 'wplace', 'cols', 'center', 'rows', 'focus', 'tstyle', 'accent', 'motion', 'anim', 'clock24', 'greet'];   // HomeConfig.THEME_KEYS (tvcopy.test.js keeps them equal)
 const HOME_THEME_FILE_MAX = 32768;                                 // a theme file is a few KB; more is not one
@@ -72,8 +83,15 @@ function homePack(keys, big, note) {
 }
 // HomeConfig.packColumn, the side column ("wplace" left / right): the same walk with the screen's height (dp) as the budget; a block's weight is its height
 const HOME_H = { full: 180, half: 90, gap: 12 };   // HomeConfig.H_FULL / H_HALF / H_GAP
-const HOME_PLACES = ['top', 'left', 'right'];   // HomeConfig.WPLACES
-const HOME_PLACE_WORDS = { top: 'home.wplace_top', left: 'home.wplace_left', right: 'home.wplace_right' };
+const HOME_PLACES = ['top', 'top2', 'left', 'right'];   // HomeConfig.WPLACES
+const HOME_PLACE_WORDS = { top: 'home.wplace_top', top2: 'home.wplace_top2', left: 'home.wplace_left', right: 'home.wplace_right' };
+// HomeConfig.packRows ("top2"): the first row without the note, the rest in a second row with the note; one row when all fits in one
+function homePackRows(keys, big, note, rows) {
+  const one = homePack(keys, big, note);
+  if (rows < 2 || !one.waiting.length) return [one];
+  const first = homePack(keys, big, false);
+  return [{ cols: first.cols, waiting: [] }, homePack(first.waiting, big, note)];
+}
 function homePackColumn(keys, big, note, room) {
   const run = (ks) => {
     const cols = []; let sum = 0, i = 0;
@@ -104,6 +122,11 @@ const HOME_STYLE_WORDS = { classic: 'home.style_classic', light: 'home.style_lig
 
 // The packed layout drawn small: a column per weight, its widgets stacked, big ones filled (sizes in css/remote.css)
 // [x]: the settings dialog's strip, { mark: the widget framed, conf: the settings the widgets are drawn with (tonal warm, a light clock pale) }
+// The rows a TV Home lays out for [c] ("top2": two, HomeConfig.rows), drawn one under the other
+const homeRowsOf = (c, w, bigs) => homePackRows(w, bigs, !!c.note, c.wplace === 'top2' ? 2 : 1);
+function packGlyphRows(rows, big, x = {}) {
+  return rows.length < 2 ? packGlyph(rows[0], big, x) : el('div', { className: 'packrows' }, ...rows.map((p) => packGlyph(p, big, x)));
+}
 function packGlyph(p, big, x = {}) {
   const g = el('div', { className: 'packview', role: 'img', 'aria-label': T('home.pack_alt') });
   const sum = Math.max(HOME_W.floor, p.cols.reduce((n, c) => n + c.weight, 0));
@@ -196,7 +219,7 @@ function homeWidgetDlg(k, c0, title, send) {
   };
   const paint = () => {
     const bigs = w.filter((x) => homeSize(c, x) === 'big');
-    strip.replaceChildren(packGlyph(homePack(w, bigs, !!c.note), bigs, { mark: k, conf: c }));
+    strip.replaceChildren(packGlyphRows(homeRowsOf(c, w, bigs), bigs, { mark: k, conf: c }));
     stage.replaceChildren(homeCardPrev(k, c));
     rows.replaceChildren(...opts.map((o) => el('div', { className: 'wopt' }, el('span', { className: 'lbl', textContent: T(o.label) }),
       el('div', { className: 'fchips', role: 'group', 'aria-label': T(o.label) }, ...o.values.map((v) => {
@@ -421,6 +444,11 @@ async function homeOpen() {
   }
   const photoAct = el('div', { className: 'actions' }, upload), videoAct = el('div', { className: 'actions' }, vupload);
   const everyHead = el('h3', { textContent: T('home.rotate') }), every = el('div', { className: 'fchips homeevery' }), everyNote = el('p', { className: 'note' });
+  // one background, or several taking turns (the user, 2026-11-20: off by default, first on the page so it is seen): HomeConfig
+  // "wevery" off / on, no second setting; on, the interval picks and the ✓ on each tile show (the TV: Customize's first tile)
+  let lastEvery = 'day';
+  const multiBox = el('input', { type: 'checkbox', onchange: () => send({ wevery: multiBox.checked ? lastEvery : 'off' }) });
+  const multiRow = el('label', { className: 'check' }, multiBox, el('span', { textContent: T('home.wall_multi') })), multiNote = el('p', { className: 'note', textContent: T('home.wall_multi_sub') });
   const file = el('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: async () => {
     // one at a time (the TV takes a photo per ADB push); a TV Home without rotation has room for one only
     const room = r.config.wrotate ? HOME_PHOTO_MAX - (r.photos || []).length : 1;
@@ -608,8 +636,39 @@ async function homeOpen() {
   // the site's moving backgrounds and pages (wallpapers.json "links"): each sets the web wall to its address, as TV Home's own "Suggested"
   const sugHead = el('h3', { textContent: T('home.wh_suggest') }), sugBox = el('div', { className: 'homegal' }), pageBox = el('div', { className: 'homegal' }), sugNote = el('p', { className: 'note', textContent: T('home.sug_note') });
   sugHead.hidden = sugBox.hidden = sugNote.hidden = pageBox.hidden = true;
-  const markSug = (c) => { for (const b of [...pageBox.children, ...sugBox.children]) { const on = c.wall === 'web' && c.wurl === b.dataset.url; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); } };
-  homeGallery(gal, credit, galHead, (n) => { if (take(n)) draw(); }, { box: sugBox, pages: pageBox, head: sugHead, note: sugNote, pick: (u, fade) => send({ wall: 'web', wurl: u, wmode: 'live', wfade: fade }), mark: () => markSug(r.config) });
+  // A TV Home with "wsug": each is a wall of its own ("sug:<id>", HomeConfig.isSug), one choice or in the set with the person's photos
+  // (the user 2026-11-20); an older one: it sets the web wall to its address, alone
+  const sugName = (k) => { const b = [...sugBox.children, ...pageBox.children].find((x) => x.dataset.key === k); return b ? b.querySelector('span').textContent : T('home.wh_suggest'); };   // the list not here yet: the group's name
+  const sugKeys = () => [...sugBox.children].map((b) => b.dataset.key);
+  const sugPick = (l) => {
+    const c = r.config, k = 'sug:' + l.id;
+    if (!c.wsug) return send({ wall: 'web', wurl: l.url, wmode: 'live', wfade: !!l.fade });
+    const multi = c.wevery !== 'off', set = c.walls || [c.wall];
+    if (!multi || set.includes('web')) return send({ wall: k });       // one choice; leaving the page (always alone in a set): the set starts again from this one
+    const n = set.includes(k) ? set.filter((x) => x !== k) : [...set, k];
+    if (n.length) send({ walls: n });
+  };
+  const markSug = (c) => {
+    const multi = c.wsug && c.wevery !== 'off', set = c.walls || [c.wall];
+    for (const b of [...pageBox.children, ...sugBox.children]) {
+      const k = b.dataset.key, on = (c.wall === 'web' && c.wurl === b.dataset.url) || (c.wsug && (multi ? set.includes(k) : c.wall === k));
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+      let now = b.querySelector('.nowtag');
+      if (multi && c.wall === k) { if (!now) b.append(el('span', { className: 'nowtag', textContent: T('home.wall_now') })); } else if (now) now.remove();
+    }
+    // "Select all" of the suggestions, as the other groups have it
+    let a = sugHead.querySelector('.wallall');
+    if (!a) { a = el('button', { type: 'button', className: 'small wallall' }); sugHead.append(' ', a); }
+    const keys = sugKeys();
+    a.hidden = !multi || keys.length < 2;
+    a.textContent = T(keys.length && keys.every((k) => set.includes(k)) ? 'home.wall_none' : 'home.wall_all');
+    a.onclick = () => {
+      const web = set.includes('web'), r2 = homeWallsAll(web ? [] : set, keys);
+      send({ walls: r2.walls, ...(web ? { wall: r2.walls[0] } : {}) });
+      if (r2.full) toast(T('home.wall_full', { n: HOME_WALLS_MAX }));
+    };
+  };
+  homeGallery(gal, credit, galHead, (n) => { if (take(n)) draw(); }, { box: sugBox, pages: pageBox, head: sugHead, note: sugNote, pick: sugPick, mark: () => { markSug(r.config); if (r.config.wrotate && /^sug:/.test(r.config.wall)) drawRotation(r.config); } });   // the list came after: the note names the one on screen
 
   // "Add to home screen": a picker of the apps (hidden ones too), their shortcuts and the live widgets; a press puts one on the grid or
   // takes it off and the list stays open. Shortcuts and live widgets are in config "tiles" (the order they have on the grid), an app is
@@ -721,7 +780,9 @@ async function homeOpen() {
     const chips = (box, key, list, word) => box.replaceChildren(...list.map((k) => el('button', { type: 'button', className: (c[key] || '') === k ? 'on' : '', 'aria-pressed': String((c[key] || '') === k), textContent: word(k), onclick: () => send({ [key]: k }) })));
     chips(vfps, 'vfps', ['', '60', '30', '24', '15'], (k) => k ? T('home.v_fps_n', { n: k }) : T('home.v_orig'));
     chips(vres, 'vres', ['', '1080', '720', '480'], (k) => k ? T('home.v_res_n', { n: k }) : T('home.v_res_screen'));
-    everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
+    if (c.wevery && c.wevery !== 'off') lastEvery = c.wevery;
+    multiBox.checked = !!c.wevery && c.wevery !== 'off'; multiRow.hidden = multiNote.hidden = !c.wrotate;
+    everyHead.hidden = every.hidden = !c.wrotate || !multiBox.checked; if (!c.wrotate || !multiBox.checked) everyNote.hidden = true;
     homebar.checked = c.homebar === true; homebar.closest('label').hidden = c.homebar === undefined;
     lockLayout.checked = c.lockLayout === true; lockLayout.closest('label').hidden = c.lockLayout === undefined;   // an older TV Home does not report it
     shift.checked = c.shift === true; shift.closest('label').hidden = c.shift === undefined;
@@ -764,12 +825,12 @@ async function homeOpen() {
     if (dk) { ddarkFrom.value = dk[1]; ddarkTo.value = dk[2]; }
     center.checked = !!c.center;
     wplaceHead.hidden = wplace.hidden = c.wplace === undefined;      // a TV Home older than it
-    wplace.replaceChildren(...HOME_PLACES.map((k) => el('button', { type: 'button', className: (c.wplace || 'top') === k ? 'on' : '', 'aria-pressed': String((c.wplace || 'top') === k), onclick: () => send({ wplace: k }) }, T(HOME_PLACE_WORDS[k]))));
+    wplace.replaceChildren(...HOME_PLACES.filter((k) => k !== 'top2' || c.wrows2 || c.wplace === 'top2').map((k) => el('button', { type: 'button', className: (c.wplace || 'top') === k ? 'on' : '', 'aria-pressed': String((c.wplace || 'top') === k), onclick: () => send({ wplace: k }) }, T(HOME_PLACE_WORDS[k]))));   // "top2": only a TV Home that reports "wrows2" (an older one reads it as top)
     center.closest('label').hidden = c.center === undefined;          // a TV Home older than it
     const ka = c.keyapps || {}, kOk = !!c.keysOk;                     // an older TV Home has neither: shown, with its update
     keyOn.checked = !!c.keyon;
     keyOn.disabled = !kOk; keysOld.hidden = kOk;
-    keysNote.textContent = kOk ? T(!c.keysSetup ? 'home.keys_need_setup' : c.keysRefused ? 'home.keys_refused' : 'home.keys_everywhere') : '';
+    keysNote.textContent = kOk ? T(!c.keysSetup ? 'home.keys_need_setup' : c.keysRefused ? 'home.keys_refused' : 'home.keys_everywhere') + (c.keysOther ? ' ' + T('home.qk_other_tv') : '') : '';   // other keys are added on the TV: a page cannot hear the remote
     autoNote.textContent = kOk ? T(!c.keysSetup ? 'home.auto_need_setup' : 'home.auto_note') : '';
     keysList.hidden = !kOk;
     autoAll.checked = !!c.autoall;
@@ -786,7 +847,8 @@ async function homeOpen() {
     wHead.hidden = !w;
     const sized = !!c.wsizes;                                         // this TV Home sizes the widgets; an older one has the preset layouts
     const bigs = sized && w ? w.filter((k) => homeSize(c, k) === 'big') : [];
-    const packed = sized && w ? homePack(w, bigs, !!c.note) : null;
+    const packedRows = sized && w ? homeRowsOf(c, w, bigs) : null;   // "top2": the second row's widgets do not wait
+    const packed = packedRows && packedRows[packedRows.length - 1];
     const places = sized ? 0 : homeSlots(c.wlayout), slots = c.note ? places - 1 : places;
     const waits = (k, i) => sized ? (packed.waiting.includes(k) ? T('home.w_waits_pack') : '')
       : places ? (i >= slots ? T('home.w_waits', { n: slots }) : '')
@@ -811,7 +873,7 @@ async function homeOpen() {
       ...(!c.wschema && c.wstyles && c.wstyles[k] ? [styleChips(k)] : []))));
     wList.hidden = !w || !w.length;
     packHead.hidden = packBox.hidden = packNote.hidden = !sized || !w || !(w.length || c.note);
-    if (packed) packBox.replaceChildren(packGlyph(packed, bigs));
+    if (packedRows) packBox.replaceChildren(packGlyphRows(packedRows, bigs));
     layHead.hidden = lay.hidden = sized || c.wlayout === undefined || !w;      // a TV Home older than the layouts; one with sizes has no presets
     layNote.hidden = layHead.hidden || !places;
     put(layNote, 'textContent', T('home.layout_note', { n: places }));
@@ -903,12 +965,26 @@ async function homeOpen() {
       if (window.ONTV) { del.hidden = true; if (!used) holdDrop(cell.firstChild, v.id); }
       return cell;
     });
+    // "Select all" beside a group's title while it rotates: the whole group in the set, or out again (homeWallsAll; the user 2026-11-19)
+    const allOf = (h, keys) => {
+      let b = h.querySelector('.wallall');
+      if (!b) { b = el('button', { type: 'button', className: 'small wallall' }); h.append(' ', b); }
+      b.hidden = !multi || keys.length < 2;
+      b.textContent = T(keys.length && keys.every((k) => set.includes(k)) ? 'home.wall_none' : 'home.wall_all');
+      b.onclick = () => {
+        const web = set.includes('web'), r2 = homeWallsAll(web ? [] : set, keys);   // leaving the page (always alone in a set): the set starts from the group
+        send({ walls: r2.walls, ...(web ? { wall: r2.walls[0] } : {}) });
+        if (r2.full) toast(T('home.wall_full', { n: HOME_WALLS_MAX }));
+      };
+    };
+    allOf(hPhotos, (r.photos || []).map((p) => p.id)); allOf(hVideos, ((r.video || {}).items || []).map((v) => v.id));
+    allOf(hScenes, HOME_ART_IDS); allOf(hColours, [...(c.ownOk ? ['own'] : []), ...Object.keys(HOME_WALLS)]);
     holdNote.hidden = !(window.ONTV && (photos.length || videos.length));
     wOnline.replaceChildren(bing, ...webTile); wPhotos.replaceChildren(...photos); wVideos.replaceChildren(...videos);   // as on the TV (HomeConfig.WALLS)
     wPhotos.hidden = !photos.length; wVideos.hidden = !videos.length;
     wScenes.replaceChildren(...art); walls.replaceChildren(...plain);
-    every.replaceChildren(...Object.keys(HOME_EVERY).map((e) => el('button', { type: 'button', className: c.wevery === e ? 'on' : '', 'aria-pressed': String(c.wevery === e), textContent: T(HOME_EVERY[e]), onclick: () => send({ wevery: e }) })));
-    const shownName = (() => { const t = [...wOnline.querySelectorAll('.nowtag'), ...wPhotos.querySelectorAll('.nowtag'), ...wVideos.querySelectorAll('.nowtag'), ...wScenes.querySelectorAll('.nowtag'), ...walls.querySelectorAll('.nowtag')][0]; return t ? t.previousSibling.textContent : ''; })();
+    every.replaceChildren(...Object.keys(HOME_EVERY).filter((e) => e !== 'off').map((e) => el('button', { type: 'button', className: c.wevery === e ? 'on' : '', 'aria-pressed': String(c.wevery === e), textContent: T(HOME_EVERY[e]), onclick: () => send({ wevery: e }) })));
+    const shownName = (() => { if (/^sug:/.test(c.wall)) return sugName(c.wall); const t = [...wOnline.querySelectorAll('.nowtag'), ...wPhotos.querySelectorAll('.nowtag'), ...wVideos.querySelectorAll('.nowtag'), ...wScenes.querySelectorAll('.nowtag'), ...walls.querySelectorAll('.nowtag')][0]; return t ? t.previousSibling.textContent : ''; })();
     put(everyNote, 'textContent', multi ? T('home.rot_state', { n: set.length, every: T(HOME_EVERY[c.wevery]).toLowerCase(), name: shownName }) + ' ' + T(set.length < 2 && set[0] !== 'bing' ? 'home.rotate_pick' : 'home.rotate_set') : '');   // Bing alone turns through its last 8 days
     everyNote.hidden = !multi;
   }
@@ -1005,7 +1081,7 @@ async function homeOpen() {
   const themeUses = (c, id) => [...(c.themes || []), ...(c.before ? [{ conf: c.before }] : [])].some((t) => t.conf.wall === id || (t.conf.walls || []).includes(id));   // HomeConfig.themeUses
   // what a theme sets, read only: name: value rows in the details dialog (the TV shows the same on a long press). Under the tiles it
   // opened below the fold, a long way from the ⓘ: nothing seemed to happen (phone, 2026-10-25)
-  const themeWall = (k) => HOME_WALL_WORDS[k] ? T(HOME_WALL_WORDS[k]) : k === 'bing' ? T('home.wall_bing') : k === 'web' ? T('home.wall_web') : /^vid:/.test(k) ? (((r.video || {}).items || []).find((v) => v.id === k) || {}).name || T('home.wall_video')
+  const themeWall = (k) => HOME_WALL_WORDS[k] ? T(HOME_WALL_WORDS[k]) : k === 'bing' ? T('home.wall_bing') : k === 'web' ? T('home.wall_web') : /^sug:/.test(k) ? sugName(k) : /^vid:/.test(k) ? (((r.video || {}).items || []).find((v) => v.id === k) || {}).name || T('home.wall_video')
     : k === 'photo' ? T('home.wall_photo') : /^photo\d+$/.test(k) ? T('home.wall_photo_n', { n: +k.slice(5) }) : k;
   const themeRows = (conf) => {
     const on = (v) => T(v ? 'home.td_on' : 'home.td_off'), none = T('home.td_none');
@@ -1133,7 +1209,7 @@ async function homeOpen() {
   const vFold = UI.card(T('home.v_head'), { fold: true }, vfpsHead, vfps, vresHead, vres);   // the video's own settings, in the videos' part
   const GROUPS = [
     ['themes', 'star', 45, 'home.themes', [themeHint, themeMineHead, themeMine, themeLine, themeNote, themeReadyHead, themeReady, themeCommHead, themeComm]],
-    ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, shadeHead, shade, shadeNote, fitHead, fit, fitNote, fadeRow, fadeNote,
+    ['bg', 'image', 330, 'home.wall', [multiRow, multiNote, everyHead, every, everyNote, shadeHead, shade, shadeNote, fitHead, fit, fitNote, fadeRow, fadeNote,
       hPhotos, photoAct, wPhotos, holdNote, galHead, gal, credit,                       // the person's own first, as TV Home's own screen
       hOnline, wOnline, pageBox, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, sugHead, sugBox, sugNote,
       hVideos, videoAct, vstate, vperf, wVideos, vFold, vnote, file, vfile,
@@ -1182,6 +1258,7 @@ async function homeOpen() {
   const onOff = (v) => T(v ? 'home.sum_on' : 'home.sum_off');
   const wallWord = (c) => c.wall === 'web' ? T('home.wall_web') : /^photo\d*$/.test(c.wall) ? T('home.wall_photo_n', { n: (+c.wall.slice(5) || 1) })
     : /^vid:/.test(c.wall) ? (((r.video || {}).items || []).find((v) => v.id === c.wall) || {}).name || T('home.wall_video')
+    : /^sug:/.test(c.wall) ? sugName(c.wall)
     : c.wall === 'bing' ? T('home.wall_bing') : HOME_WALL_WORDS[c.wall] ? T(HOME_WALL_WORDS[c.wall]) : c.wall;
   // the line under each group's name, as the TV's Customize writes it (summary())
   function sums(c) {
@@ -1273,9 +1350,10 @@ async function homeGallery(box, credit, head, done, sug) {
     const tile = (l) => {
       const face = l.thumb ? el('img', { src: l.thumb, alt: '', loading: 'lazy' }) : el('i', { className: 'mi', innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg>' });
       const tag = l.kind === 'video' ? T('home.sug_video') : l.kind === 'page' ? T('home.sug_page') : '';
-      const b = el('button', { type: 'button', title: [l.name[lang] || l.name.en, l.credit, l.license].filter(Boolean).join(' · '), onclick: () => sug.pick(l.url, !!l.fade) },
+      const b = el('button', { type: 'button', title: [l.name[lang] || l.name.en, l.credit, l.license].filter(Boolean).join(' · '), onclick: () => sug.pick(l) },
         face, el('span', { textContent: l.name[lang] || l.name.en }), ...(tag ? [el('small', { className: 'badge', textContent: tag })] : []));
       b.dataset.url = l.url;
+      b.dataset.key = 'sug:' + l.id;                                    // its wall id on a TV Home with "wsug"
       return b;
     };
     const pages = links.filter((l) => l.kind === 'page'), rest = links.filter((l) => l.kind !== 'page');   // a page sits beside Bing, in Online

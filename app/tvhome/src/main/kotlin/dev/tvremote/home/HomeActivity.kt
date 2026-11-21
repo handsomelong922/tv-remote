@@ -222,7 +222,7 @@ class HomeActivity : Activity() {
         shortcutWatch = Pins.watch(this) { r -> bg.execute(r) }
         if (!Pins.listed(this)) bg.execute { Pins.refresh(this) }       // the first Home: + Add has the apps' shortcuts to list
         Store.advance(this, true)                                     // a rotation on "each time Home is shown" (or one that fell due while away): before the first paint, so nothing is drawn twice
-        conf = Store.get(this); readNames(); Pics.ids = picIds(); if (Pics.dir(this).isDirectory) bg.execute { Pics.sweep(this, Pics.ids.values + Pics.frame) }; Pins.resize(pinW())
+        conf = Store.shown(this); readNames(); Pics.ids = picIds(); if (Pics.dir(this).isDirectory) bg.execute { Pics.sweep(this, Pics.ids.values + Pics.frame) }; Pins.resize(pinW())
         val root = FrameLayout(this)
         backdrop = Backdrop(window.decorView)
 
@@ -294,11 +294,12 @@ class HomeActivity : Activity() {
         col.addView(head); col.head = head
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
         widgets.onMenu = ::widgetMenu
-        widgets.onFocus = { v, f -> if (f) { glassTo(v); if (HomeConfig.side(place())) scrollToY(0) } else glassOff() }   // a side column is in the first screen
+        // the widgets are in the first screen (a side column, or the rows over the grid: back up from the grid in two rows the page stayed down, row 1 cut)
+        widgets.onFocus = { v, f -> if (f) { glassTo(v); scrollToY(0) } else glassOff() }
         widgets.onMark = { glassTo(it, r = dp(12).toFloat()) }
         widgets.onOpen = { k -> if (editing || k !in OPENS) widgets.hot.firstOrNull { it.tag == k }?.let { widgetMenu(k, it) } else startActivity(Intent(this, when (k) { "news" -> dev.tvremote.home.widgets.NewsActivity::class.java; "market" -> dev.tvremote.home.widgets.MarketActivity::class.java; else -> dev.tvremote.home.widgets.WeatherMapActivity::class.java }).putExtra("i", widgets.newsShown)) }
         widgets.onUp = { v -> (bar.buttons.filter { it.isShown } + listOfNotNull(headLeft.takeIf { it.isShown && it.isFocusable })).minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
-        widgets.onDown = { v -> if (place() == "top") below(v)?.let { go(it) } }   // beside the grid nothing is below
+        widgets.onDown = { v -> if (!HomeConfig.side(place())) below(v)?.let { go(it) } }   // beside the grid nothing is below
         widgets.onSide = { v, dx -> if ((place() == "left" && dx > 0) || (place() == "right" && dx < 0)) gridBeside(v)?.let { go(it) } }
         body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         col.addView(body, LinearLayout.LayoutParams(-1, -2))
@@ -315,7 +316,7 @@ class HomeActivity : Activity() {
         ThemeShots.live = { webShot() ?: backdrop.small }              // a web wall: the page as it is drawn now, or the site's picture / slide TV Home draws itself
         Store.onChange = fun() {
             if (isDestroyed) { if (Store.onChange === heard) Store.onChange = null; return }   // handed back to a gone Home (a Quick keys dialog closed after it)
-            val was = conf; conf = Store.get(this)
+            val was = conf; conf = Store.shown(this)
             // the veil alone (its stepper, a step every press): the picture painted again, nothing else rebuilt; the whole screen
             // made again took ~60 ms of the FPT box's main thread a step (the widgets, the tiles)
             if (veilOnly(was, conf)) wall() else onConf()
@@ -330,7 +331,7 @@ class HomeActivity : Activity() {
             @Suppress("DEPRECATION") addAction(ConnectivityManager.CONNECTIVITY_ACTION)
             addAction(Intent.ACTION_DREAMING_STARTED); addAction(Intent.ACTION_DREAMING_STOPPED)
         })
-        if (Store.suggestOff(this)) { Store.suggestOff(this, false); conf = Store.change(this, JSONObject().put("showSuggest", false)) }   // the old "hide" flag is now the setting everyone sees
+        if (Store.suggestOff(this)) { Store.suggestOff(this, false); Store.change(this, JSONObject().put("showSuggest", false)); conf = Store.shown(this) }   // the old "hide" flag is now the setting everyone sees; conf as drawn (a "sug:" wall resolved), not change()'s raw copy
         Look.read(Store.get(this))                                    // before the apps load: App.load makes the icon of icon / glass tiles off the main thread
         loadApps()
         if (Motion.on) enter()
@@ -719,9 +720,9 @@ class HomeActivity : Activity() {
         body.removeAllViews()
         body.orientation = if (side) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
         val wl = if (side) LinearLayout.LayoutParams(Widgets.sideW(resources.displayMetrics), -2).apply { topMargin = dp(SIDE_TOP); if (p == "left") rightMargin = dp(SIDE_GAP) else leftMargin = dp(SIDE_GAP) }
-            else LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (p == "top") 28 else 32) }
+            else LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (p == "top" || p == "top2") 28 else 32) }
         val gl = if (side) LinearLayout.LayoutParams(0, -2, 1f).apply { topMargin = dp(SIDE_TOP) } else LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) }
-        if (p == "top" || p == "left") { body.addView(widgets, wl); body.addView(grid, gl) } else { body.addView(grid, gl); body.addView(widgets, wl) }
+        if (p != "right") { body.addView(widgets, wl); body.addView(grid, gl) } else { body.addView(grid, gl); body.addView(widgets, wl) }
         shownKey = ""
         body.requestLayout()
     }
@@ -812,7 +813,7 @@ class HomeActivity : Activity() {
     /** The widgets' numbers, read off the main thread; none at all while they are off. [tick]: the minute's read, which keeps a row that would draw the same. */
     private fun widgetsRead(tick: Boolean = false) {
         val want = Store.list(this, "widgets")
-        val conf = Store.get(this); val note = conf.optString("note"); val sizes = conf.optJSONObject("wsize") ?: JSONObject()
+        val conf = Store.shown(this); val note = conf.optString("note"); val sizes = conf.optJSONObject("wsize") ?: JSONObject()
         val none = want.isEmpty() && note.isEmpty()
         if (none) noWidgets = true                                    // else kept until the read says: reset to false here, chosen widgets with nothing to show rebuilt the grid without end
         widgets.roomPx = (if (scroll.height > 0) scroll.height else resources.displayMetrics.heightPixels) - (if (head.bottom > 0) head.bottom else dp(118)) - dp(SIDE_TOP) - dp(16)   // two full blocks (2 x 180 + 12) under a head with the time (126 dp): 20 dp less above them than the row has, they fit
@@ -820,7 +821,7 @@ class HomeActivity : Activity() {
         if (none) { widgets.visibility = View.GONE; placedSet(emptyList()); return }
         val sig = want.joinToString(",") + "|" + note.isNotEmpty()
         val held = widgets.visibility == View.GONE && widgetsLast != "-$sig"   // the row came last time (or nothing known): keep its place
-        if (held && !(noWidgets && HomeConfig.side(place()))) widgets.hold()   // a first column held beside a grid laid out full width pushed its last tiles off the screen
+        if (held && !(noWidgets && HomeConfig.side(place()))) widgets.hold(HomeConfig.packRows(want, HomeConfig.bigs(conf), note.isNotEmpty(), HomeConfig.rows(place())).size)   // a first column held beside a grid laid out full width pushed its last tiles off the screen
         bg.execute {
             val f = widgets.read(want)
             runOnUiThread {
@@ -932,7 +933,7 @@ class HomeActivity : Activity() {
 
     private fun badgeTiles() {
         val m = getString(R.string.b_m); val h = getString(R.string.b_h)
-        val conf = Store.get(this)
+        val conf = Store.shown(this)
         val power = Keys.powerApp(conf)
         for (t in tileCache.values) t.app?.let { a -> t.mark(badges.of(a.pkg) ?: Badges.POWER.takeIf { a.pkg == power }) { Badges.label(it, m, h) } }
         // which keys open each tile: a key's target is the tile's own key (a package, "pin:…", "tile:…"), only while keys are on
@@ -1732,8 +1733,16 @@ class HomeActivity : Activity() {
     private fun headRoom() = if (conf.optBoolean("fixHead", false)) head.bottom else 0
 
     private fun reveal(v: View) {
-        if (grid.indexOfChild(v.parent as? View) <= 0) { scrollToY(0); return }
+        // the first row shows the page's top, when it fits there: two rows of widgets on a 960×540 dp screen put it under the edge,
+        // and the focus went down to a tile nobody could see (the user accepts it hidden until then, 2026-11-20)
+        if (grid.indexOfChild(v.parent as? View) <= 0 && fitsAtTop(v)) { scrollToY(0); return }
         revealAt(v)
+    }
+
+    private fun fitsAtTop(v: View): Boolean {
+        var y = 0; var p: View? = v
+        while (p != null && p !== scroll) { y += p.top; p = p.parent as? View }
+        return y + v.height <= scroll.height
     }
 
     /** The page scrolls only as far as [v] needs to be whole on screen. */
@@ -2308,7 +2317,7 @@ class HomeActivity : Activity() {
             start.add(stays(R.drawable.ic_power, R.string.auto_on, getString(if (powerApp) R.string.am_on else R.string.am_off)) {   // the app that opens when the TV turns on: TV Setup does it (Keys.push); a toggle, so the panel stays and the row shows the new state
                 Keys.setPowerApp(this, if (powerApp) "" else a.pkg)
                 if (!Keys.setup(this)) toast(R.string.auto_needs_setup)   // saved anyway: it works the day TV Setup is there
-                conf = Store.get(this)
+                conf = Store.shown(this)
                 sub(a, st, me, 0)
             })
             val mine = HomeConfig.keyApps(conf.optJSONObject("keyapps")).filterValues { it == a.pkg }.keys.sorted()
@@ -2622,7 +2631,7 @@ class HomeActivity : Activity() {
      */
     private fun keyPicker(a: App, st: JSONObject?, focusCode: Int?, said: String) {
         val p = amPanel ?: return
-        val conf = Store.get(this)
+        val conf = Store.shown(this)
         val map = HomeConfig.keyApps(conf.optJSONObject("keyapps"))
         val have = Keys.have(this)?.let { j -> (0 until j.length()).map { j.getInt(it) }.toSet() }
         val dead = Keys.dead(this).filter { it in HomeConfig.KEY_DEAD }
@@ -2733,7 +2742,7 @@ class HomeActivity : Activity() {
                     if (isDestroyed) return@runOnUiThread
                     if (ch != null && ch.length() > 0) Store.change(this, ch)
                     toast(if (ok) R.string.link_changed else if (r == YouTube.NO_APP) R.string.link_no_app else if (r == YouTube.NO_LINK) R.string.pq_web_bad else R.string.watch_pin_fail)
-                    conf = Store.get(this); pinsRead()
+                    conf = Store.shown(this); pinsRead()
                 }
             }
         }

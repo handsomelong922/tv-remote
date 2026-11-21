@@ -200,7 +200,7 @@ addEventListener('resize', closePop);
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
 // ids of i18n/*.json: the words of each feature, said in the question below
-const SETUP_NEEDS = { keymulti: 'core.need_keymulti', home_playing: 'core.need_home_playing', notifylater: 'core.need_notifylater', videocopy: 'core.need_videocopy', videorot: 'core.need_videorot', videoaudio: 'core.need_videoaudio', scenetime: 'core.need_scenetime', sceneon: 'core.need_sceneon', mic_freespeech: 'core.need_mic_freespeech', mic_engine: 'core.need_mic_engine', schedule: 'core.need_schedule', schedule_windows: 'core.need_schedule_windows', rules: 'core.need_rules', draw: 'core.need_draw', video: 'core.need_video', invite: 'core.need_invite', ram: 'core.need_ram', ramauto: 'core.need_ramauto', idleoff: 'core.need_idleoff', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', speak: 'core.need_speak', homebar: 'core.need_homebar', voicekey: 'core.need_voicekey', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', appgrant: 'core.need_appgrant', home_usage: 'core.need_home_usage', holdkeys: 'core.need_holdkeys', mic: 'core.need_mic', checkout: 'core.need_checkout', telegram: 'core.need_telegram', kids: 'core.need_kids', homekey: 'core.need_homekey', keytest: 'core.need_keytest', support: 'core.need_support', scenepin: 'core.need_scenepin', mic_offline: 'core.need_mic_offline', family: 'core.need_family' };
+const SETUP_NEEDS = { keymulti: 'core.need_keymulti', home_playing: 'core.need_home_playing', notifylater: 'core.need_notifylater', videocopy: 'core.need_videocopy', videorot: 'core.need_videorot', videoaudio: 'core.need_videoaudio', scenetime: 'core.need_scenetime', sceneon: 'core.need_sceneon', mic_freespeech: 'core.need_mic_freespeech', mic_engine: 'core.need_mic_engine', schedule: 'core.need_schedule', schedule_windows: 'core.need_schedule_windows', rules: 'core.need_rules', draw: 'core.need_draw', video: 'core.need_video', invite: 'core.need_invite', ram: 'core.need_ram', ramauto: 'core.need_ramauto', idleoff: 'core.need_idleoff', pic: 'core.need_pic', drawkeep: 'core.need_drawkeep', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', speak: 'core.need_speak', homebar: 'core.need_homebar', voicekey: 'core.need_voicekey', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', appgrant: 'core.need_appgrant', home_usage: 'core.need_home_usage', holdkeys: 'core.need_holdkeys', mic: 'core.need_mic', checkout: 'core.need_checkout', telegram: 'core.need_telegram', kids: 'core.need_kids', homekey: 'core.need_homekey', keytest: 'core.need_keytest', support: 'core.need_support', scenepin: 'core.need_scenepin', mic_offline: 'core.need_mic_offline', family: 'core.need_family' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => { const what = SETUP_NEEDS[m[2]] ? T(SETUP_NEEDS[m[2]]) : m[2];
   return m[1] === 'missing' ? T('core.setup_missing', { what }) : T('core.setup_old', { what, min: m[3], have: m[4] }); };
@@ -429,6 +429,7 @@ async function refreshRead() {
   if (locked) return;
   tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
   if (s) applyKind(s);
+  if (typeof fieldFollow === 'function') fieldFollow();                // the TV's text field (no ADB): the typing box starts with what is in it
   if (!s && ++stateMiss < 2) { setTimeout(refresh, 1500); return; }    // one miss is often this device waking (its Wi-Fi back a moment later)
   if (s) stateMiss = 0;
   if (!s) {
@@ -671,7 +672,7 @@ function applyAdb() {
   const noadb = !ready && ADB.state !== 'unknown' && !NATIVE();         // not while still connecting; LG / Samsung hide those tabs instead
   $('.tabs').classList.toggle('noadb', noadb);
   document.querySelectorAll('.tabs [data-needs-adb]').forEach((b) => { if (noadb) b.title = T('core.needs_adb_tip'); else b.removeAttribute('title'); });
-  const typing = ready || NATIVE() && can('text');                    // typing goes through ADB, or LG's / Samsung's own keyboard link
+  const typing = ready || NATIVE() && can('text') || !!STATE.field;   // typing goes through ADB, LG's / Samsung's keyboard link, or the text field an Android TV reports without ADB
   put('#kbd', 'disabled', !typing); put($('#kbdoff'), 'hidden', typing);         // no half-working box without it
   put('#screenbtn', 'disabled', !ready && !screenOn);
   if (!ready && screenOn) stopScreen(T('core.adb_stopped_view'));

@@ -97,6 +97,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         internal val BOLD get() = Font.bold
         private val BIG = setOf("system", "usage", "calendar", "weather", "air", "market", "news", "recent", "adblock", "prayer")
         const val BIG_H = 180                                          // dp: the widgets' height, fixed: the favourites stay on screen
+        const val ROW_GAP = 16                                          // dp between the two rows of "top2"
+        fun rowsH(rows: Int) = BIG_H * rows + ROW_GAP * (rows - 1)
         /** A side column's width: a third of the content (the screen less the page's 48 dp each side), 240..340 dp. */
         fun sideW(dm: android.util.DisplayMetrics): Int = ((dm.widthPixels - 96 * dm.density) / 3).coerceIn(240 * dm.density, 340 * dm.density).toInt()
         private const val FULL_MIN = 180                              // dp: a big widget in a column narrower than this shows its small form (the row of three big widgets gives 190 to 260)
@@ -195,6 +197,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     private val side get() = HomeConfig.side(place)
     /** The height a side column may fill (px), set before [show] by the screen: what is left under the top bar. */
     var roomPx = 0
+    /** Rows the last [show] laid out under the top bar (2 with "top2" and widgets enough for a second row). */
+    private var shownRows = 1
     /** The widgets the last [show] gave a place (none waiting for room, none with nothing to show): the top bar's clock goes by these. */
     var placed: List<String> = emptyList()
     /** Left / Right pressed on a widget with nothing beside it in the column: the screen decides (the grid, or nowhere). */
@@ -339,11 +343,12 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
      */
     /**
      * The row's place kept, empty, while its numbers are read (2-3 s on a weak box at start): the grid sits where it will stay from
-     * the first frame instead of under the clock, then pushed down when they came (the user, 2026-11-03).
+     * the first frame instead of under the clock, then pushed down when they came (the user, 2026-11-03). [rows]: how many the saved
+     * settings pack ("top2" with widgets enough: 2); the last [show]'s count was 1 at start, so the grid sat a row high and then jumped.
      */
-    fun hold() {
+    fun hold(rows: Int) {
         val lp = layoutParams
-        if (!side && lp != null && lp.height != dp(BIG_H)) { lp.height = dp(BIG_H); layoutParams = lp }   // a side column has no height to keep: the grid is beside it
+        if (!side && lp != null && lp.height != dp(rowsH(rows))) { lp.height = dp(rowsH(rows)); layoutParams = lp }   // a side column has no height to keep: the grid is beside it
         if (visibility == View.GONE) visibility = View.INVISIBLE
     }
 
@@ -354,17 +359,18 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         val noteView = if (note.isNotEmpty()) pill(tile(AMBER, R.drawable.ic_message), note, "", 1).apply {   // the words are the widget: large, no "Note" over them
             ((getChildAt(1) as LinearLayout).getChildAt(0) as TextView).apply { textSize = 16f; maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END }
         } else null
-        val tall = layoutParams
-        val want0 = if (side) -2 else dp(BIG_H)
-        if (tall != null && tall.height != want0) { tall.height = want0; layoutParams = tall }
-        orientation = if (side) VERTICAL else HORIZONTAL
         val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) && (it !in HomeQr.KEYS || qrs.has(it)) && (it != "adblock" || Adblock.supported()) }   // a widget with nothing to show takes no place; Private DNS is Android 9+
         val big = HomeConfig.bigs(JSONObject().put("wsize", sizes))
-        val packed = if (side) HomeConfig.packColumn(keys, big, noteView != null, Math.round((if (roomPx > 0) roomPx else a.resources.displayMetrics.heightPixels * 2 / 3) / a.resources.displayMetrics.density))
-            else HomeConfig.pack(keys, big, noteView != null)
-        placed = keys - packed.waiting.toSet()
+        val rowsPacked = if (side) listOf(HomeConfig.packColumn(keys, big, noteView != null, Math.round((if (roomPx > 0) roomPx else a.resources.displayMetrics.heightPixels * 2 / 3) / a.resources.displayMetrics.density)))
+            else HomeConfig.packRows(keys, big, noteView != null, HomeConfig.rows(place))   // "top2": a second row for what waits
+        shownRows = rowsPacked.size
+        val tall = layoutParams
+        val want0 = if (side) -2 else dp(rowsH(shownRows))
+        if (tall != null && tall.height != want0) { tall.height = want0; layoutParams = tall }
+        orientation = if (side || shownRows > 1) VERTICAL else HORIZONTAL
+        placed = keys - rowsPacked.last().waiting.toSet()
         if ("frame" !in placed) { frame?.release(); frame = null }       // off, or no room: nothing held, no timer
-        if (packed.cols.isEmpty()) { placed = emptyList(); visibility = View.GONE; return }
+        if (rowsPacked[0].cols.isEmpty()) { placed = emptyList(); visibility = View.GONE; return }
         fun plain(k: String, alone: Boolean): View? = when (k) {
             "lunar" -> f.moon?.let { lunar(it) }; "timer" -> timerView
             "clock" -> clock(if (!alone) 0 else if (k in big) 2 else 1)
@@ -373,6 +379,10 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         }
         fun tonal(k: String) = k in HomeConfig.TONAL && opt(k, "look") == "tonal"                  // the default look, glass, is what a missing one means
         val gap = dp(20)
+        rowsPacked.forEachIndexed { r, packed ->
+        val line: LinearLayout = if (shownRows > 1) LinearLayout(a).apply { orientation = HORIZONTAL; clipChildren = false; clipToPadding = false
+            gravity = if (Store.get(a).optBoolean("center", false)) Gravity.CENTER_HORIZONTAL else Gravity.START
+            this@Widgets.addView(this, LayoutParams(-1, dp(BIG_H)).apply { if (r > 0) topMargin = dp(ROW_GAP) }) } else this
         val room = (if (side) sideW(a.resources.displayMetrics) else if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - gap * (if (side) 0 else packed.cols.size - 1)
         val sum = maxOf(HomeConfig.FLOOR, packed.cols.sumOf { it.weight })
         packed.cols.forEachIndexed { i, col ->
@@ -421,7 +431,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                 box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
             if (side) addView(box, LayoutParams(-1, dp(col.weight)).apply { if (i > 0) topMargin = dp(HomeConfig.H_GAP) })
-            else addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })
+            else line.addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })
+        }
         }
         gravity = if (!side && Store.get(a).optBoolean("center", false)) Gravity.CENTER_HORIZONTAL else Gravity.START   // a row that does not fill the width sits over the grid as the grid does: centered with it
         visibility = View.VISIBLE
@@ -458,16 +469,31 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             p.removeView(square)
             val title = words.getChildAt(0) as TextView
             words.removeView(title)
+            val year = text(sky.year, 13f, DIM)
+            val moon = MoonFace(a, sky.phase)
             p.addView(LinearLayout(a).apply {
                 orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
                 addView(square, LayoutParams(dp(56), dp(56)))
                 addView(LinearLayout(a).apply {
                     orientation = VERTICAL
                     addView(title.apply { textSize = 18f; maxLines = 1 })
-                    addView(text(sky.year, 13f, DIM), LayoutParams(-2, -2).apply { topMargin = dp(2) })
+                    addView(year, LayoutParams(-2, -2).apply { topMargin = dp(2) })
                 }, LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
-                addView(MoonFace(a, sky.phase), LayoutParams(dp(44), dp(44)))
+                addView(moon, LayoutParams(dp(44), dp(44)))
             }, 0, LayoutParams(-1, -2).apply { topMargin = dp(6) })
+            // a narrow widget (two rows of them) cut the date and the year to "1…" / "Bín…": first the moon gives its room up, then the
+            // day's square (the date says the day too), then the date gets smaller; each step once, so it never loops
+            title.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+                override fun onLayoutChange(v: View, l: Int, t: Int, r: Int, b: Int, ol: Int, ot: Int, or: Int, ob: Int) {
+                    val cut = listOf(title, year).any { w -> w.paint.measureText(w.text.toString()) > w.width - w.paddingLeft - w.paddingRight + 1 }
+                    if (v.width == 0 || !cut) return
+                    when {
+                        moon.visibility != View.GONE -> v.post { moon.visibility = View.GONE }
+                        square.visibility != View.GONE -> v.post { square.visibility = View.GONE; ((v.parent as View).layoutParams as LayoutParams).leftMargin = 0; (v.parent as View).requestLayout() }
+                        else -> { v.removeOnLayoutChangeListener(this); v.post { title.textSize = 15f } }
+                    }
+                }
+            })
             // a title and the top edge like the big widgets beside it (weather, system): centred and untitled it sat off their lines
             p.addView(head(a.getString(R.string.w_lunar), ""), 0)
             p.gravity = Gravity.START or Gravity.TOP

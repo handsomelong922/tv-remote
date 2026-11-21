@@ -5,7 +5,7 @@ Read [README.md](README.md) first: change the row a fault belongs to, and this f
 **Code:** `app/tvsetup/src/main/kotlin/dev/tvremote/setup/rules/SceneTimer.kt`, `app/tvsetup/src/main/kotlin/dev/tvremote/setup/rules/Guard.kt`,
 `app/tvsetup/src/main/kotlin/dev/tvremote/setup/ScenePin.kt`, `app/tvsetup/src/main/kotlin/dev/tvremote/setup/rules/NotifyLater.kt`, `app/shared/src/main/kotlin/dev/tvremote/core/scenes/Scenes.kt`.
 
-**Tests:** `app/tvsetup/src/test/kotlin/dev/tvremote/setup/rules/SceneTimerTest.kt` (it also holds the `NotifyLater.step` tests): each row names its test where a pure one can hold it.
+**Tests:** `app/tvsetup/src/test/kotlin/dev/tvremote/setup/rules/SceneTimerTest.kt` (it also holds the `NotifyLater.step` tests), `app/shared/src/test/kotlin/dev/tvremote/core/ScenesTest.kt` (row 26): each row names its test where a pure one can hold it.
 
 ## The goal, for the person
 
@@ -17,7 +17,8 @@ A scene can also have "Start when" (`on`): an app comes to the front, or the TV 
 ## How it runs
 
 No alarm, receiver or thread of its own. `SceneTimer.set` keeps the timed scenes (prefs `scenetimer`, from RulesReceiver "scenes" or
-the TV page's save) and `Rules.active` is true while one exists, so `Guard` runs; each `Guard.check` calls `SceneTimer.tick`, which
+the TV page's save) and `Rules.guarded` is true while one exists, so `Guard` runs (with nothing guarded its chain stops, and
+`Guard.poke` from `SceneTimer.set` starts it again); each `Guard.check` calls `SceneTimer.tick`, which
 asks the pure `SceneTimer.step` and starts the due ones through `runNow` (ScenePin.kt) over TV Setup's own ADB link (the shell:
 Android 14's block on a background app opening a screen never applies). One cursor per scene (the last moment looked at, ms):
 the scene's next time after it (`Scenes.nextAt`, in the TV's time zone of that moment) has come = run. Guard's chain is
@@ -40,7 +41,7 @@ the scene's next time after it (`Scenes.nextAt`, in the TV's time zone of that m
 | 11 | a one-date scene after its run | nothing left to wait for; it stays in the list | `changedTimeStartsAgainAndOnceEndsWithNothingToWaitFor` |
 | 12 | Fire TV (local ADB blocked) or no ADB ever | row 3 each time: tried for 5 min, then "no ADB" | |
 | 13 | TV Setup older than `SetupNeed` "scenetime" | the client's save is refused with the update question; nothing timed on the TV | |
-| 14 | no timed scene | `SceneTimer.any` false: Guard does not run for it, nothing is read | |
+| 14 | no timed scene | `SceneTimer.any` false: Guard does not run for it, nothing is read; with no other rule either (`Rules.guarded` false) its chain, lock thread and volume receiver all stop | |
 | 15 | an "open app" step: the app turned off, or Android 6 and older (no `cmd package resolve-activity`) | `Scenes.launch`: resolve its TV / phone screen; else `am start -p` by category; still nothing: `AppRestore` brings it back for the user in front and tries once more; then "no launcher screen" | |
 | 16 | scene with `on.app`, screen on | each `Guard.check` (every <= 10 s while such a scene exists) reads `Usage.events` since its cursor; an app coming to the front (not another screen of the app already in front) runs the scene once | `anAppComingToTheFrontStartsItsSceneOnce` |
 | 17 | the app stays in front, or the person leaves and comes back | stays: nothing again; comes back: a new run | `anAppComingToTheFrontStartsItsSceneOnce` |
@@ -51,6 +52,8 @@ the scene's next time after it (`Scenes.nextAt`, in the TV's time zone of that m
 | 22 | no scene with `on`; screen off | no events are read, no receiver work (`onPower` returns at once); TV Setup older than `SetupNeed` "sceneon": the save is refused with the update question | |
 | 23 | no ADB at an event run | `launch` passes `noAdb = { true }`: silent, no "no ADB" on every app opened; no retry (an event is gone) | measured: on an emulator without the link the wait took ~3 min, the scene quiet meanwhile |
 | 24 | a notification sent "in 10 min / 20 min / 1 h" (`delay` on the notify request; the page's Notify dialog "When") | `NotifyReceiver` keeps it in prefs `notifylater` (`NotifyLater.add`, pokes Guard); `Guard.check` shows what is due through `NotifyLater.tick`. Not shown if > 10 min late (TV off), dropped if due further away than a day (clock went back); survives TV Setup being killed; none pending = nothing runs. TV Setup older than `SetupNeed` "notifylater": the client asks to update before sending | `aMessageWaitsThenShowsOnceAndNeverInAPile` |
+| 25 | a scene with both a time and `on` (app or power) whose own steps wake the TV or open that app | the timed run sets the same quiet window as an event run (`tick` before `runNow`, `endQuiet` after): it does not start itself again. Before: only event runs had it | the window: `aSceneThatOpensItsOwnAppDoesNotStartItself` (setting it on a timed run is Android code, not unit-tested) |
+| 26 | the same scene started again while it runs (a tile twice, its time and its event together, a chat, the page) | `runNow` and `/api/scene/run` share `Scenes.claim` per scene id in TV Setup: the second start is dropped (a tile toasts "still running", the page and Telegram say so, a timed or event run is quiet; a timed one is not retried). Different scenes still run together; steps without an id (the editor's Try) are not checked. The phone app does the same for its own runs | `aSceneStillRunningIsNotStartedAgainButAnotherOneIs` |
 
 ## Checking it
 

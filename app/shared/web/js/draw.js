@@ -1,7 +1,8 @@
 // ✏️ Drawing on the TV's screen over the picture here: TV Setup draws the same strokes over whatever is on the TV, for the
 // person watching (DrawLayer.kt there, Draw.kt for the way strokes go). Points are sent in 0..10000 of the picture's size.
 // What is drawn here fades soon after the finger lifts: by then the TV's picture shows it, from the TV itself.
-let drawing = false, drawColor = '#ff3b30', drawWidth = 60, drawId = 0, drawQ = [], drawSending = false, drawPen = null;
+// drawId starts anywhere: TV Setup adds "a" points to the newest stroke with that id, and another phone or page draws too
+let drawing = false, drawColor = '#ff3b30', drawWidth = 60, drawId = Math.floor(Math.random() * 1e9), drawQ = [], drawSending = false, drawPen = null;
 const drawLocal = [];                                                  // {pts, color, width, upAt} or {pic, x, y, w, upAt}: drawn here until they fade
 // 🖼️ a picture being placed: only here until ✓, then it goes to the TV once, where it stays put like a stroke
 let drawPic = null;                                                    // {img, b, x, y, w}: centre and width in 0..10000 of the screen
@@ -45,7 +46,8 @@ function drawPaint() {
   if (drawLocal.some((s) => s.upAt)) requestAnimationFrame(drawPaint);
 }
 
-// One request at a time; what comes meanwhile goes in the next, so a slow link never falls behind the finger.
+// One request at a time; what comes meanwhile goes in the next, so a slow link never falls behind the finger. It goes on after
+// ✓ too, until all is sent (the last stroke, a picture just placed); only a failure drops what waits.
 function drawSend(op) {
   const last = drawQ[drawQ.length - 1];
   if (op.o === 'a' && last && last.o !== 'u' && last.o !== 'x' && last.id === op.id) last.p.push(...op.p); else drawQ.push(op);
@@ -53,11 +55,13 @@ function drawSend(op) {
 }
 async function drawFlush() {
   drawSending = true;
-  while (drawQ.length && drawing) {
-    const ops = drawQ; drawQ = [];
+  while (drawQ.length) {
+    let n = 0, size = 0;                                               // pictures in more than one body: each under Draw.MAX_BODY
+    while (n < drawQ.length && (!n || size + (drawQ[n].b || '').length < 5e6)) size += (drawQ[n++].b || '').length;
+    const ops = drawQ.splice(0, n);
     const r = await fetch('/api/draw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops }) }).catch(() => null);
     if (!r || !r.ok) {
-      drawStop(); drawFail(await drawWhy(r));
+      drawQ.length = 0; drawStop(); drawFail(await drawWhy(r));
       break;
     }
   }
@@ -77,15 +81,30 @@ function drawFail(why) {
 }
 
 let drawPics = true;                                                   // this TV Setup takes pictures: known once drawing starts
+// ⏱ How long it all stays on the TV after the last stroke, remembered here: 10 minutes as before there was a choice, 0 until
+// cleared (through a restart too; TV Setup's screen then has a tile to clear it). Each stroke carries it (DrawLayer "k").
+const DRAW_KEEPS = [[10, 'remote.keep_10m'], [30, 'remote.keep_30m'], [60, 'remote.keep_1h'], [0, 'remote.keep_always']];
+let drawKeep = (() => { try { const v = +localStorage.getItem('drawkeep'); return DRAW_KEEPS.some(([m]) => m === v) && localStorage.getItem('drawkeep') !== null ? v : 10; } catch { return 10; } })();
+let drawKeeps = true;                                                  // this TV Setup takes the choice: known once drawing starts
+const drawK = () => drawKeeps && drawKeep !== 10 ? { k: drawKeep } : {};   // an older one gets what it always did
+const drawKeepShow = () => { put('#drawkeepw', 'textContent', T(DRAW_KEEPS.find(([m]) => m === drawKeep)[1])); $('#drawkeep').classList.toggle('on', drawKeep !== 10); };
+$('#drawkeep').addEventListener('click', (e) => popover(e.currentTarget, DRAW_KEEPS.map(([m, id]) => ['', T(id), () => {
+  if (m !== 10 && !drawKeeps) { setupFor('drawkeep'); return; }
+  drawKeep = m; try { localStorage.setItem('drawkeep', m); } catch {}
+  drawKeepShow(); if (drawKeeps && drawing) drawSend({ o: 'k', m });               // what is on the TV now follows the new choice
+}, m === drawKeep ? 'on' : ''])));
+drawKeepShow();
 async function drawStart() {
   if (!screenOn) startScreen();                                        // the strokes go where the picture shows
-  drawing = true; drawQ = [];
+  drawing = true;
   put('#drawcv', 'hidden', false); put('#drawbar', 'hidden', false); $('#r-draw').classList.add('on');
   drawSize();
   const r = await fetch('/api/draw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"ops":[]}' }).catch(() => null);
   if (!drawing) return;
-  if (!r || !r.ok) { const why = await drawWhy(r); drawStop(); drawFail(why); return; }
-  drawPics = (await r.json().catch(() => ({}))).pic !== false;
+  if (!r || !r.ok) { const why = await drawWhy(r); drawQ.length = 0; drawStop(); drawFail(why); return; }
+  const j = await r.json().catch(() => ({}));
+  drawPics = j.pic !== false; drawKeeps = j.keep === true;
+  if (!drawKeeps && drawKeep !== 10) setupFor('drawkeep');             // chosen here, but this TV Setup still clears after 10 minutes
 }
 function drawStop() {
   drawing = false; drawPen = null; drawLocal.length = 0; picEnd();
@@ -151,7 +170,7 @@ $('#drawtext').addEventListener('click', async () => {
   g.beginPath(); g.roundRect(0, 0, w, h, 32); g.fill();
   g.font = font; g.fillStyle = drawColor; g.textBaseline = 'top'; g.textAlign = 'center';
   lines.forEach((l, i) => g.fillText(l, w / 2, pad + i * lh));
-  if (!drawing) await drawStart();
+  if (!drawing) { await drawStart(); if (!drawing) return; }          // it could not start: drawFail said why
   picPlace(c.toDataURL('image/png'), Math.min(9000, Math.round(w / 1920 * 10000)));   // 72px words as on a 1080p TV
 });
 function picEnd() { drawPic = null; picTouch.clear(); put('#picbar', 'hidden', true); if (drawing) put('#drawbar', 'hidden', false); drawPaint(); }
@@ -173,7 +192,7 @@ function picWidth(w) { drawPic.w = Math.round(Math.min(10000, Math.max(400, w)))
 $('#piccancel').addEventListener('click', picEnd);
 $('#picok').addEventListener('click', () => {
   const p = drawPic; if (!p) return;
-  drawSend({ o: 'i', id: ++drawId, b: p.b, x: Math.round(p.x), y: Math.round(p.y), w: p.w });
+  drawSend({ o: 'i', id: ++drawId, b: p.b, x: Math.round(p.x), y: Math.round(p.y), w: p.w, ...drawK() });
   drawLocal.push({ img: p.img, x: p.x, y: p.y, w: p.w, upAt: Date.now() });
   picEnd();
 });
@@ -190,7 +209,7 @@ $('#drawcv').addEventListener('pointerdown', (e) => {
   e.preventDefault(); try { $('#drawcv').setPointerCapture(e.pointerId); } catch {}
   drawPen = { id: ++drawId, pts: [p], color: drawColor, width: drawWidth, upAt: 0 };
   drawLocal.push(drawPen); drawPaint();
-  drawSend({ o: 's', id: drawPen.id, c: drawColor, w: drawWidth, p: [...p] });
+  drawSend({ o: 's', id: drawPen.id, c: drawColor, w: drawWidth, p: [...p], ...drawK() });
 });
 $('#drawcv').addEventListener('pointermove', (e) => {
   if (drawPic && picTouch.has(e.pointerId)) {

@@ -278,6 +278,18 @@ class HomeConfigTest {
         assertEquals(0, both.getJSONObject("wsize").length())
     }
 
+    /** "Select all" of a group of backgrounds, as tests/walls_all_cases.json says (the page's homeWallsAll reads it too). */
+    @Test fun selectAllWallsFollowsTheSharedCases() {
+        val cases = JSONObject(java.io.File("tests/walls_all_cases.json").readText()).getJSONArray("cases")
+        fun list(a: JSONArray) = (0 until a.length()).map { a.getString(it) }
+        for (i in 0 until cases.length()) {
+            val c = cases.getJSONObject(i)
+            val (walls, full) = HomeConfig.wallsAll(list(c.getJSONArray("set")), list(c.getJSONArray("group")))
+            assertEquals(c.getString("name"), list(c.getJSONArray("walls")), walls)
+            assertEquals(c.getString("name"), c.getBoolean("full"), full)
+        }
+    }
+
     /** The packing gives what tests/home_pack_cases.json says (the page's homePack reads the same table). */
     @Test fun packingFollowsTheSharedCases() {
         val cases = JSONObject(java.io.File("tests/home_pack_cases.json").readText()).getJSONArray("cases")
@@ -289,6 +301,19 @@ class HomeConfigTest {
             assertEquals(c.getString("name"), (0 until cols.length()).map { list(cols.getJSONArray(it)) }, p.cols.map { it.keys })
             assertEquals(c.getString("name"), list(c.getJSONArray("waiting")), p.waiting)
             assertEquals(c.getString("name"), true, p.cols.sumOf { it.weight } <= HomeConfig.BUDGET)
+        }
+    }
+
+    /** "top2": the rows [HomeConfig.packRows] makes, as the same file's "rows" table says (the page's homePackRows reads it too). */
+    @Test fun twoRowsFollowTheSharedCases() {
+        val cases = JSONObject(java.io.File("tests/home_pack_cases.json").readText()).getJSONArray("rows")
+        fun list(a: JSONArray) = (0 until a.length()).map { a.getString(it) }
+        for (i in 0 until cases.length()) {
+            val c = cases.getJSONObject(i)
+            val p = HomeConfig.packRows(list(c.getJSONArray("keys")), list(c.getJSONArray("big")).toSet(), c.optBoolean("note"), c.getInt("rows"))
+            val lines = c.getJSONArray("lines")
+            assertEquals(c.getString("name"), (0 until lines.length()).map { l -> lines.getJSONArray(l).let { a -> (0 until a.length()).map { list(a.getJSONArray(it)) } } }, p.map { r -> r.cols.map { it.keys } })
+            assertEquals(c.getString("name"), list(c.getJSONArray("waiting")), p.last().waiting)
         }
     }
 
@@ -376,6 +401,16 @@ class HomeConfigTest {
     }
 
     private fun walls(c: JSONObject) = c.getJSONArray("walls").let { a -> List(a.length()) { a.getString(it) } }
+
+    @Test fun aSiteSuggestionIsAStopOfTheSet() {
+        val c = HomeConfig.clean(JSONObject().put("wall", "sug:vn").put("wevery", "1h")
+            .put("walls", JSONArray(listOf("sug:vn", "photo", "sug:aurora-harbor", "sug:", "sug:Bad", "sug:a b", "sug:../x", "web", "sug:" + "x".repeat(41)))))
+        assertEquals(listOf("sug:vn", "photo", "sug:aurora-harbor"), walls(c))   // bad ids and the page itself go
+        assertEquals("sug:vn", c.getString("wall"))
+        assertEquals("sug:fireplace", HomeConfig.clean(JSONObject().put("wall", "sug:fireplace")).getString("wall"))   // one choice, no address needed
+        assertEquals(listOf("sug:vn", "dawn"), HomeConfig.wallsAll(listOf("sug:vn"), listOf("dawn")).first)
+        assertEquals("night", HomeConfig.clean(JSONObject().put("wall", "sug:")).getString("wall"))
+    }
 
     @Test fun theSetIsNeverEmptyAndAlwaysHoldsTheWallOnShow() {
         val none = HomeConfig.clean(JSONObject())
@@ -510,6 +545,14 @@ class HomeConfigTest {
         assertEquals("big", f.getJSONObject("wsize").getString("radar"))
         assertFalse(f.getJSONObject("wsize").has("system"))
         assertEquals(listOf("system"), HomeConfig.clean(f).getJSONArray("widgets").let { a -> (0 until a.length()).map { a.getString(it) } })   // TV Home's own decides
+    }
+    @Test fun otherKeysAreKeptButNeverNavigationOrSystemKeys() {
+        val m = HomeConfig.clean(JSONObject().put("keyapps", JSONObject().put("85", "a.b").put("166", "c.d").put("165", "e.f")
+            .put("23", "no.ok").put("4", "no.back").put("3", "no.home").put("19", "no.up").put("26", "no.power").put("164", "no.mute").put("82", "no.menu").put("999", "too.big")))
+        assertEquals(mapOf(85 to "a.b", 166 to "c.d", 165 to "e.f"), HomeConfig.keyApps(m.getJSONObject("keyapps")))
+        assertTrue(HomeConfig.keyOther(85)); assertFalse(HomeConfig.keyOther(183)); assertFalse(HomeConfig.keyOther(7)); assertFalse(HomeConfig.keyOther(170))   // colours, numbers, dead keys have their own rows
+        assertTrue(HomeConfig.keyOnHome(7) && HomeConfig.keyOnHome(183) && HomeConfig.keyOnHome(85)); assertFalse(HomeConfig.keyOnHome(170))   // a dead key is TV Setup's, everywhere
+        for (k in listOf(62, 96, 97, 99, 100)) assertFalse("$k", HomeConfig.keyOther(k) || HomeConfig.keyAllowed(k))   // Space, a pad's A / B / X / Y: they click and go back
     }
     @Test fun keysAndPowerOnAppAreOffByDefaultAndKeepOnlyFreeKeys() {
         val c = HomeConfig.clean(JSONObject())
