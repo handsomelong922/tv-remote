@@ -84,6 +84,21 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "046a4750ed104c16db021c39|0.48.0": {
+  "at": "2026-11-26T14:01:57+07:00",
+  "n": 1,
+  "note": "ZTE B866V2F (Viettel/MediaBox operator box, a14), 3 installs: 5555 open, the 'Allow USB debugging?' question was not answered; health report, nothing to fix"
+ },
+ "046a4750ed104c16db021c39|0.54.0": {
+  "at": "2026-11-26T14:01:57+07:00",
+  "n": 2,
+  "note": "ZTE B866V2F (Viettel/MediaBox operator box, a14), 3 installs: 5555 open, the 'Allow USB debugging?' question was not answered; health report, nothing to fix"
+ },
+ "046a4750ed104c16db021c39|0.55.0": {
+  "at": "2026-11-26T14:01:57+07:00",
+  "n": 2,
+  "note": "ZTE B866V2F (Viettel/MediaBox operator box, a14), 3 installs: 5555 open, the 'Allow USB debugging?' question was not answered; health report, nothing to fix"
+ },
  "054e1adb82724af476bb5118|0.47.0": {
   "at": "2026-11-08T05:23:25+07:00",
   "n": 1,
@@ -410,39 +425,54 @@
   "note": "Skyworth 4K Google TV Stick sdk 34: others 1, rs allow: another a11y service, ours dropped by firmware (operator kind); clients say keys work only on TV Home"
  },
  "13ebb1a66fdaf61270829f5a|0.26.3": {
-  "at": "2026-11-05T10:40:10+07:00",
+  "at": "2026-11-25T22:00:56+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
  },
  "13ebb1a66fdaf61270829f5a|0.30.0": {
-  "at": "2026-11-05T10:40:10+07:00",
+  "at": "2026-11-25T22:00:56+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
  },
  "13ebb1a66fdaf61270829f5a|0.31.0": {
-  "at": "2026-11-05T10:40:10+07:00",
+  "at": "2026-11-25T22:00:56+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
  },
  "13ebb1a66fdaf61270829f5a|0.37.0": {
-  "at": "2026-11-05T10:40:10+07:00",
+  "at": "2026-11-25T22:00:56+07:00",
   "n": 2,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
  },
  "13ebb1a66fdaf61270829f5a|0.40.0": {
-  "at": "2026-11-06T17:03:02+07:00",
+  "at": "2026-11-25T22:00:56+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
  },
  "13ebb1a66fdaf61270829f5a|0.44.0": {
-  "at": "2026-11-05T10:40:10+07:00",
+  "at": "2026-11-25T22:00:56+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing, EOF on Fire TV = Amazon blocks local ADB)"
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
  },
  "13ebb1a66fdaf61270829f5a|0.45.0": {
-  "at": "2026-11-06T17:03:02+07:00",
+  "at": "2026-11-25T22:00:56+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
+ },
+ "13ebb1a66fdaf61270829f5a|0.51.0": {
+  "at": "2026-11-25T22:00:56+07:00",
+  "n": 2,
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
+ },
+ "13ebb1a66fdaf61270829f5a|0.53.1": {
+  "at": "2026-11-25T22:00:56+07:00",
+  "n": 1,
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
+ },
+ "13ebb1a66fdaf61270829f5a|0.55.0": {
+  "at": "2026-11-25T22:00:56+07:00",
+  "n": 2,
+  "note": "TCL Smart TV (C06/G06/G10/G13, a11-14), 6 installs: 5555 open, the 'Allow USB debugging?' question was not answered on the TV; health report, nothing to fix"
  },
  "1503103843d16ccc2d0cdb5b|0.47.0": {
   "at": "2026-11-11T06:02:16+07:00",
@@ -1275,64 +1305,99 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "3f685f9c7cdca8d898486836|0.26.2": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 1,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.26.3": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 1,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.28.0": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 1,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.29.0": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 1,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.30.0": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 4,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.31.0": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 1,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.34.1": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 3,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.35.0": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 3,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.38.2": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 1,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.38.4": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 2,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.44.0": {
-  "at": "2026-11-05T21:24:09+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 1,
-  "note": "ADB report, not a crash: the TV's own ADB state (not paired / refused / allow unanswered / timeout); TV Setup shows it and keeps trying"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3f685f9c7cdca8d898486836|0.45.0": {
-  "at": "2026-11-06T17:03:02+07:00",
+  "at": "2026-11-26T05:01:57+07:00",
   "n": 1,
-  "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
+ },
+ "3f685f9c7cdca8d898486836|0.46.0": {
+  "at": "2026-11-26T05:01:57+07:00",
+  "n": 1,
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
+ },
+ "3f685f9c7cdca8d898486836|0.50.0": {
+  "at": "2026-11-26T05:01:57+07:00",
+  "n": 2,
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
+ },
+ "3f685f9c7cdca8d898486836|0.51.0": {
+  "at": "2026-11-26T05:01:57+07:00",
+  "n": 3,
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
+ },
+ "3f685f9c7cdca8d898486836|0.52.0": {
+  "at": "2026-11-26T05:01:57+07:00",
+  "n": 3,
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
+ },
+ "3f685f9c7cdca8d898486836|0.53.1": {
+  "at": "2026-11-26T05:01:57+07:00",
+  "n": 1,
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
+ },
+ "3f685f9c7cdca8d898486836|0.53.6": {
+  "at": "2026-11-26T05:01:57+07:00",
+  "n": 1,
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
+ },
+ "3f685f9c7cdca8d898486836|0.55.0": {
+  "at": "2026-11-26T05:01:57+07:00",
+  "n": 3,
+  "note": "Chromecast group now 24 installs over 9 versions (0.30-0.55): 8 of 9 'adb tls: this device is not paired' (Chromecast has only Wireless debugging; TV Setup must be paired, worded by errors.tv_not_paired_with), 1 old timeout; health report, nothing new to fix"
  },
  "3fd52ef15449ebe1bb5ee526|0.49.0": {
   "at": "2026-11-22T22:16:41+07:00",
@@ -1809,6 +1874,11 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "57bf114e6db642676f25d4b4|0.55.0": {
+  "at": "2026-11-25T21:02:19+07:00",
+  "n": 1,
+  "note": "TCL G08 (C805) a14: TV Setup paired over Wireless debugging; its saved TLS port 36603 timed out (not refused, so kept) and the 5555 fallback came after; the rule fired inside that dial window. 1 time; fallback exists (Adb.connectTo), nothing to fix unless it repeats"
+ },
  "5829f9352b7b17a070bc391f|0.44.0": {
   "at": "2026-11-07T05:15:46+07:00",
   "n": 1,
@@ -1848,6 +1918,26 @@
   "at": "2026-11-18T19:27:00+07:00",
   "n": 1,
   "note": "rules_no_adb (Xiaomi MiTV-MZTU0, 0.52.0): could not close TizenTube, the TV was still asking 'Allow USB debugging?'; the TV's state, TV Setup shows the allow step"
+ },
+ "592ef0de506c0c694f2d21c2|0.32.1": {
+  "at": "2026-11-27T04:00:49+07:00",
+  "n": 1,
+  "note": "4K Google TV Box (a14), 3 installs: 5555 open, the 'Allow USB debugging?' question was not answered; health report, nothing to fix"
+ },
+ "592ef0de506c0c694f2d21c2|0.46.0": {
+  "at": "2026-11-27T04:00:49+07:00",
+  "n": 1,
+  "note": "4K Google TV Box (a14), 3 installs: 5555 open, the 'Allow USB debugging?' question was not answered; health report, nothing to fix"
+ },
+ "592ef0de506c0c694f2d21c2|0.49.0": {
+  "at": "2026-11-27T04:00:49+07:00",
+  "n": 1,
+  "note": "4K Google TV Box (a14), 3 installs: 5555 open, the 'Allow USB debugging?' question was not answered; health report, nothing to fix"
+ },
+ "592ef0de506c0c694f2d21c2|0.53.1": {
+  "at": "2026-11-27T04:00:49+07:00",
+  "n": 3,
+  "note": "4K Google TV Box (a14), 3 installs: 5555 open, the 'Allow USB debugging?' question was not answered; health report, nothing to fix"
  },
  "5a3f0f3294d8f48d02e14828|0.43.0": {
   "at": "2026-11-05T10:40:20+07:00",
@@ -2160,7 +2250,7 @@
   "note": "TV Setup ADB health report (the box refused ADB), not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.28.0": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
@@ -2200,7 +2290,7 @@
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.37.0": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
@@ -2215,63 +2305,93 @@
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.38.4": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.40.0": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.42.0": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.42.2": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.44.0": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.45.0": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 2,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.45.1": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.46.0": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.47.0": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.49.0": {
-  "at": "2026-11-14T07:01:05+07:00",
+  "at": "2026-11-24T17:00:49+07:00",
   "n": 1,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.50.0": {
-  "at": "2026-11-14T07:01:05+07:00",
-  "n": 3,
+  "at": "2026-11-24T17:00:49+07:00",
+  "n": 5,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67c022dfb5a21bcb3a3560b8|0.51.0": {
-  "at": "2026-11-14T07:01:05+07:00",
-  "n": 2,
+  "at": "2026-11-24T17:00:49+07:00",
+  "n": 3,
+  "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.52.0": {
+  "at": "2026-11-24T17:00:49+07:00",
+  "n": 4,
+  "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.53.0": {
+  "at": "2026-11-24T17:00:49+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.53.1": {
+  "at": "2026-11-24T17:00:49+07:00",
+  "n": 3,
+  "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.53.6": {
+  "at": "2026-11-24T17:00:49+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.54.0": {
+  "at": "2026-11-24T17:00:49+07:00",
+  "n": 1,
+  "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.55.0": {
+  "at": "2026-11-24T17:00:49+07:00",
+  "n": 7,
   "note": "TV Setup ADB health report: Chromecast (Google TV) not paired over Wireless debugging yet (5555 refused / tls not paired / Allow unanswered); TV Setup shows the pairing step and keeps trying; not a code fault"
  },
  "67f82331bc87f7fa012370a1|0.49.0": {
@@ -2649,6 +2769,11 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "77ae935846869c06a384678f|0.55.0": {
+  "at": "2026-11-26T20:37:59+07:00",
+  "n": 1,
+  "note": "AQUA Android TV sdk 30 on 0.55.0: add-on stopped, known kind, nothing to fix"
+ },
  "79d301739f47300b62afcc99|0.24.0": {
   "at": "2026-10-26T21:47:42+07:00",
   "n": 1,
@@ -2658,6 +2783,11 @@
   "at": "2026-10-30T09:08:16+07:00",
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout), not a code fault"
+ },
+ "7c5a834899c350d2c4f466d9|0.36.0": {
+  "at": "2026-11-24T14:46:39+07:00",
+  "n": 3,
+  "note": "DeadSystemException: system_server died under a Dialog.show (box restarting; MBOX says 11.1, stack is Android 7). Not ours"
  },
  "7ce62d6ce53d30ec3ee956df|0.49.0": {
   "at": "2026-11-08T22:48:37+07:00",
@@ -2773,6 +2903,11 @@
   "at": "2026-11-04T06:24:40+07:00",
   "n": 1,
   "note": "ADB link reports (known classes); 83256fe0 fixed: remote.json read twice, mute guarded"
+ },
+ "841685a7854d564f4079d897|0.55.0": {
+  "at": "2026-11-26T14:37:40+07:00",
+  "n": 1,
+  "note": "MOKA STREAM R10G (Realtek rtd6748 operator box, sdk 34, rs allow): another a11y service enabled, ours dropped; operator kind like SEI STREAM b04354d6, nothing to fix"
  },
  "849cab1d400f0aea1d9415e5|0.45.0": {
   "at": "2026-11-06T17:03:02+07:00",
@@ -2969,6 +3104,11 @@
   "n": 1,
   "note": "Xiaomi MiTV sdk 28: service taken out by the firmware (like MiTV-MZTU0); nothing to fix"
  },
+ "8be99b53507d36787ba5260a|0.55.0": {
+  "at": "2026-11-26T19:44:59+07:00",
+  "n": 2,
+  "note": "G TWO BOX again on 0.55.0: Allwinner firmware kind, nothing to fix"
+ },
  "8c37e8d6e0a4d7dcfdb19359|0.53.6": {
   "at": "2026-11-19T21:00:48+07:00",
   "n": 1,
@@ -3154,6 +3294,11 @@
   "n": 1,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "9c9c3c5efee53907aeea62e4|0.55.0": {
+  "at": "2026-11-26T02:39:13+07:00",
+  "n": 1,
+  "note": "Skyworth SWTV-20AE-PRO (m7332, sdk 30): add-on running, another a11y service enabled (others 1), ours dropped: operator kind, nothing to fix"
+ },
  "9d57a846bf45ba3616ccd0d1|0.49.0": {
   "at": "2026-11-21T20:50:23+07:00",
   "n": 1,
@@ -3240,24 +3385,29 @@
   "note": "TV Setup ADB link report: refused / allow unanswered / tls not paired / read timeout / Fire TV EOF (known), not a code fault"
  },
  "a0ef02bfc8edf9bdb3f78d1d|0.51.0": {
-  "at": "2026-11-20T08:23:13+07:00",
+  "at": "2026-11-25T11:05:35+07:00",
   "n": 1,
-  "note": "Amlogic t950s box again on 0.53.1: rs allow, other a11y bound, firmware drops ours (operator kind)"
+  "note": "same Amlogic t950s fake-Pixel box on 0.55.0: operator kind, nothing to fix"
  },
  "a0ef02bfc8edf9bdb3f78d1d|0.52.0": {
-  "at": "2026-11-20T08:23:13+07:00",
+  "at": "2026-11-25T11:05:35+07:00",
   "n": 1,
-  "note": "Amlogic t950s box again on 0.53.1: rs allow, other a11y bound, firmware drops ours (operator kind)"
+  "note": "same Amlogic t950s fake-Pixel box on 0.55.0: operator kind, nothing to fix"
  },
  "a0ef02bfc8edf9bdb3f78d1d|0.53.0": {
-  "at": "2026-11-20T08:23:13+07:00",
+  "at": "2026-11-25T11:05:35+07:00",
   "n": 1,
-  "note": "Amlogic t950s box again on 0.53.1: rs allow, other a11y bound, firmware drops ours (operator kind)"
+  "note": "same Amlogic t950s fake-Pixel box on 0.55.0: operator kind, nothing to fix"
  },
  "a0ef02bfc8edf9bdb3f78d1d|0.53.1": {
-  "at": "2026-11-20T08:23:13+07:00",
+  "at": "2026-11-25T11:05:35+07:00",
   "n": 1,
-  "note": "Amlogic t950s box again on 0.53.1: rs allow, other a11y bound, firmware drops ours (operator kind)"
+  "note": "same Amlogic t950s fake-Pixel box on 0.55.0: operator kind, nothing to fix"
+ },
+ "a0ef02bfc8edf9bdb3f78d1d|0.55.0": {
+  "at": "2026-11-25T11:05:35+07:00",
+  "n": 1,
+  "note": "same Amlogic t950s fake-Pixel box on 0.55.0: operator kind, nothing to fix"
  },
  "a11df287c4b27a276b8f644e|0.27.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -3310,9 +3460,14 @@
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "a3c50fa342d23dac064f20a9|0.47.0": {
-  "at": "2026-11-08T00:33:01+07:00",
+  "at": "2026-11-25T23:25:18+07:00",
   "n": 1,
-  "note": "keyfix_refused on X96mini (Android 10): firmware takes the key filter out, same as WS/ADT-3/G-Two/SWTV; 0.47.0 has no cause in the detail yet (a20c4155 adds it), left"
+  "note": "X96mini (fake Google eros-p1, Allwinner sun50iw9p1, sdk 29): Allwinner firmware drops the a11y entry, known kind, nothing to fix"
+ },
+ "a3c50fa342d23dac064f20a9|0.55.0": {
+  "at": "2026-11-25T23:25:18+07:00",
+  "n": 1,
+  "note": "X96mini (fake Google eros-p1, Allwinner sun50iw9p1, sdk 29): Allwinner firmware drops the a11y entry, known kind, nothing to fix"
  },
  "a3e21d228922e0f24f4b55f4|0.34.1": {
   "at": "2026-11-10T20:01:00+07:00",
@@ -4035,9 +4190,14 @@
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "c637d18dfed3a49bbcb1db54|0.53.1": {
-  "at": "2026-11-21T04:53:57+07:00",
+  "at": "2026-11-25T23:16:59+07:00",
   "n": 3,
-  "note": "keyfix_refused firmware kind (service taken out by the box); clients say keys work only on TV Home; nothing to fix"
+  "note": "AI PONT (mt5867, sdk 30) on 0.55.0: add-on stopped + another a11y service; same firmware/operator kind as before, nothing to fix"
+ },
+ "c637d18dfed3a49bbcb1db54|0.55.0": {
+  "at": "2026-11-25T23:16:59+07:00",
+  "n": 1,
+  "note": "AI PONT (mt5867, sdk 30) on 0.55.0: add-on stopped + another a11y service; same firmware/operator kind as before, nothing to fix"
  },
  "c6a86068f3601afb5dbbefd8|0.31.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -4045,9 +4205,14 @@
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
  "c72299faad487700633d5e82|0.51.0": {
-  "at": "2026-11-13T18:49:22+07:00",
+  "at": "2026-11-26T20:37:58+07:00",
   "n": 1,
-  "note": "keyfix_refused on a Xiaomi MiTV-MZTU0 (mt5896, sdk 34, rs allow): add-on stopped, the TV's cleaner force-stops it within 60 s of each re-arm. Measured on the API 34 emulator: one force-stop is re-armed in 7 s and stays bound, so a shell-installed add-on is fine; nothing to fix; told on the clients since e9452995"
+  "note": "MiTV-MZTU0 sdk 34 on 0.55.0: add-on stopped (cleaner), known kind, nothing to fix"
+ },
+ "c72299faad487700633d5e82|0.55.0": {
+  "at": "2026-11-26T20:37:58+07:00",
+  "n": 1,
+  "note": "MiTV-MZTU0 sdk 34 on 0.55.0: add-on stopped (cleaner), known kind, nothing to fix"
  },
  "c72b1cc15e0a7d87e1b728a1|0.24.1": {
   "at": "2026-11-05T19:34:28+07:00",
@@ -4489,6 +4654,11 @@
   "n": 3,
   "note": "TV Setup ADB health report (the box refused / no Allow / timeout / not paired), not a code fault"
  },
+ "dede28121993abafba7dec52|0.55.0": {
+  "at": "2026-11-25T01:07:02+07:00",
+  "n": 1,
+  "note": "TD SYSTEMS (Expressluck m5621) sdk 30: add-on stopped (force-stopped by the firmware/cleaner), Android drops the a11y entry; same kind as ff386e26, nothing to fix"
+ },
  "defef3515cb89aabff4263f5|0.26.2": {
   "at": "2026-11-02T22:17:48+07:00",
   "n": 2,
@@ -4668,6 +4838,11 @@
   "at": "2026-10-29T18:31:22+07:00",
   "n": 1,
   "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
+ "e966b83874d60582b3123b92|0.55.0": {
+  "at": "2026-11-25T08:37:18+07:00",
+  "n": 1,
+  "note": "XL Axiata B860H (SDMC operator box) sdk 28: others 1, operator kind, nothing to fix"
  },
  "e9dd380c42178c0fa1a7b214|0.37.0": {
   "at": "2026-11-02T22:17:48+07:00",
@@ -5060,44 +5235,44 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "fbed4da875a2ffa6e96f47b8|0.47.0": {
-  "at": "2026-11-22T02:04:04+07:00",
+  "at": "2026-11-26T19:45:00+07:00",
   "n": 2,
-  "note": "0.55.0: same fake ADT-3 (Allwinner sun50iw15p1), rs allow, bound 0: firmware drops the a11y entry; clients say keys work only on TV Home"
+  "note": "ADT-3 (Allwinner sun50iw15p1 faking ADT-3) on 0.55.0: firmware kind, nothing to fix"
  },
  "fbed4da875a2ffa6e96f47b8|0.49.0": {
-  "at": "2026-11-22T02:04:04+07:00",
+  "at": "2026-11-26T19:45:00+07:00",
   "n": 1,
-  "note": "0.55.0: same fake ADT-3 (Allwinner sun50iw15p1), rs allow, bound 0: firmware drops the a11y entry; clients say keys work only on TV Home"
+  "note": "ADT-3 (Allwinner sun50iw15p1 faking ADT-3) on 0.55.0: firmware kind, nothing to fix"
  },
  "fbed4da875a2ffa6e96f47b8|0.50.0": {
-  "at": "2026-11-22T02:04:04+07:00",
+  "at": "2026-11-26T19:45:00+07:00",
   "n": 5,
-  "note": "0.55.0: same fake ADT-3 (Allwinner sun50iw15p1), rs allow, bound 0: firmware drops the a11y entry; clients say keys work only on TV Home"
+  "note": "ADT-3 (Allwinner sun50iw15p1 faking ADT-3) on 0.55.0: firmware kind, nothing to fix"
  },
  "fbed4da875a2ffa6e96f47b8|0.51.0": {
-  "at": "2026-11-22T02:04:04+07:00",
+  "at": "2026-11-26T19:45:00+07:00",
   "n": 4,
-  "note": "0.55.0: same fake ADT-3 (Allwinner sun50iw15p1), rs allow, bound 0: firmware drops the a11y entry; clients say keys work only on TV Home"
+  "note": "ADT-3 (Allwinner sun50iw15p1 faking ADT-3) on 0.55.0: firmware kind, nothing to fix"
  },
  "fbed4da875a2ffa6e96f47b8|0.52.0": {
-  "at": "2026-11-22T02:04:04+07:00",
+  "at": "2026-11-26T19:45:00+07:00",
   "n": 2,
-  "note": "0.55.0: same fake ADT-3 (Allwinner sun50iw15p1), rs allow, bound 0: firmware drops the a11y entry; clients say keys work only on TV Home"
+  "note": "ADT-3 (Allwinner sun50iw15p1 faking ADT-3) on 0.55.0: firmware kind, nothing to fix"
  },
  "fbed4da875a2ffa6e96f47b8|0.53.0": {
-  "at": "2026-11-22T02:04:04+07:00",
+  "at": "2026-11-26T19:45:00+07:00",
   "n": 2,
-  "note": "0.55.0: same fake ADT-3 (Allwinner sun50iw15p1), rs allow, bound 0: firmware drops the a11y entry; clients say keys work only on TV Home"
+  "note": "ADT-3 (Allwinner sun50iw15p1 faking ADT-3) on 0.55.0: firmware kind, nothing to fix"
  },
  "fbed4da875a2ffa6e96f47b8|0.53.1": {
-  "at": "2026-11-22T02:04:04+07:00",
+  "at": "2026-11-26T19:45:00+07:00",
   "n": 2,
-  "note": "0.55.0: same fake ADT-3 (Allwinner sun50iw15p1), rs allow, bound 0: firmware drops the a11y entry; clients say keys work only on TV Home"
+  "note": "ADT-3 (Allwinner sun50iw15p1 faking ADT-3) on 0.55.0: firmware kind, nothing to fix"
  },
  "fbed4da875a2ffa6e96f47b8|0.55.0": {
-  "at": "2026-11-22T02:04:04+07:00",
-  "n": 1,
-  "note": "0.55.0: same fake ADT-3 (Allwinner sun50iw15p1), rs allow, bound 0: firmware drops the a11y entry; clients say keys work only on TV Home"
+  "at": "2026-11-26T19:45:00+07:00",
+  "n": 2,
+  "note": "ADT-3 (Allwinner sun50iw15p1 faking ADT-3) on 0.55.0: firmware kind, nothing to fix"
  },
  "fc50f4abd4e3d69b9a57334c|0.34.1": {
   "at": "2026-10-30T09:08:32+07:00",
